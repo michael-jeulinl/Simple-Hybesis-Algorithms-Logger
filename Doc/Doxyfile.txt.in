@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Project: Simple Hybesis Algorithm
+# Project: Simple Hybesis Algorithm Logger
 #
 # Copyright (c) Michael Jeulin-Lagarrigue.
 # All rights reserved.
