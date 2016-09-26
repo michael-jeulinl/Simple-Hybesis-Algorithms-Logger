@@ -1,6 +1,6 @@
 #############################################################################################################
 #
-# SHA - Simple Hybesis Algorithm
+# Project: Simple Hybesis Algorithms Logger
 #
 # Copyright (c) Michael Jeulin-Lagarrigue
 #
@@ -21,7 +21,7 @@
 cmake_minimum_required(VERSION 2.8.2)
 
 #-----------------------------------------------------------------------------
-project(SimpleHybesisAlgorithm)
+project(SimpleHybesisAlgorithmsLogger)
 #-----------------------------------------------------------------------------
 
 #-----------------------------------------------------------------------------
@@ -49,7 +49,7 @@ set(SHA_VERSION
 # Information.
 # Variables containing project information.
 #
-set(SHA_PROJECT_TITLE "Simple-Hybesis-Algorithms")
+set(SHA_PROJECT_TITLE "Simple-Hybesis-Algorithms-Logger")
 
 #-----------------------------------------------------------------------------
 # Install directories, used for install rules.
