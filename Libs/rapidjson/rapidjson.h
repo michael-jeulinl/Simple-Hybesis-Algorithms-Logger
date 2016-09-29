@@ -121,12 +121,12 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 // RAPIDJSON_HAS_STDSTRING
-
+// SHA
 #ifndef RAPIDJSON_HAS_STDSTRING
 #ifdef RAPIDJSON_DOXYGEN_RUNNING
 #define RAPIDJSON_HAS_STDSTRING 1 // force generation of documentation
 #else
-#define RAPIDJSON_HAS_STDSTRING 0 // no std::string support by default
+#define RAPIDJSON_HAS_STDSTRING 1 // no std::string support by default
 #endif
 /*! \def RAPIDJSON_HAS_STDSTRING
     \ingroup RAPIDJSON_CONFIG

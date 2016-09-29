@@ -12,7 +12,11 @@
 set(SHA ${PROJECT_NAME})
 
 # Source files
-set(MODULE_LOGGER_SRCS TestAlgorithm.cxx)
+set(MODULE_LOGGER_SRCS #TestAlgorithm.cxx
+                       #TestArray.cxx
+                       TestIterator.cxx
+                       #TestParameter.cxx
+                       )
 
 # --------------------------------------------------------------------------
 # Build Testing executables
