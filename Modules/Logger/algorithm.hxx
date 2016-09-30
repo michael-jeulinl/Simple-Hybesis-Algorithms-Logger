@@ -1,61 +1,69 @@
-#ifndef MODULE_LOGGER_ALGO_HXX
-#define MODULE_LOGGER_ALGO_HXX
+#ifndef MODULE_LOGGER_ALGORITHM_HXX
+#define MODULE_LOGGER_ALGORITHM_HXX
 
-#include <rapidjson/prettywriter.h>
-#include <rapidjson/stringbuffer.h>
-
-// STD includes
-#include <memory>
-
-#include <iostream>
+#include <typedef.hxx>
 
 namespace SHA_Logger
 {
-  /// @class Logger
+  /// @class Algo_Traits
   ///
-  /// @todo may be basic class of specified logger (JSON/XML...)
-  typedef rapidjson::StringBuffer Buffer_Type;
-  typedef rapidjson::PrettyWriter<Buffer_Type> Writer_type;
-  class Algo
+  template <typename Algo>
+  class Algo_Traits
   {
     public:
-      /// Build - Construct in a naive way a Binary Search Tree given an unordered sequence of elements.
+      /// Instantiate a new json writer using the stream passed as
+      /// argument and write algorithm information.
       ///
-      /// @return Algo logger unique pointer to be owned, nullptr if construction failed.
-      static std::unique_ptr<Algo> Build(const std::string& name)
+      /// @return stream reference filled up with Algo object information,
+      ///         error information in case of failure.
+      static std::ostream& Build(std::ostream& os)
       {
-        // Create algorithm logger
-        auto algo = std::unique_ptr<Algo>(new Algo());
+        auto algo = Algo_Traits(os);
+        algo.Write();
 
-        return algo;
-      }
-      
-      // @todo temporary code
-      ~Algo()
-      {
-        std::cout << strBuffer.GetString() << std::endl;
+        return os;
       }
 
-      //static std::unique_ptr<Algo> BuildFromJson(const std::string& name, ostream& stream){}
+      /// Use json writer passed as parameter to write Algo information.
+      ///
+      /// @return stream reference filled up with Algo object information,
+      ///         error information in case of failure.
+      static Writer_Type& Build(Writer_Type& writer)
+      {
+        Write(writer);
+
+        return writer;
+      }
 
     private:
-      Algo() : strBuffer(), writer(std::unique_ptr<Writer_type>(new Writer_type(this->strBuffer))) 
+      Algo_Traits(std::ostream& os) : stream(os), writer(this->stream) {}
+      Algo_Traits operator=(Algo_Traits&) {}                              // Not Implemented
+
+      bool Write() { return Write(this->writer); }
+
+      static bool Write(Writer_Type& writer)
       {
-        // @todo temporary code for poc
-        writer->StartObject();
-        writer->Key("type");
-        writer->String("algorithm");
-        writer->Key("version");
-        writer->Double(0.1);
-        writer->EndObject();
+        writer.StartObject();
+        writer.Key("type");
+        writer.String(GetType());
+        writer.Key("version");
+        writer.String(Algo::GetVersion());
+        writer.Key("author");
+        writer.String(Algo::GetAuthor());
+        writer.Key("name");
+        writer.String(Algo::GetName());
+        writer.Key("module");
+        writer.String(Algo::GetModule());
+        writer.EndObject();
+
+        return true;
       }
 
-      Algo(Algo&) {}           // Not Implemented
-      Algo operator=(Algo&) {} // Not Implemented
+      static const std::string GetType() { return "algorithm"; }
 
-      Buffer_Type strBuffer;               // Temporary Variable
-      std::unique_ptr<Writer_type> writer; // Temporary Variable
+      Stream_Type stream; // Stream wrapper
+      Writer_Type writer; // Writer used to fill the stream
   };
 };
 
-#endif() // MODULE_LOGGER_ALGO_HXX
+#endif() // MODULE_LOGGER_ALGORITHM_HXX

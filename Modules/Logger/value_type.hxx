@@ -13,10 +13,11 @@ namespace SHA_Logger
       // Assert correct JSON construction.
       ~ValueType() { assert(this->writer.IsComplete()); }
 
-      /// Build - Construct a json ValueType log.
+      /// Instantiate a new json writer using the stream passed as
+      /// argument and write Value_Type information depending on type.
       ///
-      /// @return stream reference filled up with ValueType object information,
-      /// error information in case of failure.
+      /// @return stream reference filled up with Iterator object information,
+      ///         error information in case of failure.
       template <typename ValueT>
       static std::ostream& Build(std::ostream& os, const ValueT& value)
       {
@@ -27,10 +28,23 @@ namespace SHA_Logger
         return os;
       }
 
-      /// Build - Construct a json ValueType log.
+      /// Use json writer passed as parameter to write Value_Type information.
       ///
-      /// @return stream reference filled up with ValueType object information,
-      /// error information in case of failure.
+      /// @return stream reference filled up with Array object information depending on type,
+      ///         error information in case of failure.
+      template <typename ValueT>
+      static Writer_Type& Build(Writer_Type& os, const ValueT& value)
+      {
+        Write(write, value);
+
+        return os;
+      }
+
+      /// Instantiate a new json writer using the stream passed as
+      /// argument and write array information depending on type.
+      ///
+      /// @return stream reference filled up with Iterator object information,
+      ///         error information in case of failure.
       template <typename IteratorT>
       static std::ostream& BuildArray(std::ostream& os, const IteratorT& begin, const IteratorT& end)
       {
@@ -46,12 +60,12 @@ namespace SHA_Logger
         return os;
       }
 
-      /// Build - Construct a json ValueType log.
+      /// Use json writer passed as parameter to write array of value_type information.
       ///
-      /// @return stream reference filled up with ValueType object information,
-      /// error information in case of failure.
+      /// @return stream reference filled up with Array object information depending on type,
+      ///         error information in case of failure.
       template <typename IteratorT>
-      static Writer_type& BuildArray(Writer_type& writer, const IteratorT& begin, const IteratorT& end)
+      static Writer_Type& BuildArray(Writer_Type& writer, const IteratorT& begin, const IteratorT& end)
       {
         // @todo check & log error? --> time consuming
         writer.StartArray();
@@ -72,16 +86,16 @@ namespace SHA_Logger
 
       // Specifications
       // @todo add char specification.
-      static bool Write(Writer_type& writer, bool value) { return writer.Bool(value); }
-      static bool Write(Writer_type& writer, double value) { return writer.Double(value); }
-      static bool Write(Writer_type& writer, int value) { return writer.Int(value); }
-      static bool Write(Writer_type& writer, int64_t value) { return writer.Int64(value); }
-      static bool Write(Writer_type& writer, const std::string& value) { return writer.String(value); }
-      static bool Write(Writer_type& writer, unsigned value) { return writer.Uint(value); }
-      static bool Write(Writer_type& writer, uint64_t value) { return writer.Uint64(value); }
+      static bool Write(Writer_Type& writer, bool value) { return writer.Bool(value); }
+      static bool Write(Writer_Type& writer, double value) { return writer.Double(value); }
+      static bool Write(Writer_Type& writer, int value) { return writer.Int(value); }
+      static bool Write(Writer_Type& writer, int64_t value) { return writer.Int64(value); }
+      static bool Write(Writer_Type& writer, const std::string& value) { return writer.String(value); }
+      static bool Write(Writer_Type& writer, unsigned value) { return writer.Uint(value); }
+      static bool Write(Writer_Type& writer, uint64_t value) { return writer.Uint64(value); }
 
       Stream_Type stream; // Stream wrapper
-      Writer_type writer; // Writer used to fill the stream
+      Writer_Type writer; // Writer used to fill the stream
   };
 };
 

@@ -12,21 +12,34 @@ namespace SHA_Logger
   class Array
   {
     public:
-      // @todo generic class
       ~Array() { assert(this->writer.IsComplete()); }
 
-      /// Build array parameter within stream
+      /// Instantiate a new json writer using the stream passed as
+      /// argument and write array information.
       ///
-      /// @return Parameter logger unique pointer to be owned, nullptr if construction failed.
+      /// @return stream reference filled up with Iterator object information,
+      ///         error information in case of failure.
       static std::ostream& Build(std::ostream& os, String_Type& id,
                                  String_Type& beginName, const IteratorT& begin,
                                  String_Type& endName, const IteratorT& end)
       {
-        // Create Iterator logger
         auto parameter = Array(os);
         parameter.Write(id, beginName, begin, endName, end);
 
         return os;
+      }
+
+      /// Use json writer passed as parameter to write iterator information.
+      ///
+      /// @return stream reference filled up with Array object information,
+      ///         error information in case of failure.
+      static Writer_Type& Build(Writer_Type& writer, String_Type& id,
+                                String_Type& beginName, const IteratorT& begin,
+                                String_Type& endName, const IteratorT& end)
+      {
+        Write(writer, id, beginName, begin, endName, end);
+
+        return writer;
       }
 
     private:
@@ -38,7 +51,7 @@ namespace SHA_Logger
                  String_Type& endName, const IteratorT& end)
       { return Write(this->writer, id, beginName, begin, endName, end); }
 
-      static bool Write(Writer_type& writer, String_Type& id,
+      static bool Write(Writer_Type& writer, String_Type& id,
                         String_Type& beginName, const IteratorT& begin,
                         String_Type& endName, const IteratorT& end)
       {
@@ -101,7 +114,7 @@ namespace SHA_Logger
       }
 
       Stream_Type stream; // Stream wrapper
-      Writer_type writer; // Writer used to fill the stream
+      Writer_Type writer; // Writer used to fill the stream
   };
 };
 

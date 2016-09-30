@@ -1,22 +1,26 @@
 #include <gtest/gtest.h>
 #include <algorithm.hxx>
 
-// STD includes
-#include <string>
-
 using namespace SHA_Logger;
 
 #ifndef DOXYGEN_SKIP
 namespace {
-  typedef std::unique_ptr<Algo> Algo_Type;
+  class Algo_Quick
+  {
+    public:
+      static const std::string GetAuthor() { return "Michael Jeulin-L"; }
+      static const std::string GetDoc() { return "Documentation."; }
+      static const std::string GetModule() { return "Sort"; }
+      static const std::string GetName() { return "QuickSort"; }
+      static const std::string GetVersion() { return "1.0"; }
+  };
 }
 #endif /* DOXYGEN_SKIP */
 
 // Test TestAlgo Construction
-TEST(TestAlgo, build)
+TEST(TestAlgo_Traits, build)
 {
-  // Empty Array - No BST should be built
-  {
-    auto algoLog = Algo::Build("test");
-  }
+  // @todo Passing arguement as: Algo_Quick::Build(std::cout, x1, x2...)
+  // { Algo_Traits<Algo_Quick>::Build() };
+  Algo_Traits<Algo_Quick>::Build(std::cout);
 }

@@ -10,13 +10,11 @@ namespace SHA_Logger
   class Iterator
   {
     public:
-      // @todo generic class
       // Assert correct JSON construction.
       ~Iterator() { assert(this->writer.IsComplete()); }
 
-      /// Build - Construct a json iterator log.
-      ///
-      /// Instantiate a writer using the stream and write into it.
+      /// Instantiate a new json writer using the stream passed as
+      /// argument and write iterator information.
       ///
       /// @return stream reference filled up with Iterator object information,
       ///         error information in case of failure.
@@ -28,15 +26,12 @@ namespace SHA_Logger
         return os;
       }
 
-      /// Build - Construct a json iterator log.
-      ///
-      /// Instantiate a writer using the stream and write into it.
+      /// Use json writer passed as parameter to write iterator information.
       ///
       /// @return stream reference filled up with Iterator object information,
       ///         error information in case of failure.
-      static Writer_type& Build(Writer_type& writer, String_Type& parentId, String_Type& name, int index)
+      static Writer_Type& Build(Writer_Type& writer, String_Type& parentId, String_Type& name, int index)
       {
-        // Create Iterator logger
         Write(writer, parentId, name, index);
 
         return writer;
@@ -44,12 +39,12 @@ namespace SHA_Logger
 
     private:
       Iterator(std::ostream& os) : stream(os), writer(this->stream) {}
-      Iterator operator=(Iterator&) {} // Not Implemented
+      Iterator operator=(Iterator&) {}                                  // Not Implemented
 
       bool Write(String_Type& parentId, String_Type& name, int index)
       { return Write(this->writer, parentId, name, index); }
 
-      static bool Write(Writer_type& writer, String_Type& parentId, String_Type& name, int index)
+      static bool Write(Writer_Type& writer, String_Type& parentId, String_Type& name, int index)
       {
          // Add Error Object log in case of failure
         // @todo temporary code: create generic error object
@@ -83,7 +78,7 @@ namespace SHA_Logger
       }
 
       Stream_Type stream; // Stream wrapper
-      Writer_type writer; // Writer used to fill the stream
+      Writer_Type writer; // Writer used to fill the stream
   };
 };
 
