@@ -13,7 +13,7 @@ set(SHA ${PROJECT_NAME})
 
 # Source files
 set(MODULE_LOGGER_SRCS #TestAlgorithm.cxx
-                       #TestArray.cxx
+                       TestArray.cxx
                        TestIterator.cxx
                        #TestParameter.cxx
                        )
