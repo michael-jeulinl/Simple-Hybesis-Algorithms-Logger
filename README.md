@@ -1,5 +1,5 @@
-# Simple-Hybesis-Algorithms
-Educational demonstration of building simple algorithms under good practices development (cross-building, unit testing, ...)
+Simple-Hybesis-Algorithms-Logger
+Fork of the Simple-Hybesis-Algorithms repository adding logging capabilities used to describe algorithms steps.
 
 # CMake - Cross-Building
 The building relies on CMake, an Open-Source system that allows to easily build cross-platform applications by generating native makefiles (cf. http://www.cmake.org/cmake/resources/software.html).
