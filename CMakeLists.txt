@@ -62,6 +62,11 @@ if(NOT SHA_INSTALL_DOC_DIR)
 endif()
 
 #-----------------------------------------------------------------------------
+# Libraries directories, used for depedencies.
+#
+SET(LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Libs)
+
+#-----------------------------------------------------------------------------
 # Documentation / Doxygen Options
 #
 option(BUILD_DOC "Build documentation" ON)
@@ -86,10 +91,11 @@ else (DOXYGEN_FOUND)
 endif (DOXYGEN_FOUND)
 
 #-----------------------------------------------------------------------------
-# Testing Options
+# Testing / Testing Log Options
 #
 option(BUILD_TESTING "Compile tests on the project sources" ON)
-if(BUILD_TESTING)
+option(BUILD_TESTING_LOG "Compile logging tests on the project sources" ON)
+if(BUILD_TESTING OR BUILD_TESTING_LOG)
   include("CMake/GTest.cmake")
 endif()
 

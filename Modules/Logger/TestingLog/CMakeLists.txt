@@ -1,6 +1,6 @@
 #############################################################################################################
 #
-# Project: Simple Hybesis Algorithms Logger
+# SHA-L - Simple Hybesis Algorithm Logger
 #
 # Copyright (c) Michael Jeulin-Lagarrigue
 #
@@ -18,17 +18,18 @@
 #
 #############################################################################################################
 
-project(SHAModuleSearch)
+set(SHA ${PROJECT_NAME})
 
 # Source files
-set(SHA_SRCS "${CMAKE_CURRENT_SOURCE_DIR}")
+set(MODULE_LOGGER_SRCS TestAlgorithm.cxx
+                       TestArray.cxx
+                       TestIterator.cxx
+                       #TestValueType.cxx
+                       )
 
-# Testing
-if(BUILD_TESTING)
-  add_subdirectory(Testing)
-endif()
-
-# Testing Log
-if(BUILD_TESTING_LOG)
-  add_subdirectory(TestingLog)
-endif()
+# --------------------------------------------------------------------------
+# Build Testing executables
+# --------------------------------------------------------------------------
+include_directories(${LIB_DIR})
+include_directories(${MODULES_DIR})
+cxx_gtest(TestModuleLogger "${MODULE_LOGGER_SRCS}" ${SHA_SRCS})

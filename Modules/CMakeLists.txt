@@ -21,6 +21,7 @@
 SET(MODULES_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_subdirectory(Combinatory)
+add_subdirectory(Logger)
 add_subdirectory(Search)
 add_subdirectory(Sort)
 add_subdirectory(DataStructures)
