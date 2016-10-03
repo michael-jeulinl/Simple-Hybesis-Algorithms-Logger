@@ -23,6 +23,7 @@
 #include <Logger/algorithm.hxx>
 #include <Logger/array.hxx>
 #include <Logger/typedef.hxx>
+#include <Logger/value.hxx>
 
 namespace SHA_Search
 {
@@ -96,6 +97,7 @@ namespace SHA_Search
       static bool Write(Writer_Type& writer, const IteratorT& begin, const IteratorT& end, const T& key)
       {
         // Build general information
+        // @todo Add option parameter to include/exclude doc etc.
         writer.StartObject();
         writer.Key("info");
         Algo_Traits<BinaryLog>::Build(writer);
@@ -105,6 +107,7 @@ namespace SHA_Search
         writer.Key("parameters");
         writer.StartArray();
         Array<IteratorT>::Build(writer, "p_0", "begin", begin, "end", end);
+        Value<T>::Build(writer, "key", key);
         writer.EndArray();
 
         // Build computation

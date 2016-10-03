@@ -17,64 +17,65 @@
  * substantial portions of the Software.
  *
  *=========================================================================================================*/
-#ifndef MODULE_LOGGER_ITERATOR_HXX
-#define MODULE_LOGGER_ITERATOR_HXX
+#ifndef MODULE_LOGGER_VALUE_HXX
+#define MODULE_LOGGER_VALUE_HXX
 
 #include <Logger/typedef.hxx>
+#include <Logger/value_type.hxx>
 
 namespace SHA_Logger
 {
-  /// @class Iterator parameter
+  /// @class Value parameter
   ///
-  class Iterator
+  template <typename T>
+  class Value
   {
     public:
       // Assert correct JSON construction.
-      ~Iterator() { assert(this->writer.IsComplete()); }
+      ~Value() { assert(this->writer.IsComplete()); }
 
       /// Instantiate a new json writer using the stream passed as
-      /// argument and write iterator information.
+      /// argument and write value information.
       ///
-      /// @return stream reference filled up with Iterator object information,
+      /// @return stream reference filled up with Value object information,
       ///         error information in case of failure.
-      static std::ostream& Build(std::ostream& os, String_Type& parentId, String_Type& name, int index)
+      static std::ostream& Build(std::ostream& os, String_Type& name, const T& value)
       {
-        auto parameter = Iterator(os);
-        parameter.Write(parentId, name, index);
+        auto parameter = Value(os);
+        parameter.Write(name, value);
 
         return os;
       }
 
       /// Use json writer passed as parameter to write iterator information.
       ///
-      /// @return stream reference filled up with Iterator object information,
+      /// @return stream reference filled up with Value object information,
       ///         error information in case of failure.
-      static Writer_Type& Build(Writer_Type& writer, String_Type& parentId, String_Type& name, int index)
+      static Writer_Type& Build(Writer_Type& writer, String_Type& name, const T& value)
       {
-        Write(writer, parentId, name, index);
+        Write(writer, name, value);
 
         return writer;
       }
 
     private:
-      Iterator(std::ostream& os) : stream(os), writer(this->stream) {}
-      Iterator operator=(Iterator&) {}                                  // Not Implemented
+      Value(std::ostream& os) : stream(os), writer(this->stream) {}
+      Value operator=(Value&) {}                                    // Not Implemented
 
-      bool Write(String_Type& parentId, String_Type& name, int index)
-      { return Write(this->writer, parentId, name, index); }
+      bool Write(String_Type& name, const T& value) { return Write(this->writer, name, value); }
 
-      static bool Write(Writer_Type& writer, String_Type& parentId, String_Type& name, int index)
+      static bool Write(Writer_Type& writer, String_Type& name, const T& value)
       {
          // Add Error Object log in case of failure
         // @todo temporary code: create generic error object
-        if (parentId.empty() || name.empty()) {
+        if (name.empty()) {
           writer.StartObject();
           writer.Key("type");
           writer.String("error");
           writer.Key("fct");
-          writer.String("iterator::build");
+          writer.String("value::build");
           writer.Key("message");
-          writer.String("parameter parentId: '" + parentId + "' or name: '" + name + "' missing.");
+          writer.String("parameter name is empty.");
           writer.EndObject();
           return false;
         }
@@ -82,13 +83,11 @@ namespace SHA_Logger
         // Add iterator information
         writer.StartObject();
         writer.Key("type");
-        writer.String("iterator");
+        writer.String("value");
         writer.Key("name");
         writer.String(name);
-        writer.Key("ref");
-        writer.String(parentId);
         writer.Key("data");
-        writer.Int(index);
+        ValueType::Build<T>(writer, value);
         writer.EndObject();
 
         return true;
@@ -99,4 +98,4 @@ namespace SHA_Logger
   };
 };
 
-#endif() // MODULE_LOGGER_ITERATOR_HXX
+#endif() // MODULE_LOGGER_VALUE_HXX

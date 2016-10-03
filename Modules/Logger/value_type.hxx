@@ -37,8 +37,8 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with Iterator object information,
       ///         error information in case of failure.
-      template <typename ValueT>
-      static std::ostream& Build(std::ostream& os, const ValueT& value)
+      template <typename T>
+      static std::ostream& Build(std::ostream& os, const T& value)
       {
         // Create ValueType and add it to the logger
         auto logger = ValueType(os);
@@ -51,12 +51,12 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with Array object information depending on type,
       ///         error information in case of failure.
-      template <typename ValueT>
-      static Writer_Type& Build(Writer_Type& os, const ValueT& value)
+      template <typename T>
+      static Writer_Type& Build(Writer_Type& writer, const T& value)
       {
-        Write(write, value);
+        Write(writer, value);
 
-        return os;
+        return writer;
       }
 
       /// Instantiate a new json writer using the stream passed as
@@ -100,8 +100,8 @@ namespace SHA_Logger
       ValueType operator=(ValueType&) {}                                  // Not Implemented
 
       // Wrapper using internal writer
-      template <typename ValueT>
-      bool Write(ValueT value) { return this->Write(this->writer, value); }
+      template <typename T>
+      bool Write(T value) { return this->Write(this->writer, value); }
 
       // Specifications
       static bool Write(Writer_Type& writer, char value) { return writer.String(std::string(1, value)); }
