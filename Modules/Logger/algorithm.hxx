@@ -20,6 +20,7 @@
 #ifndef MODULE_LOGGER_ALGORITHM_HXX
 #define MODULE_LOGGER_ALGORITHM_HXX
 
+#include <Logger/options.hxx>
 #include <Logger/typedef.hxx>
 
 namespace SHA_Logger
@@ -35,10 +36,10 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with Algo object information,
       ///         error information in case of failure.
-      static std::ostream& Build(std::ostream& os)
+      static std::ostream& Build(std::ostream& os, Options opts)
       {
         auto algo = Algo_Traits(os);
-        algo.Write();
+        algo.Write(opts);
 
         return os;
       }
@@ -47,9 +48,9 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with Algo object information,
       ///         error information in case of failure.
-      static Writer_Type& Build(Writer_Type& writer)
+      static Writer_Type& Build(Writer_Type& writer, Options opts)
       {
-        Write(writer);
+        Write(writer, opts);
 
         return writer;
       }
@@ -58,9 +59,9 @@ namespace SHA_Logger
       Algo_Traits(std::ostream& os) : stream(os), writer(this->stream) {}
       Algo_Traits operator=(Algo_Traits&) {}                              // Not Implemented
 
-      bool Write() { return Write(this->writer); }
+      bool Write(Options opts) { return Write(this->writer); }
 
-      static bool Write(Writer_Type& writer)
+      static bool Write(Writer_Type& writer, Options opts)
       {
         writer.StartObject();
         writer.Key("type");
@@ -73,8 +74,11 @@ namespace SHA_Logger
         writer.String(Algo::GetName());
         writer.Key("module");
         writer.String(Algo::GetModule());
-        writer.Key("doc");
-        writer.String(Algo::GetDoc());
+        if (opts & OpGetDoc)
+        {
+          writer.Key("doc");
+          writer.String(Algo::GetDoc());
+        }
         writer.EndObject();
 
         return true;

@@ -56,16 +56,16 @@ TEST(TestBinaryLog, build)
   // Empty array
   {
     Container_Type emptyArray = Container_Type();
-    BinaryLog_Type::Build(std::cout, emptyArray.begin(), emptyArray.end(), 0);
+    BinaryLog_Type::Build(std::cout, OpGetAll, emptyArray.begin(), emptyArray.end(), 0);
   }
 
   // First element
   {
-    BinaryLog_Type::Build(std::cout, sortedArray.begin(), sortedArray.end(), -3);
+    BinaryLog_Type::Build(std::cout, OpGetMin, sortedArray.begin(), sortedArray.end(), -3);
   }
 
   // Existing random value
   {
-    BinaryLog_Type::Build(std::cout, sortedArray.begin(), sortedArray.end(), 8);
+    BinaryLog_Type::Build(std::cout, OpGetMin, sortedArray.begin(), sortedArray.end(), 8);
   }
 }

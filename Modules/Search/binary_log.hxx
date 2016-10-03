@@ -66,11 +66,11 @@ namespace SHA_Search
       ///
       /// @return stream reference filled up with BinaryLog object information,
       ///         error object information in case of failure.
-      static std::ostream& Build(std::ostream& os,
+      static std::ostream& Build(std::ostream& os, Options opts,
                                  const IteratorT& begin, const IteratorT& end, const T& key)
       {
         auto parameter = BinaryLog(os);
-        parameter.Write(begin, end, key);
+        parameter.Write(opts, begin, end, key);
 
         return os;
       }
@@ -79,10 +79,10 @@ namespace SHA_Search
       ///
       /// @return stream reference filled up with BinaryLog object information,
       ///         error information in case of failure.
-      static Writer_Type& Build(Writer_Type& writer,
+      static Writer_Type& Build(Writer_Type& writer, Options opts,
                                 const IteratorT& begin, const IteratorT& end, const T& key)
       {
-        Write(writer, begin, end, key);
+        Write(writer, opts, begin, end, key);
 
         return writer;
       }
@@ -91,17 +91,17 @@ namespace SHA_Search
       BinaryLog(std::ostream& os) : stream(os), writer(this->stream) {}
       BinaryLog operator=(BinaryLog&) {}                                  // Not Implemented
 
-      bool Write(const IteratorT& begin, const IteratorT& end, const T& key)
-      { return Write(this->writer, begin, end, key); }
+      bool Write(Options opts, const IteratorT& begin, const IteratorT& end, const T& key)
+      { return Write(this->writer, opts, begin, end, key); }
 
-      static bool Write(Writer_Type& writer, const IteratorT& begin, const IteratorT& end, const T& key)
+      static bool Write(Writer_Type& writer, Options opts,
+                        const IteratorT& begin, const IteratorT& end, const T& key)
       {
-        // Build general information
-        // @todo Add option parameter to include/exclude doc etc.
         writer.StartObject();
+
+        // Build general information
         writer.Key("info");
-        Algo_Traits<BinaryLog>::Build(writer);
-        
+        Algo_Traits<BinaryLog>::Build(writer, opts);
 
         // Add parameters
         writer.Key("parameters");
