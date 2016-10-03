@@ -51,9 +51,21 @@ namespace {
 // Test TestAlgo Construction
 TEST(TestBinaryLog, build)
 {
+  const Container_Type sortedArray(SortedArrayInt, SortedArrayInt + sizeof(SortedArrayInt) / sizeof(int));
+
   // Empty array
   {
     Container_Type emptyArray = Container_Type();
     BinaryLog_Type::Build(std::cout, emptyArray.begin(), emptyArray.end(), 0);
+  }
+
+  // First element
+  {
+    BinaryLog_Type::Build(std::cout, sortedArray.begin(), sortedArray.end(), -3);
+  }
+
+  // Existing random value
+  {
+    BinaryLog_Type::Build(std::cout, sortedArray.begin(), sortedArray.end(), 8);
   }
 }

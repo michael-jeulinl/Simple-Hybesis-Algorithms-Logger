@@ -20,7 +20,7 @@
 #ifndef MODULE_LOGGER_VALUE_TYPE_HXX
 #define MODULE_LOGGER_VALUE_TYPE_HXX
 
-#include <typedef.hxx>
+#include <Logger/typedef.hxx>
 
 namespace SHA_Logger
 {
@@ -104,7 +104,7 @@ namespace SHA_Logger
       bool Write(ValueT value) { return this->Write(this->writer, value); }
 
       // Specifications
-      // @todo add char specification.
+      static bool Write(Writer_Type& writer, char value) { return writer.String(std::string(1, value)); }
       static bool Write(Writer_Type& writer, bool value) { return writer.Bool(value); }
       static bool Write(Writer_Type& writer, double value) { return writer.Double(value); }
       static bool Write(Writer_Type& writer, int value) { return writer.Int(value); }

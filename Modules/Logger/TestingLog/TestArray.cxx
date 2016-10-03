@@ -33,7 +33,7 @@ namespace {
 // Test Array
 TEST(TestArray, build)
 {
-  // Simple Iterator
+  // Simple sequence
   {
     std::vector<int> sequence;
     sequence.push_back(2);
@@ -42,5 +42,11 @@ TEST(TestArray, build)
     sequence.push_back(7);
     sequence.push_back(0);
     Array<std::vector<int>::iterator>::Build(std::cout, "p_0", "begin", sequence.begin(), "end", sequence.end());
+  }
+
+  // String sequence
+  {
+    std::string str = "StringToBeRespresentatedAsArray";
+    Array<std::string::iterator>::Build(std::cout, "p_0", "begin", str.begin(), "end", str.end());
   }
 }
