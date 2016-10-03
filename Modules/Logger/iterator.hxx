@@ -20,6 +20,7 @@
 #ifndef MODULE_LOGGER_ITERATOR_HXX
 #define MODULE_LOGGER_ITERATOR_HXX
 
+#include <Logger/error.hxx>
 #include <Logger/typedef.hxx>
 
 namespace SHA_Logger
@@ -65,17 +66,13 @@ namespace SHA_Logger
 
       static bool Write(Writer_Type& writer, String_Type& parentId, String_Type& name, int index)
       {
-         // Add Error Object log in case of failure
-        // @todo temporary code: create generic error object
-        if (parentId.empty() || name.empty()) {
-          writer.StartObject();
-          writer.Key("type");
-          writer.String("error");
-          writer.Key("fct");
-          writer.String("iterator::build");
-          writer.Key("message");
-          writer.String("parameter parentId: '" + parentId + "' or name: '" + name + "' missing.");
-          writer.EndObject();
+        // Add Error Object log in case of failure
+        if (parentId.empty() || name.empty())
+        {
+          Error::Build(writer, __FILE__, __LINE__,
+            "Missing parameter: " +
+            (parentId.empty()) ? "+ parentId " : "" +
+            (name.empty()) ? "+ name " : "");
           return false;
         }
 

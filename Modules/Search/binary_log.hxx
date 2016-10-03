@@ -111,12 +111,12 @@ namespace SHA_Search
         writer.EndArray();
 
         // Build computation
+
+
         writer.EndObject();
 
         return true;
       }
-
-      //@todo check if cleaner solution
 
       Stream_Type stream; // Stream wrapper
       Writer_Type writer; // Writer used to fill the stream

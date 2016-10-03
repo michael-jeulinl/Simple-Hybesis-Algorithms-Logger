@@ -43,7 +43,7 @@ namespace SHA_Logger
                                  String_Type& endName, const IteratorT& end)
       {
         auto parameter = Array(os);
-        parameter.Write(name beginName, begin, endName, end);
+        parameter.Write(name, beginName, begin, endName, end);
 
         return os;
       }
@@ -68,43 +68,28 @@ namespace SHA_Logger
       bool Write(String_Type& name,
                  String_Type& beginName, const IteratorT& begin,
                  String_Type& endName, const IteratorT& end)
-      { return Write(this->writer, id, beginName, begin, endName, end); }
+      { return Write(this->writer, name, beginName, begin, endName, end); }
 
       static bool Write(Writer_Type& writer, String_Type& name,
                         String_Type& beginName, const IteratorT& begin,
                         String_Type& endName, const IteratorT& end)
       {
-         // Add Error Object log in case of failure
-        // @todo temporary code: create generic error object
-        // PARAM: CreateError: std::map<string, string> for: if (empty --> error + return false)
-        // Check if only macro usage retrieving fct name + line
-        if (name.empty() || beginName.empty() || endName.empty()) {
-          writer.StartObject();
-          writer.Key("type");
-          writer.String("error");
-          writer.Key("fct");
-          writer.String("array::build");
-          writer.Key("message");
-          writer.String("XXXX");
-          writer.EndObject();
-
+        // Add Error Object log in case of failure
+        if (name.empty() || beginName.empty() || endName.empty())
+        {
+          Error::Build(writer, __FILE__, __LINE__,
+            "Missing parameter: " +
+            (name.empty()) ? "+ name " : "" +
+            (beginName.empty()) ? "+ beginName " : "" +
+            (endName.empty()) ? "+ endName " : "");
           return false;
         }
 
-        // @todo create generic error object
         // 2*N for non random accessible iterator
         const int kdataSize = static_cast<int>(std::distance(begin, end));
         if (kdataSize < 1)
         {
-          writer.StartObject();
-          writer.Key("type");
-          writer.String("error");
-          writer.Key("fct");
-          writer.String("array::build");
-          writer.Key("message");
-          writer.String("undefined or empty sequence.");
-          writer.EndObject();
-
+          Error::Build(writer, __FILE__, __LINE__, "empty/invalid sequence detected.");
           return false;
         }
 

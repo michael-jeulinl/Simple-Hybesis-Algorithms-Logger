@@ -17,71 +17,63 @@
  * substantial portions of the Software.
  *
  *=========================================================================================================*/
-#ifndef MODULE_LOGGER_VALUE_HXX
-#define MODULE_LOGGER_VALUE_HXX
+#ifndef MODULE_LOGGER_ERROR_HXX
+#define MODULE_LOGGER_ERROR_HXX
 
-#include <Logger/error.hxx>
 #include <Logger/typedef.hxx>
-#include <Logger/value_type.hxx>
 
 namespace SHA_Logger
 {
-  /// @class Value parameter
+  /// @class Error parameter
   ///
-  template <typename T>
-  class Value
+  class Error
   {
     public:
       // Assert correct JSON construction.
-      ~Value() { assert(this->writer.IsComplete()); }
+      ~Error() { assert(this->writer.IsComplete()); }
 
       /// Instantiate a new json writer using the stream passed as
       /// argument and write value information.
       ///
-      /// @return stream reference filled up with Value object information,
+      /// @return stream reference filled up with Error object information,
       ///         error information in case of failure.
-      static std::ostream& Build(std::ostream& os, String_Type& name, const T& value)
+      static std::ostream& Build(std::ostream& os, String_Type& file, int line, String_Type& message)
       {
-        auto parameter = Value(os);
-        parameter.Write(name, value);
+        auto parameter = Error(os);
+        parameter.Write(file, line, message);
 
         return os;
       }
 
       /// Use json writer passed as parameter to write iterator information.
       ///
-      /// @return stream reference filled up with Value object information,
+      /// @return stream reference filled up with Error object information,
       ///         error information in case of failure.
-      static Writer_Type& Build(Writer_Type& writer, String_Type& name, const T& value)
+      static Writer_Type& Build(Writer_Type& writer, String_Type& file, int line, String_Type& message)
       {
-        Write(writer, name, value);
+        Write(writer, file, line, message);
 
         return writer;
       }
 
     private:
-      Value(std::ostream& os) : stream(os), writer(this->stream) {}
-      Value operator=(Value&) {}                                    // Not Implemented
+      Error(std::ostream& os) : stream(os), writer(this->stream) {}
+      Error operator=(Error&) {}                                    // Not Implemented
 
-      bool Write(String_Type& name, const T& value) { return Write(this->writer, name, value); }
+      bool Write(String_Type& file, int line, String_Type& message)
+      { return Write(this->writer, file, line, message); }
 
-      static bool Write(Writer_Type& writer, String_Type& name, const T& value)
+      static bool Write(Writer_Type& writer, String_Type& file, int line, String_Type& message)
       {
-        // Add Error Object log in case of failure
-        if (name.empty())
-        {
-          Error::Build(writer, __FILE__, __LINE__, "name parameter empty.");
-          return false;
-        }
-
-        // Add iterator information
         writer.StartObject();
         writer.Key("type");
-        writer.String("value");
-        writer.Key("name");
-        writer.String(name);
-        writer.Key("data");
-        ValueType::Build<T>(writer, value);
+        writer.String("error");
+        writer.Key("file");
+        writer.String(file);
+        writer.Key("line");
+        writer.Int(line);
+        writer.Key("message");
+        writer.String("Error: " + message);
         writer.EndObject();
 
         return true;
@@ -92,4 +84,4 @@ namespace SHA_Logger
   };
 };
 
-#endif() // MODULE_LOGGER_VALUE_HXX
+#endif() // MODULE_LOGGER_ERROR_HXX

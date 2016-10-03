@@ -27,12 +27,19 @@ using namespace SHA_Logger;
 
 #ifndef DOXYGEN_SKIP
 namespace {
+  typedef Array<std::vector<int>::iterator> Array_Type;
 }
 #endif /* DOXYGEN_SKIP */
 
 // Test Array
 TEST(TestArray, build)
 {
+  // Empty sequence
+  {
+    std::vector<int> sequence;
+    Array_Type::Build(std::cout, "p_0", "begin", sequence.begin(), "end", sequence.end());
+  }
+
   // Simple sequence
   {
     std::vector<int> sequence;
@@ -41,7 +48,7 @@ TEST(TestArray, build)
     sequence.push_back(5);
     sequence.push_back(7);
     sequence.push_back(0);
-    Array<std::vector<int>::iterator>::Build(std::cout, "p_0", "begin", sequence.begin(), "end", sequence.end());
+    Array_Type::Build(std::cout, "p_0", "begin", sequence.begin(), "end", sequence.end());
   }
 
   // String sequence

@@ -59,7 +59,7 @@ namespace SHA_Logger
       Algo_Traits(std::ostream& os) : stream(os), writer(this->stream) {}
       Algo_Traits operator=(Algo_Traits&) {}                              // Not Implemented
 
-      bool Write(Options opts) { return Write(this->writer); }
+      bool Write(Options opts) { return Write(this->writer, opts); }
 
       static bool Write(Writer_Type& writer, Options opts)
       {
