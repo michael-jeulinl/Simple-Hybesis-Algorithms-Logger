@@ -23,7 +23,7 @@ project(SHAModuleLogger)
 # Source files
 set(SHA_SRCS "${CMAKE_CURRENT_SOURCE_DIR}")
 
-# Testing
+# Testing Logs
 if(BUILD_TESTING_LOG)
   add_subdirectory(TestingLog)
 endif()

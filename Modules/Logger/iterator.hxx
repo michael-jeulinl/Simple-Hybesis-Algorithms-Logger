@@ -20,7 +20,7 @@
 #ifndef MODULE_LOGGER_ITERATOR_HXX
 #define MODULE_LOGGER_ITERATOR_HXX
 
-#include <typedef.hxx>
+#include <Logger/typedef.hxx>
 
 namespace SHA_Logger
 {

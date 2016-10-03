@@ -20,8 +20,8 @@
 #ifndef MODULE_LOGGER_ARRAY_HXX
 #define MODULE_LOGGER_ARRAY_HXX
 
-#include <iterator.hxx>
-#include <value_type.hxx>
+#include <Logger/iterator.hxx>
+#include <Logger/value_type.hxx>
 
 namespace SHA_Logger
 {

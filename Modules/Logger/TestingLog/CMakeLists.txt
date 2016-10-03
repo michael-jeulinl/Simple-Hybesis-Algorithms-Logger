@@ -31,4 +31,5 @@ set(MODULE_LOGGER_SRCS TestAlgorithm.cxx
 # Build Testing executables
 # --------------------------------------------------------------------------
 include_directories(${LIB_DIR})
+include_directories(${MODULES_DIR})
 cxx_gtest(TestModuleLogger "${MODULE_LOGGER_SRCS}" ${SHA_SRCS})

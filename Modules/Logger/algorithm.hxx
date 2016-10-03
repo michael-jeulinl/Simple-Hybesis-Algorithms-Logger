@@ -20,7 +20,7 @@
 #ifndef MODULE_LOGGER_ALGORITHM_HXX
 #define MODULE_LOGGER_ALGORITHM_HXX
 
-#include <typedef.hxx>
+#include <Logger/typedef.hxx>
 
 namespace SHA_Logger
 {
@@ -73,6 +73,8 @@ namespace SHA_Logger
         writer.String(Algo::GetName());
         writer.Key("module");
         writer.String(Algo::GetModule());
+        writer.Key("doc");
+        writer.String(Algo::GetDoc());
         writer.EndObject();
 
         return true;
