@@ -23,6 +23,7 @@
 #include <Logger/algorithm.hxx>
 #include <Logger/array.hxx>
 #include <Logger/comment.hxx>
+#include <Logger/operation.hxx>
 #include <Logger/typedef.hxx>
 #include <Logger/value.hxx>
 
@@ -37,7 +38,7 @@ namespace SHA_Search
 
   /// @class BinaryLog
   ///
-  template <typename IteratorT, typename T, typename IsEqualT>
+  template <typename IT, typename T, typename IsEqualT>
   class BinaryLog
   {
     public:
@@ -72,8 +73,7 @@ namespace SHA_Search
       ///
       /// @return stream reference filled up with BinaryLog object information,
       ///         error object information in case of failure.
-      static std::ostream& Build(std::ostream& os, Options opts,
-                                 const IteratorT& begin, const IteratorT& end, const T& key)
+      static Ostream_T& Build(Ostream_T& os, Options opts, const IT& begin, const IT& end, const T& key)
       {
         auto parameter = BinaryLog(os);
         parameter.Write(opts, begin, end, key);
@@ -86,7 +86,7 @@ namespace SHA_Search
       /// @return stream reference filled up with BinaryLog object information,
       ///         error information in case of failure.
       static Writer_Type& Build(Writer_Type& writer, Options opts,
-                                const IteratorT& begin, const IteratorT& end, const T& key)
+                                const IT& begin, const IT& end, const T& key)
       {
         Write(writer, opts, begin, end, key);
 
@@ -97,11 +97,11 @@ namespace SHA_Search
       BinaryLog(std::ostream& os) : stream(os), writer(this->stream) {}
       BinaryLog operator=(BinaryLog&) {}                                  // Not Implemented
 
-      bool Write(Options opts, const IteratorT& begin, const IteratorT& end, const T& key)
+      bool Write(Options opts, const IT& begin, const IT& end, const T& key)
       { return Write(this->writer, opts, begin, end, key); }
 
       static bool Write(Writer_Type& writer, Options opts,
-                        const IteratorT& begin, const IteratorT& end, const T& key)
+                        const IT& begin, const IT& end, const T& key)
       {
         writer.StartObject();
 
@@ -112,7 +112,7 @@ namespace SHA_Search
         // Add parameters
         writer.Key("parameters");
         writer.StartArray();
-        Array<IteratorT>::Build(writer, kSeqName, "begin", begin, "end", end);
+        Array<IT>::Build(writer, kSeqName, "begin", begin, "end", end);
         Value<T>::Build(writer, "key", key);
         writer.EndArray();
 
@@ -134,21 +134,22 @@ namespace SHA_Search
 
       ///
       static bool WriteComputation(Writer_Type& writer,
-                                   const IteratorT& begin, const IteratorT& end, const T& key)
+                                   const IT& begin, const IT& end, const T& key)
       {
         int index = -1;
         auto lowIt = begin;
         auto highIt = end;
-        const int _kSeqSize = static_cast<int>(std::distance(lowIt, highIt)); // Not part of the logs
-        auto middleIt = lowIt + _kSeqSize / 2;
+        int _seqSize = static_cast<int>(std::distance(lowIt, highIt)); // Not part of the logs
+        int _lowIdx = 0;                                               // Not part of the logs
+        auto middleIt = lowIt + _seqSize / 2;
 
         // Log local variables
         writer.Key("locals");
         writer.StartArray();
         Value<int>::Build(writer, "index", index);
         Iterator::Build(writer, kSeqName, "lowIt", 0);
-        Iterator::Build(writer, kSeqName, "highIt", _kSeqSize + 1);
-        Iterator::Build(writer, kSeqName, "middleIt", _kSeqSize / 2);
+        Iterator::Build(writer, kSeqName, "highIt", _seqSize + 1);
+        Iterator::Build(writer, kSeqName, "middleIt", _seqSize / 2);
         writer.EndArray();
 
         // Log algorithm operations
@@ -160,27 +161,43 @@ namespace SHA_Search
         {
           if (IsEqualT()(key, *middleIt))
           {
-            Comment::Build(writer, "Object found: set index computed from initial begin iterator.", 1);
             index = static_cast<int>(std::distance(begin, middleIt));
+
+            // Logs
+            Comment::Build(writer, "Object found: set index computed from initial begin iterator.", 1);
+            Operation::Set<int>(writer, "index", index);
+
+            break;
           }
           else if (key > *middleIt)
           {
+            lowIt = middleIt + 1;
+
+            // Logs
             Comment::Build(writer,
               "Object with higher value than the middle: search key within upper collection.", 1);
-            lowIt = middleIt + 1;
+            _lowIdx += _seqSize / 2 + 1;
+            _seqSize -= _seqSize / 2 + 1;
+            Operation::Set<int>(writer, "lowIt", _lowIdx);
           }
           else
           {
+            highIt = middleIt;
+
+            // Logs
             Comment::Build(writer,
               "Object with lower value than the middle: search key within lower collection.", 1);
-            highIt = middleIt;
+            Operation::Set<int>(writer, "highIt", _seqSize / 2);
+            _seqSize -= _seqSize / 2;
           }
 
-          middleIt = lowIt + std::distance(lowIt, highIt) / 2;
+          middleIt = lowIt + _seqSize / 2;
+
+          // Logs
+          Operation::Set<int>(writer, "middleIt", _lowIdx + _seqSize / 2);
         }
 
-        // Add return value
-        // return index;
+        // Log return value
         writer.StartObject();
         writer.Key("return");
         writer.Int(index);
