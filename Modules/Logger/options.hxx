@@ -26,8 +26,9 @@ namespace SHA_Logger
   {
     OpGetMin = 0x00,
     OpGetDoc = 0x01,
-    OpGetSrc = 0x02,
-    OpGetAll = OpGetDoc | OpGetSrc
+    OpGetInfo = 0x02,
+    OpGetSrc = 0x04,
+    OpGetAll = OpGetDoc | OpGetInfo | OpGetSrc
   };
 };
 

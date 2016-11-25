@@ -54,13 +54,17 @@ namespace SHA_Logger
         return os;
       }
 
-      /// Instantiate a new json writer using the stream passed as
-      /// argument and write value information.
-      ///
-      /// @return stream reference filled up with Operation object information,
-      ///         error information in case of failure.
-      ///
-      /// @todo pass extent as an enumered type.
+      /// @inherit doc
+      template <typename T>
+      static std::ostream& Return(std::ostream& os, const T& value)
+      {
+        auto operation = Operation(os);
+        operation.WriteReturn(value);
+
+        return os;
+      }
+
+      /// @inherit doc
       template <typename T>
       static std::ostream& OffSet(std::ostream& os, String_Type& name, const T& offset)
       {
@@ -82,10 +86,16 @@ namespace SHA_Logger
         return writer;
       }
 
-      /// Use json writer passed as parameter to write iterator information.
-      ///
-      /// @return stream reference filled up with Operation object information,
-      ///         error information in case of failure.
+      /// @inherit doc
+      template <typename T>
+      static Writer_Type& Return(Writer_Type& writer, const T& value)
+      {
+        WriteReturn(writer, value);
+
+        return writer;
+      }
+
+      /// @inherit doc
       template <typename T>
       static Writer_Type& OffSet(Writer_Type& writer, String_Type& name, const T& offset)
       {
@@ -107,6 +117,10 @@ namespace SHA_Logger
       { return WriteOffSet(this->writer, name, offset); }
 
       template <typename T>
+      bool WriteReturn(const T& value)
+      { return WriteReturn(this->writer, value); }
+
+      template <typename T>
       static bool WriteSet(Writer_Type& writer, String_Type& name, const T& value)
       {
         writer.StartObject();
@@ -114,7 +128,7 @@ namespace SHA_Logger
         writer.String(kTypeName);
         writer.Key("name");
         writer.String("Set");
-        writer.Key("var");
+        writer.Key("ref");
         writer.String(name);
         writer.Key("data");
         ValueType::Build<T>(writer, value);
@@ -131,10 +145,25 @@ namespace SHA_Logger
         writer.String(kTypeName);
         writer.Key("name");
         writer.String("OffSet");
-        writer.Key("var");
+        writer.Key("ref");
         writer.String(name);
         writer.Key("data");
         ValueType::Build<T>(writer, offset);
+        writer.EndObject();
+
+        return true;
+      }
+
+      template <typename T>
+      static bool WriteReturn(Writer_Type& writer, const T& value)
+      {
+        writer.StartObject();
+        writer.Key("type");
+        writer.String(kTypeName);
+        writer.Key("name");
+        writer.String("return");
+        writer.Key("data");
+        ValueType::Build<T>(writer, value);
         writer.EndObject();
 
         return true;

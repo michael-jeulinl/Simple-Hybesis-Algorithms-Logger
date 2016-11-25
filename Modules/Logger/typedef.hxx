@@ -31,7 +31,11 @@ namespace SHA_Logger
 {
   typedef rapidjson::OStreamWrapper Stream_Type;
   typedef rapidjson::PrettyWriter<Stream_Type> Writer_Type;
+
+  // STD typedef
   typedef const std::string String_Type;
+  typedef std::ostream Ostream_T;
+  typedef std::ofstream OFStream_T;
 };
 
 #endif() // MODULE_LOGGER_TYPEDEF_HXX

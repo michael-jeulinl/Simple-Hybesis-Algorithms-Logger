@@ -63,23 +63,14 @@ namespace SHA_Logger
 
       static bool Write(Writer_Type& writer, Options opts)
       {
-        writer.StartObject();
         writer.Key("type");
         writer.String(GetType());
-        writer.Key("version");
-        writer.String(Algo::GetVersion());
-        writer.Key("author");
-        writer.String(Algo::GetAuthor());
-        writer.Key("name");
-        writer.String(Algo::GetName());
-        writer.Key("module");
-        writer.String(Algo::GetModule());
         if (opts & OpGetDoc)
-        {
-          writer.Key("doc");
-          writer.String(Algo::GetDoc());
-        }
-        writer.EndObject();
+          Algo::WriteDoc(writer);
+        if (opts & OpGetInfo)
+          Algo::WriteInfo(writer);
+        if (opts & OpGetSrc)
+          Algo::WriteSrc(writer);
 
         return true;
       }
