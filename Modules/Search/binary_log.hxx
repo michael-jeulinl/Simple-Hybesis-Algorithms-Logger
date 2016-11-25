@@ -122,37 +122,23 @@ namespace SHA_Search
       ///
       static bool WriteComputation(Writer_Type& writer, const IT& begin, const IT& end, const T& key)
       {
+        // Not part of the logs
+        int _lowIdx = 0;
+
         // Local logged variables
         writer.Key("locals");
         writer.StartArray();
-        Value<int>::Build(writer, "index", -1);
-        Value<int>::Build(writer, "seqSize", -1);
-        Iterator::Build(writer, kSeqName, "lowIt", -1);
-        Iterator::Build(writer, kSeqName, "highIt", -1);
-        Iterator::Build(writer, kSeqName, "middleIt", -1);
+        auto index = Value<int>::BuildValue(writer, "index", -1);
+        auto seqSize = Value<int>::BuildValue(writer, "seqSize", static_cast<int>(std::distance(begin, end)));
+        auto lowIt = Iterator::BuildIt<IT>(writer, kSeqName, "lowIt", 0, begin);
+        auto highIt = Iterator::BuildIt<IT>(writer, kSeqName, "highIt", seqSize + 1, end);
+        auto middleIt = Iterator::BuildIt<IT>(writer, kSeqName, "middleIt", seqSize / 2,
+          lowIt + seqSize / 2, "Initiate index on the middle element of the sequence");
         writer.EndArray();
-
-        // Setting local variable
-        int index = -1;
-        auto lowIt = begin;
-        auto highIt = end;
-        int seqSize = static_cast<int>(std::distance(lowIt, highIt));
-        auto middleIt = lowIt + seqSize / 2;
-
-        // Not part of the logs
-        int _lowIdx = 0;
 
         // Log algorithm operations
         writer.Key("logs");
         writer.StartArray();
-
-        // Log local variable settings
-        Operation::Set<int>(writer, "index", index);
-        Operation::Set<int>(writer, "seqSize", seqSize);
-        Operation::Set<int>(writer, "lowIt", 0);
-        Operation::Set<int>(writer, "highIt", seqSize + 1);
-        Operation::Set<int>(writer, "middleIt", seqSize / 2);
-
         Comment::Build(writer, "Start Binary Search", 0);
         while (lowIt < highIt && index < 0)
         {
@@ -183,6 +169,7 @@ namespace SHA_Search
           }
 
           middleIt = lowIt + seqSize / 2;
+          Comment::Build(writer, "Select the middle element of the remaining sequence.", 1);
           Operation::Set<int>(writer, "middleIt", _lowIdx + seqSize / 2);
         }
 
@@ -190,9 +177,7 @@ namespace SHA_Search
         if (index < 0)
           Comment::Build(writer, "Key not found.", 0);
 
-        // Log return value
         Operation::Return<int>(writer, index);
-
         writer.EndArray();
         return true;
       }

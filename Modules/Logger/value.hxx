@@ -40,10 +40,11 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with Value object information,
       ///         error information in case of failure.
-      static std::ostream& Build(std::ostream& os, String_Type& name, const T& value)
+      static std::ostream& Build
+        (std::ostream& os, String_Type& name, const T& value, String_Type& comment = "")
       {
         auto parameter = Value(os);
-        parameter.Write(name, value);
+        parameter.Write(name, value, comment);
 
         return os;
       }
@@ -52,9 +53,36 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with Value object information,
       ///         error information in case of failure.
-      static Writer_Type& Build(Writer_Type& writer, String_Type& name, const T& value)
+      static const T& BuildValue
+        (Writer_Type& writer, String_Type& name, const T& value, String_Type& comment = "")
       {
-        Write(writer, name, value);
+        Write(writer, name, value, comment);
+
+        return value;
+      }
+
+      /// Instantiate a new json writer using the stream passed as
+      /// argument and write value information.
+      ///
+      /// @return stream reference filled up with Value object information,
+      ///         error information in case of failure.
+      static const T& BuildValue
+        (std::ostream& os, String_Type& name, const T& value, String_Type& comment = "")
+      {
+        auto parameter = Value(os);
+        parameter.Write(name, value, comment);
+
+        return value;
+      }
+
+      /// Use json writer passed as parameter to write iterator information.
+      ///
+      /// @return stream reference filled up with Value object information,
+      ///         error information in case of failure.
+      static Writer_Type& Build
+        (Writer_Type& writer, String_Type& name, const T& value, String_Type& comment = "")
+      {
+        Write(writer, name, value, comment);
 
         return writer;
       }
@@ -63,9 +91,10 @@ namespace SHA_Logger
       Value(std::ostream& os) : stream(os), writer(this->stream) {}
       Value operator=(Value&) {}                                    // Not Implemented
 
-      bool Write(String_Type& name, const T& value) { return Write(this->writer, name, value); }
+      bool Write(String_Type& name, const T& value, String_Type& comment)
+      { return Write(this->writer, name, value, comment); }
 
-      static bool Write(Writer_Type& writer, String_Type& name, const T& value)
+      static bool Write(Writer_Type& writer, String_Type& name, const T& value, String_Type& comment)
       {
         // Add Error Object log in case of failure
         if (name.empty())
@@ -78,10 +107,18 @@ namespace SHA_Logger
         writer.StartObject();
         writer.Key("type");
         writer.String("value");
+
         writer.Key("name");
         writer.String(name);
+
         writer.Key("data");
         ValueType::Build<T>(writer, value);
+
+        if (!comment.empty())
+        {
+          writer.Key("comment");
+          writer.String(comment);
+        }
         writer.EndObject();
 
         return true;
