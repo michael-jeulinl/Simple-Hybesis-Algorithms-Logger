@@ -38,10 +38,11 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with Iterator object information,
       ///         error information in case of failure.
-      static std::ostream& Build(std::ostream& os, String_Type& parentId, String_Type& name, int index)
+      static std::ostream& Build
+        (std::ostream& os, String_Type& parentId, String_Type& name, int index, String_Type& comment = "")
       {
         auto parameter = Iterator(os);
-        parameter.Write(parentId, name, index);
+        parameter.Write(parentId, name, index, comment);
 
         return os;
       }
@@ -50,21 +51,51 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with Iterator object information,
       ///         error information in case of failure.
-      static Writer_Type& Build(Writer_Type& writer, String_Type& parentId, String_Type& name, int index)
+      static Writer_Type& Build
+        (Writer_Type& writer, String_Type& parentId, String_Type& name, int index, String_Type& comment = "")
       {
-        Write(writer, parentId, name, index);
+        Write(writer, parentId, name, index, comment);
 
         return writer;
       }
 
+      /// Instantiate a new json writer using the stream passed as
+      /// argument and write iterator information.
+      ///
+      /// @return stream reference filled up with Iterator object information,
+      ///         error information in case of failure.
+      template <typename T>
+      static const T& BuildIt (Ostream_T& os, String_Type& parentId, String_Type& name, int index,
+                              const T& it, String_Type& comment = "")
+      {
+        auto parameter = Iterator(os);
+        parameter.Write(parentId, name, index, comment);
+
+        return it;
+      }
+
+      /// Use json writer passed as parameter to write iterator information.
+      ///
+      /// @return stream reference filled up with Iterator object information,
+      ///         error information in case of failure.
+      template <typename T>
+      static const T& BuildIt (Writer_Type& writer, String_Type& parentId, String_Type& name, int index,
+                               const T& it, String_Type& comment = "")
+      {
+        Write(writer, parentId, name, index, comment);
+
+        return it;
+      }
+
     private:
-      Iterator(std::ostream& os) : stream(os), writer(this->stream) {}
+      Iterator(Ostream_T& os) : stream(os), writer(this->stream) {}
       Iterator operator=(Iterator&) {}                                  // Not Implemented
 
-      bool Write(String_Type& parentId, String_Type& name, int index)
-      { return Write(this->writer, parentId, name, index); }
+      bool Write(String_Type& parentId, String_Type& name, int index, String_Type& comment)
+      { return Write(this->writer, parentId, name, index, comment); }
 
-      static bool Write(Writer_Type& writer, String_Type& parentId, String_Type& name, int index)
+      static bool Write
+        (Writer_Type& writer, String_Type& parentId, String_Type& name, int index, String_Type& comment)
       {
         // Add Error Object log in case of failure
         if (parentId.empty() || name.empty())
@@ -80,12 +111,21 @@ namespace SHA_Logger
         writer.StartObject();
         writer.Key("type");
         writer.String("iterator");
+
         writer.Key("name");
         writer.String(name);
+
         writer.Key("ref");
         writer.String(parentId);
+
         writer.Key("data");
         writer.Int(index);
+
+        if (!comment.empty())
+        {
+          writer.Key("comment");
+          writer.String(comment);
+        }
         writer.EndObject();
 
         return true;
