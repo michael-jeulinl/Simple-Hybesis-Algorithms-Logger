@@ -27,14 +27,10 @@
 #include <Logger/typedef.hxx>
 #include <Logger/value.hxx>
 
-namespace SHA_Search
+namespace SHA_Logger
 {
   namespace
-  {
-    using namespace SHA_Logger;
-
-    static const std::string kSeqName = "sequence"; // Name used as id for Array build from iterators.
-  }
+  { static const std::string kSeqName = "sequence"; } // Name used as id for Array build from iterators.
 
   /// @class BinaryLog
   ///
