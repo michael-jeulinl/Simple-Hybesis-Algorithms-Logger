@@ -46,10 +46,21 @@ set(SHA_VERSION
     "${SHA_VERSION_MAJOR}.${SHA_VERSION_MINOR}.${SHA_VERSION_PATCH}")
 
 #-----------------------------------------------------------------------------
+# Logger Version number.
+# An even minor number corresponds to releases.
+#
+set(SHA_LOGGER_VERSION_MAJOR 0)
+set(SHA_LOGGER_VERSION_MINOR 0)
+set(SHA_LOGGER_VERSION_PATCH 2)
+set(SHA_LOGGER_VERSION
+    "${SHA_LOGGER_VERSION_MAJOR}.${SHA_LOGGER_VERSION_MINOR}.${SHA_LOGGER_VERSION_PATCH}")
+
+#-----------------------------------------------------------------------------
 # Information.
 # Variables containing project information.
 #
 set(SHA_PROJECT_TITLE "Simple-Hybesis-Algorithms-Logger")
+set(SHA_LOGGER_PROJECT_TITLE "Simple-Hybesis-Algorithms-Logger-API")
 
 #-----------------------------------------------------------------------------
 # Install directories, used for install rules.
@@ -69,7 +80,7 @@ SET(LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Libs)
 #-----------------------------------------------------------------------------
 # Documentation / Doxygen Options
 #
-option(BUILD_DOC "Build documentation" ON)
+option(BUILD_DOC "Build documentation" OFF)
 find_package(Doxygen)
 if (DOXYGEN_FOUND)
     # Set input and output files
@@ -85,6 +96,30 @@ if (DOXYGEN_FOUND)
         COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMENT "Generating API documentation with Doxygen"
+        VERBATIM)
+else (DOXYGEN_FOUND)
+  message("Doxygen need to be installed to generate the doxygen documentation.")
+endif (DOXYGEN_FOUND)
+
+#-----------------------------------------------------------------------------
+# Documentation / Doxygen Options
+#
+option(BUILD_DOC_LOG "Build logger documentation" ON)
+find_package(Doxygen)
+if (DOXYGEN_FOUND)
+    # Set input and output files
+    set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doc/Doxyfile_Log.txt.in)
+    set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile_Log)
+
+    # Request to configure the file
+    configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+    message("Doxygen build started")
+
+    # Build the docs together with the application
+    add_custom_target(logger_doc_doxygen ALL
+        COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Generating Logger API documentation with Doxygen"
         VERBATIM)
 else (DOXYGEN_FOUND)
   message("Doxygen need to be installed to generate the doxygen documentation.")
