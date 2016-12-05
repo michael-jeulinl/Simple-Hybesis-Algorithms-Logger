@@ -74,6 +74,16 @@ namespace SHA_Logger
         return os;
       }
 
+      /// @inherit doc
+
+      static std::ostream& Swap(std::ostream& os, String_Type& aName, String_Type& bName)
+      {
+        auto operation = Operation(os);
+        operation.WriteSwap(aName, bName);
+
+        return os;
+      }
+
       /// Use json writer passed as parameter to write iterator information.
       ///
       /// @return stream reference filled up with Operation object information,
@@ -104,6 +114,14 @@ namespace SHA_Logger
         return writer;
       }
 
+      /// @inherit doc
+      static Writer_Type& Swap(Writer_Type& writer, String_Type& aName, String_Type& bName)
+      {
+        WriteSwap(writer, aName, bName);
+
+        return writer;
+      }
+
     private:
       Operation(std::ostream& os) : stream(os), writer(this->stream) {}
       Operation operator=(Operation&) {}                                    // Not Implemented
@@ -119,6 +137,9 @@ namespace SHA_Logger
       template <typename T>
       bool WriteReturn(const T& value)
       { return WriteReturn(this->writer, value); }
+
+      bool WriteSwap(String_Type& aName, String_Type& bName)
+      { return WriteSwap(this->writer, aName, bName); }
 
       template <typename T>
       static bool WriteSet(Writer_Type& writer, String_Type& name, const T& value)
@@ -161,9 +182,25 @@ namespace SHA_Logger
         writer.Key("type");
         writer.String(kTypeName);
         writer.Key("name");
-        writer.String("return");
+        writer.String("Return");
         writer.Key("data");
         ValueType::Build<T>(writer, value);
+        writer.EndObject();
+
+        return true;
+      }
+
+      static bool WriteSwap(Writer_Type& writer, String_Type& aName, String_Type& bName)
+      {
+        writer.StartObject();
+        writer.Key("type");
+        writer.String(kTypeName);
+        writer.Key("name");
+        writer.String("Swap");
+        writer.Key("refA");
+        writer.String(aName);
+        writer.Key("refB");
+        writer.String(bName);
         writer.EndObject();
 
         return true;
