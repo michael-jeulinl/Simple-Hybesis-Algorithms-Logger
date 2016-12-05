@@ -30,14 +30,11 @@
 // STD includes
 #include <iterator>
 
-namespace SHA_Sort
+namespace SHA_Logger
 {
   namespace
-  {
-    using namespace SHA_Logger;
+  { static const std::string kSeqName = "sequence"; } // Name used as id for Array build from iterators.
 
-    static const std::string kSeqName = "sequence"; // Name used as id for Array build from iterators.
-  }
   /// @class PartitionLog
   ///
   template <typename IT, typename Compare>

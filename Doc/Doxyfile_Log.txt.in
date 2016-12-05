@@ -447,7 +447,7 @@ EXTRACT_ALL            = YES
 # be included in the documentation.
 # The default value is: NO.
 # SHA
-EXTRACT_PRIVATE        = NO
+EXTRACT_PRIVATE        = YES
 
 # If the EXTRACT_PACKAGE tag is set to YES, all members with package or internal
 # scope will be included in the documentation.
@@ -1146,7 +1146,7 @@ HTML_FILE_EXTENSION    = .html
 # of the possible markers and block names see the documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 # SHA
-HTML_HEADER            = @CMAKE_CURRENT_SOURCE_DIR@/Doc/header.html
+HTML_HEADER            = @CMAKE_CURRENT_SOURCE_DIR@/Doc/header_log.html
 
 # The HTML_FOOTER tag can be used to specify a user-defined HTML footer for each
 # generated HTML page. If the tag is left blank doxygen will generate a standard
@@ -1156,7 +1156,7 @@ HTML_HEADER            = @CMAKE_CURRENT_SOURCE_DIR@/Doc/header.html
 # that doxygen normally uses.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 # SHA
-HTML_FOOTER            = @CMAKE_CURRENT_SOURCE_DIR@/Doc/footer.html
+HTML_FOOTER            = @CMAKE_CURRENT_SOURCE_DIR@/Doc/footer_log.html
 
 # The HTML_STYLESHEET tag can be used to specify a user-defined cascading style
 # sheet that is used by each HTML page. It can be used to fine-tune the look of
@@ -1180,8 +1180,8 @@ HTML_STYLESHEET        =
 # style sheet in the list overrules the setting of the previous ones in the
 # list). For an example see the documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
-
-HTML_EXTRA_STYLESHEET  = @CMAKE_CURRENT_SOURCE_DIR@/Doc/customdoxygen.css
+# SHA
+HTML_EXTRA_STYLESHEET  = @CMAKE_CURRENT_SOURCE_DIR@/Doc/customdoxygen_log.css
 
 # The HTML_EXTRA_FILES tag can be used to specify one or more extra images or
 # other source files which should be copied to the HTML output directory. Note
@@ -1190,8 +1190,8 @@ HTML_EXTRA_STYLESHEET  = @CMAKE_CURRENT_SOURCE_DIR@/Doc/customdoxygen.css
 # files. In the HTML_STYLESHEET file, use the file name only. Also note that the
 # files will be copied as-is; there are no commands or markers available.
 # This tag requires that the tag GENERATE_HTML is set to YES.
-
-HTML_EXTRA_FILES       = @CMAKE_CURRENT_SOURCE_DIR@/Doc/doxy-boot.js
+# SHA
+HTML_EXTRA_FILES       = @CMAKE_CURRENT_SOURCE_DIR@/Doc/doxy-boot_log.js
 
 # The HTML_COLORSTYLE_HUE tag controls the color of the HTML output. Doxygen
 # will adjust the colors in the style sheet and background images according to

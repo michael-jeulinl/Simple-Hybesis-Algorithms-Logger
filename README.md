@@ -26,7 +26,7 @@ Use the CMake **'BUILD_DOC'** (default to false) option to automatically setup D
 Use the CMake **'BUILD_DOC_LOG'** (default to true) option to automatically setup the logger Documentation Generation with doxygen.
 
 Please find the last generated documentations here:
-- http://michaeljeulin-l.com/Projects/SHA/Doc/
+- http://michaeljeulin-l.com/Projects/SHAC/Doc/
 - http://michaeljeulin-l.com/Projects/SHAL/Doc/
 
 # GTest - Unit Testing & CMake
@@ -50,6 +50,9 @@ E.g. to manually run the 'TestBasicBinary' Unit Test (using GTest):
 #### Search
 - **Binary Search:** Iteratively proceed a dichotomous search, within a sorted sequence, on the first occurrence of the key.
 
+#### Sort
+- **Partition-Exchange:** Proceed an in-place partitioning on the elements.
+
 # Other Algorithms/Data Structures core implementations
 #### Combinatory
 - **Combinations:** Compute all possible combinations of elements containing within the sequence.
@@ -71,6 +74,5 @@ E.g. to manually run the 'TestBasicBinary' Unit Test (using GTest):
 - **MergeInplace:** Functor that proceeds a in place merge of two sequences of elements.
 - **MergeSort:** John von Neumann in 1945: Proceed merge-sort on the elements whether using an in-place strategy or using a buffer.
 - **MergeWithBuffer:** Functor that proceeds a merge of two sequences of elements using a buffer to improve time computation.
-- **Partition-Exchange:** Proceed an in-place partitioning on the elements.
 - **Quick Sort - Partition-Exchange Sort:** Proceed an in-place quick-sort on the elements.
 - **Raddix Sort - LSD:** Proceed the Least Significant Digit Raddix sort, a non-comparative integer sorting algorithm.
