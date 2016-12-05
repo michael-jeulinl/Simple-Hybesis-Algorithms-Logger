@@ -894,7 +894,8 @@ EXCLUDE_PATTERNS       = */Testing/*
 # Note that the wildcards are matched against the file with absolute path, so to
 # exclude all test directories use the pattern */test/*
 
-EXCLUDE_SYMBOLS        = SHA_DataStructures
+EXCLUDE_SYMBOLS        = SHA_Combinatory
+EXCLUDE_SYMBOLS        += SHA_DataStructures
 EXCLUDE_SYMBOLS        += SHA_Search
 EXCLUDE_SYMBOLS        += SHA_Sort
 
@@ -1144,8 +1145,8 @@ HTML_FILE_EXTENSION    = .html
 # default header when upgrading to a newer version of doxygen. For a description
 # of the possible markers and block names see the documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
-
-HTML_HEADER            = 
+# SHA
+HTML_HEADER            = @CMAKE_CURRENT_SOURCE_DIR@/Doc/header.html
 
 # The HTML_FOOTER tag can be used to specify a user-defined HTML footer for each
 # generated HTML page. If the tag is left blank doxygen will generate a standard
@@ -1154,8 +1155,8 @@ HTML_HEADER            =
 # section "Doxygen usage" for information on how to generate the default footer
 # that doxygen normally uses.
 # This tag requires that the tag GENERATE_HTML is set to YES.
-
-HTML_FOOTER            = 
+# SHA
+HTML_FOOTER            = @CMAKE_CURRENT_SOURCE_DIR@/Doc/footer.html
 
 # The HTML_STYLESHEET tag can be used to specify a user-defined cascading style
 # sheet that is used by each HTML page. It can be used to fine-tune the look of
@@ -1180,7 +1181,7 @@ HTML_STYLESHEET        =
 # list). For an example see the documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_STYLESHEET  = 
+HTML_EXTRA_STYLESHEET  = @CMAKE_CURRENT_SOURCE_DIR@/Doc/customdoxygen.css
 
 # The HTML_EXTRA_FILES tag can be used to specify one or more extra images or
 # other source files which should be copied to the HTML output directory. Note
@@ -1190,7 +1191,7 @@ HTML_EXTRA_STYLESHEET  =
 # files will be copied as-is; there are no commands or markers available.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_FILES       = 
+HTML_EXTRA_FILES       = @CMAKE_CURRENT_SOURCE_DIR@/Doc/doxy-boot.js
 
 # The HTML_COLORSTYLE_HUE tag controls the color of the HTML output. Doxygen
 # will adjust the colors in the style sheet and background images according to
@@ -1653,7 +1654,7 @@ EXTRA_SEARCH_MAPPINGS  =
 # If the GENERATE_LATEX tag is set to YES, doxygen will generate LaTeX output.
 # The default value is: YES.
 
-GENERATE_LATEX         = YES
+GENERATE_LATEX         = NO
 
 # The LATEX_OUTPUT tag is used to specify where the LaTeX docs will be put. If a
 # relative path is entered the value of OUTPUT_DIRECTORY will be put in front of
@@ -2140,7 +2141,7 @@ EXTERNAL_GROUPS        = YES
 # be listed.
 # The default value is: YES.
 
-EXTERNAL_PAGES         = YES
+EXTERNAL_PAGES         = NO
 
 # The PERL_PATH should be the absolute path and name of the perl script
 # interpreter (i.e. the result of 'which perl').

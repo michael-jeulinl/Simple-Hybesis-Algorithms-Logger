@@ -38,7 +38,7 @@ namespace SHA_Logger
       /// @return stream reference filled up with Comment object information,
       ///         error information in case of failure.
       ///
-      /// @todo pass extent as an enumered type.
+      /// @note todo pass extent as an enumered type.
       static std::ostream& Build(std::ostream& os,
                                  String_Type& message, int level = 0, String_Type extent = "normal")
       {

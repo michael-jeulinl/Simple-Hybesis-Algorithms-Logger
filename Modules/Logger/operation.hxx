@@ -44,7 +44,7 @@ namespace SHA_Logger
       /// @return stream reference filled up with Operation object information,
       ///         error information in case of failure.
       ///
-      /// @todo pass extent as an enumered type.
+      /// @note todo pass extent as an enumered type.
       template <typename T>
       static std::ostream& Set(std::ostream& os, String_Type& name, const T& value)
       {

@@ -22,14 +22,16 @@ The building relies on CMake, an Open-Source system that allows to easily build 
 
 # Doxygen Documentation & CMake
 Use the CMake **'BUILD_DOC'** (default to false) option to automatically setup Documentation Generation with doxygen including SHA Core documentation.
+
 Use the CMake **'BUILD_DOC_LOG'** (default to true) option to automatically setup the logger Documentation Generation with doxygen.
 
 Please find the last generated documentations here:
-- http://michaeljeulin-l.com/Projects/SHADocumentation/
-- http://michaeljeulin-l.com/Projects/SHALDocumentation/
+- http://michaeljeulin-l.com/Projects/SHA/Doc/
+- http://michaeljeulin-l.com/Projects/SHAL/Doc/
 
 # GTest - Unit Testing & CMake
 Use the CMake **'BUILD_TESTING_LOG'** (default to true) option to automatically setup Unit Testing with google test on the Logger modules.
+
 Use the CMake **'BUILD_TESTING'** (default to true) option to automatically setup Unit Testing with google test on the Core modules.
 
 It allows to very quickly get set up with C++ and google test:
@@ -44,11 +46,11 @@ E.g. to manually run the 'TestBasicBinary' Unit Test (using GTest):
     Simple-Hybesis-Algorithms-Build/Modules/Search/Testing/Debug/TestBinary.exe  (Win)
     ./Simple-Hybesis-Algorithms-Build/Modules/Search/Testing/Debug/TestBinary    (UNIX)
 
-# Current Algorithms - Data Structures Including Logs and Visualizations
+# Algorithms/Data Structures with Logs and Visualizations
 #### Search
 - **Binary Search:** Iteratively proceed a dichotomous search, within a sorted sequence, on the first occurrence of the key.
 
-# Others Algorithms - Data Structures core implementations
+# Other Algorithms/Data Structures core implementations
 #### Combinatory
 - **Combinations:** Compute all possible combinations of elements containing within the sequence.
 - **Intersection:** Compute the intersection of two sequences keeping duplicate keys distinct.
