@@ -21,7 +21,7 @@
 #include <partition_log.hxx>
 
 // Testing namespace
-using namespace SHA_Sort;
+using namespace SHA_Logger;
 
 // STD includes
 #include <fstream>

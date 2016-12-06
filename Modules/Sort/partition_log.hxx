@@ -128,8 +128,8 @@ namespace SHA_Logger
         // Local logged variables
         writer.Key("locals");
         writer.StartArray();
-        auto it = Iterator::BuildIt<IT>(writer, kSeqName, "it", 0, begin, "Last element.");
-        auto last = Iterator::BuildIt<IT>(writer, kSeqName, "last", _seqSize, end - 1, "Last element.");
+        auto it = Iterator::BuildIt<IT>(writer, kSeqName, "it", 0, begin, "Current element iterator.");
+        auto last = Iterator::BuildIt<IT>(writer, kSeqName, "last", _seqSize - 1, end - 1, "Last element.");
         auto pivotValue = Value<IT::value_type>::BuildValue(writer, "pivotValue", *pivot, "Keet pivot val.");
         auto store = Iterator::BuildIt<IT>(writer, kSeqName, "store", 0, begin, "Current store iterator.");
         writer.EndArray();
@@ -148,23 +148,23 @@ namespace SHA_Logger
         Operation::Swap(writer, "pivot", "last");
         std::swap(*pivot, *(end - 1));
 
-        Comment::Build(writer, "Swap each smaller before the pivot item", 0);
+        Comment::Build(writer, "Swap each element with ", 0);
         for (it = begin; it != end - 1; ++it, Operation::Set<int>(writer, "it", ++_itIdx))
         {
           if (Compare()(*it, pivotValue))
           {
-            Comment::Build(writer, "Element compare well: swap with pivot.", 1);
+            Comment::Build(writer, "it <= pivot: swap(it, store).", 1);
             Operation::Swap(writer, "store", "it");
-            std::swap(*store, *it);
             Operation::Set<int>(writer, "store", ++_storeIdx);
+            std::swap(*store, *it);
             ++store;
           } else
-            Comment::Build(writer, "Ignore element.", 1);
+            Comment::Build(writer, "pivot > it : Ignore element.", 1);
         }
 
+        Comment::Build(writer, "Replace the pivot at its good position and replace its value.", 0);
         Operation::Set<int>(writer, "pivot", _storeIdx);
         pivot = store;
-        Comment::Build(writer, "Replace the pivot at its good position.", 0);
         Operation::Swap(writer, "pivot", "last");
         std::swap(*(end - 1), *pivot);
 

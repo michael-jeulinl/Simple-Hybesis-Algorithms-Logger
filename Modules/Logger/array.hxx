@@ -108,7 +108,7 @@ namespace SHA_Logger
         writer.Key("iterators");
         writer.StartArray();
         Iterator::Build(writer, name, beginName, 0);
-        Iterator::Build(writer, name, endName, static_cast<int>(kdataSize) + 1);
+        Iterator::Build(writer, name, endName, static_cast<int>(kdataSize));
         writer.EndArray();
 
         // Finish object
