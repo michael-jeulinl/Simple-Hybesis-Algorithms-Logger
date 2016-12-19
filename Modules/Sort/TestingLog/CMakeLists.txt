@@ -21,7 +21,8 @@
 set(SHA ${PROJECT_NAME})
 
 # Source files
-set(MODULE_SORT_LOG_SRCS TestPartitionLog.cxx)
+set(MODULE_SORT_LOG_SRCS TestPartitionLog.cxx
+                         TestQuickLog.cxx)
 
 # --------------------------------------------------------------------------
 # Build Testing Log executables

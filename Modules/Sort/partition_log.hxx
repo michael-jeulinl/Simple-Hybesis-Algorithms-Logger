@@ -32,9 +32,6 @@
 
 namespace SHA_Logger
 {
-  namespace
-  { static const std::string kSeqName = "sequence"; } // Name used as id for Array build from iterators.
-
   /// @class PartitionLog
   ///
   template <typename IT, typename Compare>
@@ -108,6 +105,14 @@ namespace SHA_Logger
       ///
       static bool WriteParameters(Writer_Type& writer, const IT& begin, IT& pivot, const IT& end)
       {
+        // Do not write sequence if no data to be processed
+        if (std::distance(begin, end) < 2 || pivot == end)
+        {
+          Comment::Build(writer, "Sequence size too small to be processed.", 0);
+          Operation::Return<bool>(writer, true);
+          return true;
+        }
+
         writer.Key("parameters");
         writer.StartArray();
         Array<IT>::Build(writer, kSeqName, "begin", begin, "end", end);
@@ -137,12 +142,6 @@ namespace SHA_Logger
         writer.Key("logs");
         writer.StartArray();
         Comment::Build(writer, "Start Partitinning", 0);
-        if (std::distance(begin, end) < 2 || pivot == end)
-        {
-          Comment::Build(writer, "Sequence size too small to be processed.", 0);
-          Operation::Return<bool>(writer, true);
-          return true;
-        }
 
         Comment::Build(writer, "Put the pivot at the end for convenience", 0);
         Operation::Swap(writer, "pivot", "last");

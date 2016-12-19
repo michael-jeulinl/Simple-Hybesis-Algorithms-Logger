@@ -17,28 +17,31 @@
  * substantial portions of the Software.
  *
  *=========================================================================================================*/
-#ifndef MODULE_LOGGER_TYPEDEF_HXX
-#define MODULE_LOGGER_TYPEDEF_HXX
-
-// JSON lib includes
-#include <rapidjson/ostreamwrapper.h>
-#include <rapidjson/prettywriter.h>
+#include <gtest/gtest.h>
+#include <quick_log.hxx>
 
 // STD includes
-#include <string>
+#include <fstream>
+#include <functional>
+#include <vector>
 
-namespace SHA_Logger
+// Testing namespace
+using namespace SHA_Logger;
+
+#ifndef DOXYGEN_SKIP
+namespace {
+  const int RandomArrayInt[] = {4, 3, 5, 2, -18, 3, 2, 3, 4, 5, -5}; // Simple random array of integers with negative values
+
+  typedef std::vector<int> Container_Type;
+  typedef Container_Type::iterator Iterator_Type;
+  typedef QuickLog<Iterator_Type, std::less_equal<int>> QuickLog_Type;
+}
+#endif /* DOXYGEN_SKIP */
+
+// Test TestAlgo Construction
+TEST(TestQuickLog, build)
 {
-  typedef rapidjson::OStreamWrapper Stream_Type;
-  typedef rapidjson::PrettyWriter<Stream_Type> Writer_Type;
-
-  // STD typedef
-  typedef const std::string String_Type;
-  typedef std::ostream Ostream_T;
-  typedef std::ofstream OFStream_T;
-
-  // Constants
-  static const std::string kSeqName = "sequence";
-};
-
-#endif() // MODULE_LOGGER_TYPEDEF_HXX
+  Container_Type randomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
+  OFStream_T fileStream("quick_output.json");
+  QuickLog_Type::Build(fileStream, OpGetMin, randomdArray.begin(), randomdArray.end());
+}
