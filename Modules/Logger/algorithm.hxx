@@ -65,7 +65,7 @@ namespace SHA_Logger
       {
         writer.Key("type");
         writer.String(GetType());
-        if (opts & OpGetName)
+        if (opts & OpGetName || opts & OpIsSub)
         {
           writer.Key("name");
           writer.String(Algo::GetName());
