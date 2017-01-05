@@ -63,10 +63,11 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with PartitionLog object information,
       ///         error object information in case of failure.
-      static Ostream_T& Build(Ostream_T& os, Options opts, const IT& begin, IT& pivot, const IT& end)
+      static Ostream_T& Build(Ostream_T& os, Options opts, const IT& begin, IT& pivot, const IT& end,
+                              const int beginIdx = 0)
       {
         auto parameter = PartitionLog(os);
-        parameter.Write(opts, begin, pivot, end);
+        parameter.Write(opts, begin, pivot, end, beginIdx);
 
         return os;
       }
@@ -75,9 +76,10 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with PartitionLog object information,
       ///         error information in case of failure.
-      static Writer_Type& Build(Writer_Type& writer, Options opts, const IT& begin, IT& pivot, const IT& end)
+      static Writer_Type& Build(Writer_Type& writer, Options opts, const IT& begin, IT& pivot, const IT& end,
+                                const int beginIdx = 0)
       {
-        Write(writer, opts, begin, pivot, end);
+        Write(writer, opts, begin, pivot, end, beginIdx);
 
         return writer;
       }
@@ -86,21 +88,31 @@ namespace SHA_Logger
       PartitionLog(std::ostream& os) : stream(os), writer(this->stream) {}
       PartitionLog operator=(PartitionLog&) {}                                  // Not Implemented
 
-      bool Write(Options opts, const IT& begin, IT& pivot, const IT& end)
-      { return Write(this->writer, opts, begin, pivot, end); }
+      bool Write(Options opts, const IT& begin, IT& pivot, const IT& end, const int beginIdx)
+      { return Write(this->writer, opts, begin, pivot, end, beginIdx); }
 
-      static bool Write(Writer_Type& writer, Options opts, const IT& begin, IT& pivot, const IT& end)
+      static bool Write(Writer_Type& writer, Options opts, const IT& begin, IT& pivot, const IT& end,
+                        const int beginIdx)
       {
         writer.StartObject();
+
+        // Do not write sequence if no data to be processed
+        const int _seqSize = static_cast<int>(std::distance(begin, end));
+        if (_seqSize < 2 || pivot == end)
+        {
+          Comment::Build(writer, "Sequence size too small to be processed.", 0);
+          Operation::Return<bool>(writer, true);
+          return true;
+        }
 
         // Write description
         Algo_Traits<PartitionLog>::Build(writer, opts);
 
         // Write parameters
-        WriteParameters(writer, begin, pivot, end);
+        WriteParameters(writer, opts, begin, pivot, end, beginIdx);
 
         // Write computation
-        WriteComputation(writer, begin, pivot, end);
+        WriteComputation(writer, begin, pivot, end, beginIdx);
 
         writer.EndObject();
 
@@ -108,51 +120,57 @@ namespace SHA_Logger
       }
 
       ///
-      static bool WriteParameters(Writer_Type& writer, const IT& begin, IT& pivot, const IT& end)
+      static bool WriteParameters(Writer_Type& writer, Options opts,
+                                  const IT& begin, IT& pivot, const IT& end, const int beginIdx)
       {
         // Do not write sequence if no data to be processed
-        if (std::distance(begin, end) < 2 || pivot == end)
-        {
-          Comment::Build(writer, "Sequence size too small to be processed.", 0);
-          Operation::Return<bool>(writer, true);
-          return true;
-        }
-
+        const int _pivIdx = static_cast<int>(std::distance(begin,pivot));
         writer.Key("parameters");
         writer.StartArray();
-        Array<IT>::Build(writer, kSeqName, "begin", begin, "end", end);
-        Iterator::Build(writer, kSeqName, "pivot", static_cast<int>(std::distance(begin,pivot)));
+        if (opts & OpIsSub)
+        {
+          const int _seqSize = static_cast<int>(std::distance(begin, end));
+          Iterator::Build(writer, kSeqName, "begin", beginIdx);
+          Iterator::Build(writer, kSeqName, "pivot", beginIdx + _pivIdx);
+          Iterator::Build(writer, kSeqName, "end", beginIdx + _seqSize);
+        }
+        else
+        {
+          Array<IT>::Build(writer, kSeqName, "begin", begin, "end", end);
+          Iterator::Build(writer, kSeqName, "pivot", _pivIdx);
+        }
         writer.EndArray();
 
         return true;
       }
 
       ///
-      static bool WriteComputation(Writer_Type& writer, const IT& begin, IT& pivot, const IT& end)
+      static bool WriteComputation(Writer_Type& writer, const IT& begin, IT& pivot, const IT& end,
+                                   const int beginIdx)
       {
         // Not part of the logs
         auto _seqSize = static_cast<int>(std::distance(begin, end));
-        int _itIdx = 0;
-        int _storeIdx = 0;
+        int _itIdx = beginIdx;
+        int _storeIdx = beginIdx;
 
         // Local logged variables
         writer.Key("locals");
         writer.StartArray();
-        auto it = Iterator::BuildIt<IT>(writer, kSeqName, "it", 0, begin, "Current element iterator.");
-        auto last = Iterator::BuildIt<IT>(writer, kSeqName, "last", _seqSize - 1, end - 1, "Last element.");
+        auto it = Iterator::BuildIt<IT>(writer, kSeqName, "it", beginIdx, begin, "Current element iterator.");
+        auto last = Iterator::BuildIt<IT>(writer, kSeqName, "last", beginIdx + _seqSize - 1, end - 1, "Last element.");
         auto pivotValue = Value<IT::value_type>::BuildValue(writer, "pivotValue", *pivot, "Keet pivot val.");
-        auto store = Iterator::BuildIt<IT>(writer, kSeqName, "store", 0, begin, "Current store iterator.");
+        auto store = Iterator::BuildIt<IT>(writer, kSeqName, "store", beginIdx, begin, "Current store iterator.");
         writer.EndArray();
 
         writer.Key("logs");
         writer.StartArray();
-        Comment::Build(writer, "Start Partitinning", 0);
+        Comment::Build(writer, "Start Partitinning");
 
-        Comment::Build(writer, "Put the pivot at the end for convenience", 0);
+        Comment::Build(writer, "Put the pivot at the end for convenience");
         Operation::Swap(writer, "pivot", "last");
         std::swap(*pivot, *(end - 1));
 
-        Comment::Build(writer, "Swap each element with ", 0);
+        Comment::Build(writer, "Swap each element with ");
         for (it = begin; it != end - 1; ++it, Operation::Set<int>(writer, "it", ++_itIdx))
         {
           if (Compare()(*it, pivotValue))
@@ -166,7 +184,7 @@ namespace SHA_Logger
             Comment::Build(writer, "pivot > it : Ignore element.", 1);
         }
 
-        Comment::Build(writer, "Replace the pivot at its good position and replace its value.", 0);
+        Comment::Build(writer, "Replace the pivot at its good position and replace its value.");
         Operation::Set<int>(writer, "pivot", _storeIdx);
         pivot = store;
         Operation::Swap(writer, "pivot", "last");

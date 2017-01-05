@@ -64,10 +64,10 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with QuickLog object information,
       ///         error object information in case of failure.
-      static Ostream_T& Build(Ostream_T& os, Options opts, IT& begin, IT& end)
+      static Ostream_T& Build(Ostream_T& os, Options opts, IT& begin, IT& end, const int beginIdx = 0)
       {
         auto parameter = QuickLog(os);
-        parameter.Write(opts, begin, end);
+        parameter.Write(opts, begin, end, beginIdx);
 
         return os;
       }
@@ -76,9 +76,9 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with QuickLog object information,
       ///         error information in case of failure.
-      static Writer_Type& Build(Writer_Type& writer, Options opts, IT& begin, IT& end)
+      static Writer_Type& Build(Writer_Type& writer, Options opts, IT& begin, IT& end, const int beginIdx = 0)
       {
-        Write(writer, opts, begin, end);
+        Write(writer, opts, begin, end, beginIdx);
 
         return writer;
       }
@@ -87,14 +87,14 @@ namespace SHA_Logger
       QuickLog(std::ostream& os) : stream(os), writer(this->stream) {}
       QuickLog operator=(QuickLog&) {}                                  // Not Implemented
 
-      bool Write(Options opts, IT& begin, IT& end)
-      { return Write(this->writer, opts, begin, end); }
+      bool Write(Options opts, IT& begin, IT& end, const int beginIdx)
+      { return Write(this->writer, opts, begin, end, beginIdx); }
 
-      static bool Write(Writer_Type& writer, Options opts, IT& begin, IT& end)
+      static bool Write(Writer_Type& writer, Options opts, IT& begin, IT& end, const int beginIdx)
       {
         // Do not write sequence if no data to be processed
-        const auto distance = static_cast<const int>(std::distance(begin, end));
-        if (distance < 2)
+        const int _seqSize = static_cast<int>(std::distance(begin, end));
+        if (_seqSize < 2)
         {
           Comment::Build(writer, "Sequence size too small to be processed.", 0);
           Operation::Return<bool>(writer, true);
@@ -107,10 +107,10 @@ namespace SHA_Logger
         Algo_Traits<QuickLog>::Build(writer, opts);
 
         // Write parameters
-        WriteParameters(writer, begin, end);
+        WriteParameters(writer, opts, begin, end, beginIdx);
 
         // Write computation
-        WriteComputation(writer, begin, end);
+        WriteComputation(writer, begin, end, beginIdx);
 
         writer.EndObject();
 
@@ -118,33 +118,45 @@ namespace SHA_Logger
       }
 
       ///
-      static bool WriteParameters(Writer_Type& writer, IT& begin, IT& end)
+      static bool WriteParameters(Writer_Type& writer, Options opts, IT& begin, IT& end, const int beginIdx)
       {
         writer.Key("parameters");
         writer.StartArray();
-        Array<IT>::Build(writer, kSeqName, "begin", begin, "end", end);
+        if (opts & OpIsSub)
+        {
+          const int _seqSize = static_cast<int>(std::distance(begin, end));
+          Iterator::Build(writer, kSeqName, "begin", beginIdx);
+          Iterator::Build(writer, kSeqName, "end", beginIdx + _seqSize);
+        }
+        else
+        {
+          Array<IT>::Build(writer, kSeqName, "begin", begin, "end", end);
+        }
         writer.EndArray();
 
         return true;
       }
 
       ///
-      static bool WriteComputation(Writer_Type& writer, IT& begin, IT& end)
+      static bool WriteComputation(Writer_Type& writer, IT& begin, IT& end, const int beginIdx)
       {
         const auto _pivotIdx = static_cast<const int>(rand() % (end - begin));
 
         // Local logged variables
         writer.Key("locals");
         writer.StartArray();
-        auto pivot = Iterator::BuildIt<IT>
-          (writer, kSeqName, "pivot", _pivotIdx, begin + _pivotIdx, "Pick Random Pivot within [begin, end]");
+        auto pivot = Iterator::BuildIt<IT>(writer, kSeqName, "pivot", beginIdx + _pivotIdx,
+          begin + _pivotIdx, "Pick Random Pivot within [begin, end]");
         writer.EndArray();
 
         writer.Key("logs");
         writer.StartArray();
-        PartitionLog<IT, Compare>::Build(writer, OpIsSub, begin, pivot, end); // Proceed partition
-        QuickLog<IT, Compare>::Build(writer, OpIsSub, begin, pivot);          // Recurse on first partition
-        QuickLog<IT, Compare>::Build(writer, OpIsSub, pivot + 1, end);        // Recurse on second partition
+        // Proceed partition
+        PartitionLog<IT, Compare>::Build(writer, OpIsSub, begin, pivot, end, beginIdx);
+        // Recurse on first partition
+        QuickLog<IT, Compare>::Build(writer, OpIsSub, begin, pivot, beginIdx);
+        // Recurse on second partition
+        QuickLog<IT, Compare>::Build(writer, OpIsSub, pivot + 1, end, _pivotIdx + 1);
         writer.EndArray();
 
         return true;
