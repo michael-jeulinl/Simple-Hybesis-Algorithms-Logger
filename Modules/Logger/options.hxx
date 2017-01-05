@@ -22,13 +22,17 @@
 
 namespace SHA_Logger
 {
+  // @TODO add option to specify if locals and/or parameter used for recursive/other function call
+  // @TODO will be used to optimize logs on such calls.
   enum Options
   {
-    OpGetMin = 0x00,
-    OpGetDoc = 0x01,
-    OpGetInfo = 0x02,
-    OpGetSrc = 0x04,
-    OpGetAll = OpGetDoc | OpGetInfo | OpGetSrc
+    OpGetMin = 0x00,                            // Retrieve only logs
+    OpGetName = 0x01,                           // Retrieve the name
+    OpGetDoc = 0x02,                            // Retrieve the technical documentation
+    OpGetInfo = 0x04,                           // Retrieve diverse information
+    OpGetSrc = 0x08,                            // Retrieve the original source code
+    OpIsSub = 0x16 | OpGetName,                 //! SubRoutine Call - Do not build parameter but only indexes
+    OpGetAll = OpGetDoc | OpGetInfo | OpGetSrc  // Retrieve all information
   };
 };
 

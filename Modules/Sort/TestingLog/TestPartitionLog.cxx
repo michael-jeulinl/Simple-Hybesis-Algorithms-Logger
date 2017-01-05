@@ -48,7 +48,6 @@ TEST(TestPartitionLog, build)
 {
   Container_type randomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
   Iterator_type pivot = randomdArray.begin() + 5;
-  const int pivotValue = *pivot;
 
   OFStream_T fileStream("partition_output.json");
 

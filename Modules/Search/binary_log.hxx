@@ -29,15 +29,17 @@
 
 namespace SHA_Logger
 {
-  namespace
-  { static const std::string kSeqName = "sequence"; } // Name used as id for Array build from iterators.
-
   /// @class BinaryLog
   ///
   template <typename IT, typename T, typename IsEqualT>
   class BinaryLog
   {
     public:
+      /// Write algorithm information
+      /// @TODO Use string litteral for JSON description within c++ code
+      /// @e.g https://cs.chromium.org/chromium/src/gpu/config/software_rendering_list_json.cc
+      static std::string GetName() { return "Binary Sort"; }
+
       /// Write algorithm information
       /// @TODO Use string litteral for JSON description within c++ code --> binary_desc.json.hxx
       static bool WriteInfo(Writer_Type& writer) { return true; }
