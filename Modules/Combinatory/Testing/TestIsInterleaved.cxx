@@ -32,8 +32,9 @@ namespace {
   const std::string kSequenceBStr = "xacvgeze";       // Random string
   const std::string kSequenceCStr = "axaemgccvgeze";  // Interleave of Sequence A and Sequence B
 
-  typedef std::vector<int> Container_Type;
-  typedef Container_Type::iterator Iterator_Type;
+  typedef std::vector<int> Container;
+  typedef Container::value_type Value;
+  typedef Container::iterator IT;
 }
 #endif /* DOXYGEN_SKIP */
 
@@ -42,44 +43,38 @@ TEST(TestIsInterleaved, Interleaved)
 {
   // Null interleave on empty sequences - empty interleave expected
   {
-    Container_Type empty = Container_Type();
-    EXPECT_TRUE(IsInterleaved<Iterator_Type>
+    Container empty = Container();
+    EXPECT_TRUE(IsInterleaved<IT>
       (empty.begin(), empty.end(), empty.begin(), empty.end(), empty.begin(), empty.end()));
   }
 
   // interleave with one empty sequence (first) - same sequence expected as interleave
   {
-    Container_Type sequenceA(kSequenceAInt, kSequenceAInt + sizeof(kSequenceAInt) /
-      sizeof(Container_Type::value_type));
-    EXPECT_TRUE(IsInterleaved<Iterator_Type>(sequenceA.begin(), sequenceA.end(), sequenceA.end(),
+    Container sequenceA(kSequenceAInt, kSequenceAInt + sizeof(kSequenceAInt) / sizeof(Value));
+    EXPECT_TRUE(IsInterleaved<IT>(sequenceA.begin(), sequenceA.end(), sequenceA.end(),
       sequenceA.end(), sequenceA.begin(), sequenceA.end()));
   }
 
   // interleave with one empty sequence (second) - same sequence expected as interleave
   {
-    Container_Type sequenceA(kSequenceAInt, kSequenceAInt + sizeof(kSequenceAInt) /
-      sizeof(Container_Type::value_type));
-    EXPECT_TRUE(IsInterleaved<Iterator_Type>(sequenceA.end(), sequenceA.end(), sequenceA.begin(),
+    Container sequenceA(kSequenceAInt, kSequenceAInt + sizeof(kSequenceAInt) / sizeof(Value));
+    EXPECT_TRUE(IsInterleaved<IT>(sequenceA.end(), sequenceA.end(), sequenceA.begin(),
       sequenceA.end(), sequenceA.begin(), sequenceA.end()));
   }
 
   // interleave with same sequence - same sequence cannot be interleave of both
   {
-    Container_Type sequenceA(kSequenceAInt, kSequenceAInt + sizeof(kSequenceAInt) /
-      sizeof(Container_Type::value_type));
-    EXPECT_FALSE(IsInterleaved<Iterator_Type>(sequenceA.begin(), sequenceA.end(), sequenceA.begin(),
+    Container sequenceA(kSequenceAInt, kSequenceAInt + sizeof(kSequenceAInt) / sizeof(Value));
+    EXPECT_FALSE(IsInterleaved<IT>(sequenceA.begin(), sequenceA.end(), sequenceA.begin(),
       sequenceA.end(), sequenceA.begin(), sequenceA.end()));
   }
 
   // Normal run with interleave
   {
-    Container_Type sequenceA(kSequenceAInt, kSequenceAInt + sizeof(kSequenceAInt) /
-      sizeof(Container_Type::value_type));
-    Container_Type sequenceB(kSequenceBInt, kSequenceBInt + sizeof(kSequenceBInt) /
-      sizeof(Container_Type::value_type));
-    Container_Type sequenceC(kSequenceCInt, kSequenceCInt + sizeof(kSequenceCInt) /
-      sizeof(Container_Type::value_type));
-    EXPECT_TRUE(IsInterleaved<Iterator_Type>(sequenceA.begin(), sequenceA.end(), sequenceB.begin(),
+    Container sequenceA(kSequenceAInt, kSequenceAInt + sizeof(kSequenceAInt) / sizeof(Value));
+    Container sequenceB(kSequenceBInt, kSequenceBInt + sizeof(kSequenceBInt) / sizeof(Value));
+    Container sequenceC(kSequenceCInt, kSequenceCInt + sizeof(kSequenceCInt) / sizeof(Value));
+    EXPECT_TRUE(IsInterleaved<IT>(sequenceA.begin(), sequenceA.end(), sequenceB.begin(),
       sequenceB.end(), sequenceC.begin(), sequenceC.end()));
   }
 

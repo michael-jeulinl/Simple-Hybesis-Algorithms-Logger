@@ -18,15 +18,15 @@
 #
 #############################################################################################################
 
-# Downloads GTest at compile time using git. 
+# Downloads GTest at compile time using git.
 # It then compiles it.
 
 find_package(Threads)
 include(ExternalProject)
 
 ExternalProject_Add(gtest_ext
-  GIT_REPOSITORY "https://github.com/michael-jeulinl/googletest/"
-  GIT_TAG "d8df1fb4884c07b032ff080d95bc6506d2a33509"
+  GIT_REPOSITORY "https://chromium.googlesource.com/external/github.com/google/googletest/"
+#  GIT_TAG "d8df1fb4884c07b032ff080d95bc6506d2a33509"
   BINARY_DIR "${CMAKE_BINARY_DIR}/gtest-build"
   SOURCE_DIR "${CMAKE_BINARY_DIR}/gtest-src"
   INSTALL_COMMAND ""
@@ -40,7 +40,11 @@ message(${GTEST_INCLUDE_DIRS})
 enable_testing()
 function(cxx_gtest name sources sourcesDirectory)
   message("${name}:  \n\t ${sources}")
-  link_directories("${CMAKE_BINARY_DIR}/gtest-build/googlemock/gtest/Debug")
+  if(MSVC)
+    link_directories("${CMAKE_BINARY_DIR}/gtest-build/googlemock/gtest/${CMAKE_BUILD_TYPE}")
+  else()
+    link_directories("${CMAKE_BINARY_DIR}/gtest-build/googlemock/gtest")
+  endif()
   add_executable(${name} ${sources})
   add_dependencies(${name} gtest_ext)
 
@@ -50,7 +54,7 @@ function(cxx_gtest name sources sourcesDirectory)
   #  optimized ${GTEST_SRC_DIRS}/Release/${CMAKE_FIND_LIBRARY_PREFIXES}gtest
   #  ${Pthread})
 
-  target_link_libraries(${name} ${ARGN} gtest gtest_main ${CMAKE_THREAD_LIBS_INIT})
+  target_link_libraries(${name} ${ARGN} gtest gtest_main ${CMAKE_THREAD_LIBS_INIT} ${Pthread})
   set_property(TARGET ${name} APPEND PROPERTY INCLUDE_DIRECTORIES ${GTEST_INCLUDE_DIRS} ${sourcesDirectory})
   add_test(NAME ${name} COMMAND ${name} "--gtest_break_on_failure")
 endfunction()

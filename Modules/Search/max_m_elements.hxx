@@ -37,7 +37,7 @@ namespace SHA_Search
   /// - f(a, b) the compare functor used: O(1) for the default std::greater_equal
   ///
   /// @tparam Container type used to return the elements.
-  /// @tparam Iterator type using to go through the collection.
+  /// @tparam IT type using to go through the collection.
   /// @tparam Compare functor type.
   ///
   /// @param begin,end iterators to the initial and final positions of
@@ -47,16 +47,21 @@ namespace SHA_Search
   ///
   /// @return a vector of sorted in decreasing/increasing order of the m maximum/minimum
   /// elements, an empty array in case of failure.
-  template <typename Container, typename Iterator, typename Compare /*= std::greater_equal*/>
-  Container MaxMElements(const Iterator& begin, const Iterator& end, const int m)
+  template <typename Container,
+            typename IT,
+            typename Compare = std::greater_equal<typename std::iterator_traits<IT>::value_type>>
+  Container MaxMElements(const IT& begin, const IT& end, const int m)
   {
     if (m < 1 || m > std::distance(begin, end))
       return Container();
 
     // Initiale values depends on the comparator functor
-    const auto limitValue = Compare()(0, std::numeric_limits<Iterator::value_type>::lowest()) ?
-                                         std::numeric_limits<Iterator::value_type>::lowest() :
-                                         std::numeric_limits<Iterator::value_type>::max();
+    const auto limitValue = Compare()(0, std::numeric_limits<typename std::iterator_traits<IT>::value_type>::
+                                      lowest()) ?
+                                         std::numeric_limits<typename std::iterator_traits<IT>::value_type>::
+                                      lowest() :
+                                         std::numeric_limits<typename std::iterator_traits<IT>::value_type>::
+                                      max();
 
     // Allocate the container final size
     Container maxMElements;
@@ -73,6 +78,6 @@ namespace SHA_Search
 
     return maxMElements;
   }
-};
+}
 
-#endif() // MODULE_COLLECTIONS_SEARCH_HXX
+#endif // MODULE_COLLECTIONS_SEARCH_HXX

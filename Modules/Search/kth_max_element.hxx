@@ -17,8 +17,8 @@
  * substantial portions of the Software.
  *
  *=========================================================================================================*/
-#ifndef MODULE_SEARCH_KTH_MAX_ELEMENT_HXX
-#define MODULE_SEARCH_KTH_MAX_ELEMENT_HXX
+#ifndef MODULE_SEARCH_MAX_KTH_ELEMENT_HXX
+#define MODULE_SEARCH_MAX_KTH_ELEMENT_HXX
 
 #include <Sort/partition.hxx>
 
@@ -36,38 +36,39 @@ namespace SHA_Search
   /// @complexity recursively look on the choosen partition:
   ///             N + N/2 + N/4 + N/8 + ... = O(N).
   ///
-  /// @tparam Iterator Random-access iterator type.
+  /// @tparam IT Random-access iterator type.
   /// @tparam Compare functor type (std::less_equal to find kth smallest element,
   /// std::greater_equal to find the kth biggest one).
   ///
-  /// @param begin,end - iterators to the initial and final positions of
+  /// @param begin,end - ITs to the initial and final positions of
   /// the sequence to be sorted. The range used is [first,last), which contains all the elements between
   /// first and last, including the element pointed by first but not the element pointed by last.
   /// @param k the zero-based kth element - 0 for the biggest/smallest.
   ///
-  /// @return the kth smallest iterator element of the array, the end iterator in case of failure.
-  template <typename Iterator, typename Compare /*= std::less_equal*/>
-  Iterator KthMaxElement(Iterator& begin, Iterator& end, size_t k)
+  /// @return the kth smallest IT element of the array, the end IT in case of failure.
+  template <typename IT, typename Compare = std::less_equal<typename std::iterator_traits<IT>::value_type>>
+  IT MaxKthElement(const IT& begin, const IT& end, unsigned int k)
   {
     const auto kSize = static_cast<const int>(std::distance(begin, end));
-    if (k > kSize || k < 0 || kSize <= 0)
+    if (k >= static_cast<unsigned int>(kSize))
       return end;
 
-    auto pivot = begin + (rand() % (end - begin));             // Take random pivot
-    SHA_Sort::Partition<Iterator, Compare>(begin, pivot, end); // Partition
+    auto pivot = begin + (rand() % kSize);                               // Take random pivot
+    auto newPivot = SHA_Sort::Partition<IT, Compare>(begin, pivot, end); // Partition
 
     // Get the index of the pivot (i'th smallest/biggest value)
-    const size_t kPivotIndex = std::distance(begin, pivot);
+    const auto kPivotIndex = std::distance(begin, newPivot);
 
     // Return if at the kth position
     if (kPivotIndex == k)
-      return pivot;
+      return newPivot;
 
     // Recurse search on left part if there is more than k elements within the left sequence
     // Recurse search on right otherwise
-    return (kPivotIndex > k) ? KthMaxElement<Iterator, Compare>(begin, pivot, k)
-                             : KthMaxElement<Iterator, Compare>(pivot, end, k - kPivotIndex);
-  }
-};
+    return (kPivotIndex > k) ? MaxKthElement<IT, Compare>(begin, newPivot, k)
+                             : MaxKthElement<IT, Compare>(newPivot, end, k - kPivotIndex);
 
-#endif() // MODULE_SEARCH_KTH_MAX_ELEMENT_HXX
+  }
+}
+
+#endif // MODULE_SEARCH_MAX_KTH_ELEMENT_HXX

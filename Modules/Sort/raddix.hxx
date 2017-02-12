@@ -33,7 +33,7 @@ namespace SHA_Sort
   ///
   /// @complexity O(d * N) with d max number of digits.
   ///
-  /// @tparam Iterator type using to go through the collection.
+  /// @tparam IT type using to go through the collection.
   ///
   /// @param begin,end iterators to the initial and final positions of
   /// the sequence to be sorted. The range used is [first,last), which contains all the elements between
@@ -41,17 +41,19 @@ namespace SHA_Sort
   /// @param base base in which the numbers are represented.
   ///
   /// @return void.
-  template <typename Iterator>
-  void RaddixSort(Iterator& begin, Iterator& end, unsigned int base = 10)
+  template <typename IT>
+  void RaddixSort(const IT& begin, const IT& end, unsigned int base = 10)
   {
     if (std::distance(begin, end) < 2)
       return;
 
     // Create a bucket for each possible value of a digit
-    std::vector<std::queue<Iterator::value_type>> buckets(base);
+    std::vector<std::queue<typename std::iterator_traits<IT>::value_type>> buckets(base);
 
     // For all possible digit
-    for (size_t powBase = 1; powBase < std::numeric_limits<Iterator::value_type>::max(); powBase *= base)
+    for (size_t powBase = 1;
+         powBase < std::numeric_limits<typename std::iterator_traits<IT>::value_type>::max();
+         powBase *= base)
     {
       // Push each number into the bucket of its digit value
       for (auto it = begin; it != end; ++it)
@@ -67,6 +69,6 @@ namespace SHA_Sort
         }
     }
   }
-};
+}
 
-#endif() // MODULE_SORT_RADDIX_HXX
+#endif // MODULE_SORT_RADDIX_HXX

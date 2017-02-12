@@ -30,21 +30,21 @@ namespace SHA_Sort
   ///
   /// @complexity O(N).
   ///
-  /// @tparam Iterator type using to go through the collection.
+  /// @tparam IT type using to go through the collection.
   /// @tparam Compare functor type (std::less_equal for smaller elements in left partition,
   /// std::greater_equal for greater elements in left partition).
   ///
   /// @param begin,end const iterators to the initial and final positions of
   /// the sequence to be pivoted. The range used is [first,last), which contains all the elements between
   /// first and last, including the element pointed by first but not the element pointed by last.
-  /// @param pivot iterators to position between begin and end.
+  /// @param pivot iterator on which the partition is delimited between begin and end.
   ///
-  /// @return void.
-  template <typename Iterator, typename Compare /*= std::less_equal*/>
-  void Partition(const Iterator& begin, Iterator& pivot, const Iterator& end)
+  /// @return new pivot iterator.
+  template <typename IT, typename Compare = std::less_equal<typename std::iterator_traits<IT>::value_type>>
+  IT Partition(const IT& begin, const IT& pivot, const IT& end)
   {
     if (std::distance(begin, end) < 2 || pivot == end)
-      return;
+      return pivot;
 
     auto pivotValue = *pivot;       // Keep the pivot value;
     std::swap(*pivot, *(end - 1));  // Put the pivot at the end for convenience
@@ -60,9 +60,11 @@ namespace SHA_Sort
       }
     }
 
-    pivot = store;                 // Return the pointer on the pivot
-    std::swap(*(end - 1), *pivot); // Replace the pivot at its good position
-  }
-};
+    // Replace the pivot at its good position
+    std::swap(*(end - 1), *store);
 
-#endif() // MODULE_SORT_PARTITION_HXX
+    return store;
+  }
+}
+
+#endif // MODULE_SORT_PARTITION_HXX

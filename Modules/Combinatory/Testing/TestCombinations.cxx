@@ -26,9 +26,10 @@ using namespace SHA_Combinatory;
 namespace {
   const int SmallIntArray[] = {2, 1, 3};  // Small array containing 2, 1, 3 values
 
-  typedef std::vector<int> Container_Type;
-  typedef Container_Type::const_iterator Const_Iterator_Type;
-  typedef std::list<Container_Type> Output_Container_Type;
+  typedef std::vector<int> Container;
+  typedef Container::value_type Value;
+  typedef Container::const_iterator Const_IT;
+  typedef std::list<Container> List;
 }
 #endif /* DOXYGEN_SKIP */
 
@@ -37,40 +38,35 @@ TEST(TestCombinations, Combinations)
 {
   // Empty vector - no combinations
   {
-    const Container_Type kEmptyCollection = Container_Type();
-    Output_Container_Type combinations = Combinations<Container_Type, Const_Iterator_Type>
-      (kEmptyCollection.begin(), kEmptyCollection.end());
-    EXPECT_EQ(0, combinations.size());
+    const Container kEmptyCollection = Container();
+    List combinations = Combinations<Container, Const_IT>(kEmptyCollection.begin(), kEmptyCollection.end());
+    EXPECT_EQ(static_cast<size_t>(0), combinations.size());
   }
 
   // Inversed iterator - no combinations
   {
-    const Container_Type kUnicCollection = Container_Type(1, 10);
-    Output_Container_Type combinations = Combinations<Container_Type, Const_Iterator_Type>
-      (kUnicCollection.end(), kUnicCollection.begin());
-    EXPECT_EQ(0, combinations.size());
+    const Container kUnicCollection = Container(1, 10);
+    List combinations = Combinations<Container, Const_IT>(kUnicCollection.end(), kUnicCollection.begin());
+    EXPECT_EQ(static_cast<size_t>(0), combinations.size());
   }
 
   // Unic element vector - Unique object returned as combinations
   {
-    const Container_Type kUnicCollection = Container_Type(1, 10);
-    Output_Container_Type combinations = Combinations<Container_Type, Const_Iterator_Type>
-      (kUnicCollection.begin(), kUnicCollection.end());
-    EXPECT_EQ(1, combinations.size());
-    EXPECT_EQ(1, combinations.begin()->size());
+    const Container kUnicCollection = Container(1, 10);
+    List combinations = Combinations<Container, Const_IT>(kUnicCollection.begin(), kUnicCollection.end());
+    EXPECT_EQ(static_cast<size_t>(1), combinations.size());
+    EXPECT_EQ(static_cast<size_t>(1), combinations.begin()->size());
     EXPECT_EQ(10, *(combinations.begin()->begin()));
   }
 
   // Run with value 2, 1, 3
   {
-    const Container_Type kSmallArray(SmallIntArray, SmallIntArray + sizeof(SmallIntArray) /
-      sizeof(Container_Type::value_type));
-    Output_Container_Type combinations = Combinations<Container_Type, Const_Iterator_Type>
-      (kSmallArray.begin(), kSmallArray.end());
-    EXPECT_EQ(7, combinations.size());
+    const Container kSmallArray(SmallIntArray, SmallIntArray + sizeof(SmallIntArray) / sizeof(Value));
+    List combinations = Combinations<Container, Const_IT>(kSmallArray.begin(), kSmallArray.end());
+    EXPECT_EQ(static_cast<size_t>(7), combinations.size());
 
     int countEls = 0;
-    for (Output_Container_Type::const_iterator it = combinations.begin(); it != combinations.end(); ++it)
+    for (List::const_iterator it = combinations.begin(); it != combinations.end(); ++it)
       countEls += static_cast<int>(it->size());
     EXPECT_EQ(12, countEls);
     //@TODO check sequence by sequence? (non ordered)
@@ -81,7 +77,7 @@ TEST(TestCombinations, Combinations)
     const std::string abcStr = "abc";
     std::list<std::string> combinations =
       Combinations<std::string, std::string::const_iterator>(abcStr.begin(), abcStr.end());
-    EXPECT_EQ(7, combinations.size());
+    EXPECT_EQ(static_cast<size_t>(7), combinations.size());
 
     int countEls = 0;
     for (std::list<std::string>::const_iterator it = combinations.begin(); it != combinations.end(); ++it)

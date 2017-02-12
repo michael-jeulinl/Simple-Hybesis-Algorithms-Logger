@@ -31,7 +31,7 @@ namespace SHA_Search
   ///
   /// @complexity O(log(N)).
   ///
-  /// @tparam Iterator type using to go through the collection.
+  /// @tparam IT type using to go through the collection.
 
   /// @param begin,end iterators to the initial and final positions of
   /// the sequence to be sorted. The range used is [first,last), which contains all the elements between
@@ -39,20 +39,23 @@ namespace SHA_Search
   /// @param key the key value to be searched.
   ///
   /// @return The vector index of the first found key, -1 otherwise.
-  template <typename Iterator, typename T, typename IsEqual>
-  int BinarySearch(const Iterator& begin, const Iterator& end, const T& key)
+  template <typename IT, typename IsEqual>
+  int BinarySearch(const IT& begin, const IT& end, const typename std::iterator_traits<IT>::value_type& key)
   {
     int index = -1;
     auto lowIt = begin;
     auto highIt = end;
     auto middleIt = lowIt + std::distance(lowIt, highIt) / 2;
 
-    // While there is still objects between the two iterators and no object has been foud yet
+    // While there is still objects between the two ITs and no object has been foud yet
     while(lowIt < highIt && index < 0)
     {
-      // Found object - Set index computed from initial begin iterator
+      // Found object - Set index computed from initial begin IT
       if (IsEqual()(key, *middleIt))
+      {
         index = static_cast<int>(std::distance(begin, middleIt));
+        break;
+      }
       // Search key within upper collection
       else if (key > *middleIt)
         lowIt = middleIt + 1;
@@ -65,6 +68,6 @@ namespace SHA_Search
 
     return index;
   }
-};
+}
 
-#endif() // MODULE_SEARCH_BINARY_HXX
+#endif // MODULE_SEARCH_BINARY_HXX

@@ -30,7 +30,7 @@ namespace SHA_Search
   /// Identifies the two indexes of the array with the maximal distance.
   ///
   /// @details Known as the simple stock market problem with the default functor (std::minus):
-  /// It finds i and j that maximizes Aj – Ai, where i < j.
+  /// It finds i and j that maximizes Aj - Ai, where i < j.
   /// In other words, maximizes the benefice of a resell given an array of prices varying over time.
   ///
   /// @complexity O(N * O(f(a, b))), with f(a,b) the functor used; is O(1) for the default std::minus.
@@ -43,8 +43,9 @@ namespace SHA_Search
   /// first and last, including the element pointed by first but not the element pointed by last.
   ///
   /// @return indexes of the array with the maximal distance, <-1,-1> in case of error.
-  template <typename Iterator, typename Distance /*= std::minus*/>
-  std::pair<int, int> MaxDistance(const Iterator& begin, const Iterator& end)
+  /// @todo return iterators instead.
+  template <typename IT, typename Distance = std::minus<typename std::iterator_traits<IT>::value_type>>
+  std::pair<int, int> MaxDistance(const IT& begin, const IT& end)
   {
     if (std::distance(begin, end) < 2)
       return std::pair<int, int>(-1, -1);
@@ -75,4 +76,4 @@ namespace SHA_Search
   }
 };
 
-#endif() // MODULE_COLLECTIONS_SEARCH_HXX
+#endif // MODULE_COLLECTIONS_SEARCH_HXX

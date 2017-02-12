@@ -30,7 +30,7 @@ project(SimpleHybesisAlgorithmsLogger)
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message(STATUS "Setting build type to 'Debug' as none was specified.")
   set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build." FORCE)
-  
+
   # Set the possible values of build type for cmake-gui
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release")
 endif()
@@ -40,7 +40,7 @@ endif()
 # An even minor number corresponds to releases.
 #
 set(SHA_VERSION_MAJOR 0)
-set(SHA_VERSION_MINOR 1)
+set(SHA_VERSION_MINOR 2)
 set(SHA_VERSION_PATCH 0)
 set(SHA_VERSION
     "${SHA_VERSION_MAJOR}.${SHA_VERSION_MINOR}.${SHA_VERSION_PATCH}")
@@ -156,9 +156,9 @@ mark_as_advanced(ADDITIONAL_CXX_FLAGS)
 #-----------------------------------------------------------------------------
 # SHA C/CXX Flags
 #
-set(SHA_C_FLAGS 
+set(SHA_C_FLAGS
   "${CMAKE_C_FLAGS_INIT} ${COVERAGE_C_FLAGS} ${ADDITIONAL_C_FLAGS}")
-set(SHA_CXX_FLAGS 
+set(SHA_CXX_FLAGS
   "${CMAKE_CXX_FLAGS_INIT} ${VISIBILITY_CXX_FLAGS} ${COVERAGE_CXX_FLAGS} ${ADDITIONAL_CXX_FLAGS}")
 
 if(CMAKE_COMPILER_IS_GNUCXX)
@@ -170,16 +170,16 @@ if(CMAKE_COMPILER_IS_GNUCXX)
   endif()
 
   set(SHA_C_FLAGS "${cflags} ${SHA_C_FLAGS}")
-  set(SHA_CXX_FLAGS "${cflags} 
-      -Woverloaded-virtual -Wold-style-cast 
-      -Wstrict-null-sentinel -Wsign-promo ${SHA_CXX_FLAGS}")
+  set(SHA_CXX_FLAGS "${cflags} ${SHA_CXX_FLAGS}")
+#      -Woverloaded-virtual -Wold-style-cast ${SHA_CXX_FLAGS}")
+#      -Wstrict-null-sentinel -Wsign-promo ${SHA_CXX_FLAGS}")
 endif()
 
 if(MSVC)
   set(msvc_suppressed_warnings
     "/wd4290" # C++ exception specification ignored except to indicate a function is not __declspec(nothrow)
-	)
-  
+  )
+
   set(SHA_CXX_FLAGS "${SHA_CXX_FLAGS} ${msvc_suppressed_warnings}")
 
   # Add compiler flag for MSVC 2012
@@ -189,8 +189,8 @@ if(MSVC)
   endif()
 endif()
 
-add_definitions(-D_CRT_NONSTDC_NO_DEPRECATE 
-                -D_CRT_SECURE_NO_WARNINGS 
+add_definitions(-D_CRT_NONSTDC_NO_DEPRECATE
+                -D_CRT_SECURE_NO_WARNINGS
                 -D_CRT_SECURE_NO_DEPRECATE)
 
 #-----------------------------------------------------------------------------
@@ -201,12 +201,17 @@ set(CMAKE_C_FLAGS ${SHA_C_FLAGS} CACHE STRING "CMake CXX Flags" FORCE)
 
 # Force static runtime libraries to build against gtest
 FOREACH(flag
- CMAKE_C_FLAGS_RELEASE CMAKE_C_FLAGS_RELWITHDEBINFO
- CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_DEBUG_INIT
- CMAKE_CXX_FLAGS_RELEASE  CMAKE_CXX_FLAGS_RELWITHDEBINFO
- CMAKE_CXX_FLAGS_DEBUG  CMAKE_CXX_FLAGS_DEBUG_INIT)
- STRING(REPLACE "/MD"  "/MT" "${flag}" "${${flag}}")
- SET("${flag}" "${${flag}} /EHsc")
+  CMAKE_C_FLAGS_RELEASE CMAKE_C_FLAGS_RELWITHDEBINFO
+  CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_DEBUG_INIT
+  CMAKE_CXX_FLAGS_RELEASE  CMAKE_CXX_FLAGS_RELWITHDEBINFO
+  CMAKE_CXX_FLAGS_DEBUG  CMAKE_CXX_FLAGS_DEBUG_INIT)
+
+  if(MSVC)
+    STRING(REPLACE "/MD"  "/MT" "${flag}" "${${flag}}")
+    SET("${flag}" "${${flag}} /EHsc")
+  else()
+    SET("${flag}" "${${flag}} -std=c++11")
+  endif()
 ENDFOREACH()
 
 #-----------------------------------------------------------------------------

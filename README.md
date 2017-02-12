@@ -1,6 +1,11 @@
 Simple-Hybesis-Algorithms-Logger
 Fork of the Simple-Hybesis-Algorithms repository adding logging capabilities used to describe algorithms steps.
 
+# Simple-Hybesis-Algorithms
+You can find a fork repository adding algorithm logging features (used for visualization) and its documentation here:
+- https://github.com/michael-jeulinl/Simple-Hybesis-Algorithms-Logger/
+- http://michaeljeulin-l.com/Projects/SHAL/Doc/
+
 # CMake - Cross-Building
 The building relies on CMake, an Open-Source system that allows to easily build cross-platform applications by generating native makefiles (cf. http://www.cmake.org/cmake/resources/software.html).
 

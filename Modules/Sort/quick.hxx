@@ -31,7 +31,7 @@ namespace SHA_Sort
   /// @remark: this algorithm performs in general 2 to 3 time faster than a classic merge sort.
   /// @remark: this algorithm is easily parallelizable.
   ///
-  /// @tparam Iterator type using to go through the collection.
+  /// @tparam IT type using to go through the collection.
   /// @tparam Compare functor type (std::less_equal in order, std::greater_equal for inverse order).
   ///
   /// @param begin,end iterators to the initial and final positions of
@@ -39,19 +39,19 @@ namespace SHA_Sort
   /// first and last, including the element pointed by first but not the element pointed by last.
   ///
   /// @return void.
-  template <typename Iterator, typename Compare  /*= std::less_equal*/>
-  void QuickSort(Iterator& begin, Iterator& end)
+  template <typename IT, typename Compare = std::less_equal<typename std::iterator_traits<IT>::value_type>>
+  void QuickSort(const IT& begin, const IT& end)
   {
     const auto distance = static_cast<const int>(std::distance(begin, end));
     if (distance < 2)
       return;
 
-    auto pivot = begin + (rand() % (end - begin));   // Pick Random Pivot € [begin, end]
-    Partition<Iterator, Compare>(begin, pivot, end); // Proceed partition
+    auto pivot = begin + (rand() % distance);                   // Pick Random Pivot € [begin, end]
+    auto newPivot = Partition<IT, Compare>(begin, pivot, end);  // Proceed partition
 
-    QuickSort<Iterator, Compare>(begin, pivot);   // Recurse on first partition
-    QuickSort<Iterator, Compare>(pivot + 1, end); // Recurse on second partition
+    QuickSort<IT, Compare>(begin, newPivot);   // Recurse on first partition
+    QuickSort<IT, Compare>(newPivot + 1, end); // Recurse on second partition
   }
-};
+}
 
-#endif() // MODULE_SORT_QUICK_HXX
+#endif // MODULE_SORT_QUICK_HXX

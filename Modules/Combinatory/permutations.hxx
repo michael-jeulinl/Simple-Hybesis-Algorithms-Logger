@@ -17,7 +17,7 @@
  * substantial portions of the Software.
  *
  *=========================================================================================================*/
- #ifndef MODULE_COMBINATORY_PERMUTATIONS_HXX
+#ifndef MODULE_COMBINATORY_PERMUTATIONS_HXX
 #define MODULE_COMBINATORY_PERMUTATIONS_HXX
 
 // STD includes
@@ -33,15 +33,15 @@ namespace SHA_Combinatory
   /// as extra complexity due to frequent resizing (use instead structure such as list or a another with
   /// your own allocator).
   ///
-  /// @tparam Iterator type using to go through the collection.
+  /// @tparam IT type using to go through the collection.
   ///
   /// @param begin,end - iterators to the initial and final positions of
   /// the sequence. The range used is [first,last), which contains all the elements between
   /// first and last, including the element pointed by first but not the element pointed by last.
   ///
   /// @return a collection containing all possible permuted sequences.
-  template <typename Container, typename Iterator>
-  std::list<Container> Permutations(const Iterator& begin, const Iterator& end)
+  template <typename Container, typename IT>
+  std::list<Container> Permutations(const IT& begin, const IT& end)
   {
     std::list<Container> permutations; // Contains the output permutations
 
@@ -60,7 +60,7 @@ namespace SHA_Combinatory
     }
 
     // Build all permutations of the suffix - Recursion
-    auto subPermutations = Permutations<Container, Iterator>(begin + 1, end);
+    auto subPermutations = Permutations<Container, IT>(begin + 1, end);
 
     // Put the letter into every possible position of the existing permutations.
     Container currentPermutation;
@@ -74,6 +74,6 @@ namespace SHA_Combinatory
 
     return permutations;
   }
-};
+}
 
-#endif() // MODULE_COMBINATORY_PERMUTATIONS_HXX
+#endif // MODULE_COMBINATORY_PERMUTATIONS_HXX

@@ -31,16 +31,16 @@ namespace SHA_Combinatory
   ///
   /// @complexity O(N + M).
   ///
-  /// @tparam Iterator type using to go through the collection.
+  /// @tparam IT type using to go through the collection.
   ///
   /// @param beginFirst,endFirst,beginSecond,endSecond - iterators to the initial and final positions of
   /// the sequences. The range used is [first,last), which contains all the elements between
   /// first and last, including the element pointed by first but not the element pointed by last.
   ///
   /// @return a vector containing the intersection of both sequences.
-  template <typename Container, typename Iterator>
-  Container Intersection(const Iterator& beginFirst, const Iterator& endFirst,
-                         const Iterator& beginSecond, const Iterator& endSecond)
+  template <typename Container, typename IT>
+  Container Intersection(const IT& beginFirst, const IT& endFirst,
+                         const IT& beginSecond, const IT& endSecond)
   {
     // Take the smallest sequence for initial count
     const auto kFirstSize = std::distance(beginFirst, endFirst);
@@ -52,7 +52,7 @@ namespace SHA_Combinatory
     intersection.reserve((kIsFirstSmaller) ? kFirstSize : kSecondSize);
 
     // Count each element of the smaller array
-    std::multiset<Iterator::value_type> count;
+    std::multiset<typename std::iterator_traits<IT>::value_type> count;
     const auto kCountEndIt = (kIsFirstSmaller) ? endFirst : endSecond;
     for (auto it = (kIsFirstSmaller) ? beginFirst : beginSecond; it != kCountEndIt; ++it)
         count.insert(*it);
@@ -72,6 +72,6 @@ namespace SHA_Combinatory
 
     return intersection;
   }
-};
+}
 
-#endif() // MODULE_COMBINATORY_INTERSECTION_HXX
+#endif // MODULE_COMBINATORY_INTERSECTION_HXX

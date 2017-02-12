@@ -29,21 +29,21 @@ namespace SHA_Combinatory
   ///
   /// @complexity O(N + M + K).
   ///
-  /// @tparam Iterator type using to go through the collection.
+  /// @tparam IT type using to go through the collection.
   ///
   /// @param beginFirst,endFirst,beginSecond,endSecond,beginFull,endFull - iterators to the initial and
   /// final positions of the sequences. The range used is [first,last), which contains all the elements
   /// between first and last, including the element pointed by first but not the element pointed by last.
   ///
   /// @return true if the last sequence is the interleave of the two others, false otherwise.
-  template <typename Iterator>
-  bool IsInterleaved(const Iterator& beginFirst, const Iterator& endFirst,
-                     const Iterator& beginSecond, const Iterator& endSecond,
-                     const Iterator& beginFull, const Iterator& endFull)
+  template <typename IT>
+  bool IsInterleaved(const IT& beginFirst, const IT& endFirst,
+                     const IT& beginSecond, const IT& endSecond,
+                     const IT& beginFull, const IT& endFull)
   {
     // Lambda that count each element occurence within the map "count"
-    std::map<Iterator::value_type, int> count;
-    auto lCountElement = [&count](Iterator::value_type val)
+    std::map<typename std::iterator_traits<IT>::value_type, int> count;
+    auto lCountElement = [&count](typename std::iterator_traits<IT>::value_type(val))
     {
       auto countIt = count.find(val);
       if (countIt != count.end())
@@ -73,6 +73,6 @@ namespace SHA_Combinatory
 
     return true;
   }
-};
+}
 
-#endif() // MODULE_COMBINATORY_IS_INTERLEAVED_HXX
+#endif // MODULE_COMBINATORY_IS_INTERLEAVED_HXX

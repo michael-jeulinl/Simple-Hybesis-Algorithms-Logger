@@ -33,15 +33,16 @@ namespace SHA_Combinatory
   /// as extra complexity due to frequent resizing (use instead structure such as list or a another with
   /// your own allocator).
   ///
-  /// @tparam Iterator type using to go through the collection.
+  /// @tparam Container type of IT type.
+  /// @tparam IT type using to go through the collection.
   ///
   /// @param begin,end - iterators to the initial and final positions of
   /// the sequence. The range used is [first,last), which contains all the elements between
   /// first and last, including the element pointed by first but not the element pointed by last.
   ///
   /// @return a collection containing all possible combined subsets.
-  template <typename Container, typename Iterator>
-  std::list<Container> Combinations(const Iterator& begin, const Iterator& end)
+  template <typename Container, typename IT>
+  std::list<Container> Combinations(const IT& begin, const IT& end)
   {
     std::list<Container> combinations;
 
@@ -60,10 +61,9 @@ namespace SHA_Combinatory
       return combinations;
 
     // Build all permutations of the suffix - Recursion
-    auto subCombinations = Combinations<Container, Iterator>(begin + 1, end);
+    auto subCombinations = Combinations<Container, IT>(begin + 1, end);
 
     // Put the letter into every possible position of the existing permutations.
-    Container currentPermutation;
     for (auto it = subCombinations.begin(); it != subCombinations.end(); ++it)
     {
       combinations.push_back(*it);
@@ -73,6 +73,6 @@ namespace SHA_Combinatory
 
     return combinations;
   }
-};
+}
 
-#endif() // MODULE_COMBINATORY_COMBINATIONS_HXX
+#endif // MODULE_COMBINATORY_COMBINATIONS_HXX

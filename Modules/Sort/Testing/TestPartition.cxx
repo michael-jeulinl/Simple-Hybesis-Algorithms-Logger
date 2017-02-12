@@ -35,10 +35,33 @@ namespace {
   const int RandomArrayInt[] = {4, 3, 5, 2, -18, 3, 2, 3, 4, 5, -5};      // Simple random array of integers with negative values
   const std::string RandomStr = "xacvgeze";                               // Random string
 
-  typedef std::vector<int> Container_type;
-  typedef Container_type::iterator Iterator_type;
-  typedef std::less_equal<Iterator_type::value_type> Comparator_type;
-  typedef std::greater_equal<Iterator_type::value_type> Greater_Comparator_type;
+  typedef std::vector<int> Container;
+  typedef Container::iterator IT;
+  typedef std::greater_equal<IT::value_type> GE_Compare;
+
+  template<typename IT>
+  void CheckPartition (const IT& begin, const IT& end, const IT& newPivot,
+                       typename std::iterator_traits<IT>::value_type pivotVal, bool inOrder = true)
+  {
+    // Value of the pivot not changed
+    EXPECT_EQ(pivotVal, *newPivot);
+
+    // All elements before the pivot are smaller or equal
+    if (inOrder)
+      for (auto it = begin; it < newPivot; ++it)
+        EXPECT_GE(pivotVal, *it);
+    else
+      for (auto it = begin; it < newPivot; ++it)
+        EXPECT_LE(pivotVal, *it);
+
+    // All elements before the pivot are bigger or equal
+    if (inOrder)
+      for (auto it = newPivot; it < end; ++it)
+        EXPECT_LE(pivotVal, *it);
+    else
+      for (auto it = newPivot; it < end; ++it)
+        EXPECT_GE(pivotVal, *it);
+  }
 }
 #endif /* DOXYGEN_SKIP */
 
@@ -47,65 +70,49 @@ TEST(TestPartition, Partitions)
 {
   // Normal Run - Random Array
   {
-    Container_type randomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
-    Iterator_type pivot = randomdArray.begin() + 5;
-    const int pivotValue = *pivot;
+    Container randomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
+    auto pivot = randomdArray.begin() + 5;
+    auto pivotVal = *pivot;
 
     // Run partition - Should result in: max[begin, pivot[ <= pivot <= min]pivot, end]
-    Partition<Iterator_type, Comparator_type>(randomdArray.begin(), pivot, randomdArray.end());
-
-    // Value of the pivot no changed
-    EXPECT_EQ(pivotValue, *pivot);
-    // All elements before the pivot are smaller or equal
-    for (Iterator_type it = randomdArray.begin(); it < pivot; ++it)
-      EXPECT_GE(*pivot, *it);
-    // All elements before the pivot are bigger or equal
-    for (Iterator_type it = pivot; it < randomdArray.end(); ++it)
-      EXPECT_LE(*pivot, *it);
+    auto newPivot = Partition<IT>(randomdArray.begin(), pivot, randomdArray.end());
+    CheckPartition<IT>(randomdArray.begin(), randomdArray.end(), newPivot, pivotVal);
   }
 
   // Already sortedArray - Array should not be affected
   {
-    Container_type sortedArray(SortedArrayInt, SortedArrayInt + sizeof(SortedArrayInt) / sizeof(int));
-    Iterator_type pivot = sortedArray.begin() + 5;
+    Container sortedArray(SortedArrayInt, SortedArrayInt + sizeof(SortedArrayInt) / sizeof(int));
+    auto pivot = sortedArray.begin() + 5;
 
-    Partition<Iterator_type, Comparator_type>(sortedArray.begin(), pivot, sortedArray.end());
+    Partition<IT>(sortedArray.begin(), pivot, sortedArray.end());
 
     int i = 0;
-    for (Iterator_type it = sortedArray.begin(); it < sortedArray.end(); ++it, ++i)
+    for (auto it = sortedArray.begin(); it < sortedArray.end(); ++it, ++i)
       EXPECT_EQ(SortedArrayInt[i], *it);
   }
 
   // Begin and End inversed - Array should not be affected
   {
-    Container_type randomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
-    Iterator_type pivot = randomdArray.begin() + 5;
+    Container randomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
+    auto pivot = randomdArray.begin() + 5;
 
-    Partition<Iterator_type, Comparator_type>(randomdArray.end(), pivot, randomdArray.begin());
+    Partition<IT>(randomdArray.end(), pivot, randomdArray.begin());
 
     int i = 0;
-    for (Iterator_type it = randomdArray.begin(); it < randomdArray.end(); ++it, ++i)
+    for (auto it = randomdArray.begin(); it < randomdArray.end(); ++it, ++i)
       EXPECT_EQ(RandomArrayInt[i], *it);
   }
+}
 
-  //String collection - Should result in: max[begin, pivot[ <= pivot <= min]pivot, end]
-  {
-    std::string randomStr = RandomStr;
-    std::string::iterator pivot = randomStr.begin() + 5;
-    const int pivotValue = *pivot;
+// String collection - Should result in: max[begin, pivot[ <= pivot <= min]pivot, end]
+TEST(TestPartition, PartitionString)
+{
+  std::string randomStr = RandomStr;
+  auto pivot = randomStr.begin() + 5;
+  auto pivotVal = *pivot;
 
-    // Run partition
-    Partition<std::string::iterator, std::less_equal<char>>(randomStr.begin(), pivot, randomStr.end());
-
-    // Value of the pivot no changed
-    EXPECT_EQ(pivotValue, *pivot);
-    // All elements before the pivot are smaller or equal
-    for (std::string::iterator it = randomStr.begin(); it < pivot; ++it)
-      EXPECT_GE(*pivot, *it);
-    // All elements before the pivot are bigger or equal
-    for (std::string::iterator it = pivot; it < randomStr.end(); ++it)
-      EXPECT_LE(*pivot, *it);
-  }
+  auto newPivot = Partition<std::string::iterator>(randomStr.begin(), pivot, randomStr.end());
+  CheckPartition<std::string::iterator>(randomStr.begin(), randomStr.end(), newPivot, pivotVal);
 }
 
 // Extreme Pivot Partition tests
@@ -113,52 +120,37 @@ TEST(TestPartition, PartitionBoudaryPivots)
 {
   // Pivot choose as begin
   {
-    Container_type randomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
-    Iterator_type pivot = randomdArray.begin();
-    const int pivotValue = *pivot;
+    Container randomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
+    auto pivot = randomdArray.begin();
+    const int pivotVal = *pivot;
 
     // Run partition
-    Partition<Iterator_type, Comparator_type>(randomdArray.begin(), pivot, randomdArray.end());
+    auto newPivot = Partition<IT>(randomdArray.begin(), pivot, randomdArray.end());
+    CheckPartition<IT>(randomdArray.begin(), randomdArray.end(), newPivot, pivotVal);
 
-    // Value of the pivot no changed
-    EXPECT_EQ(pivotValue, *pivot);
-    // All elements before the pivot are smaller or equal
-    for (Iterator_type it = randomdArray.begin(); it < pivot; ++it)
-      EXPECT_GE(*pivot, *it);
-    // All elements before the pivot are bigger or equal
-    for (Iterator_type it = pivot; it < randomdArray.end(); ++it)
-      EXPECT_LE(*pivot, *it);
   }
 
   // Pivot choose as last element
   {
-    Container_type randomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
-    Iterator_type pivot = randomdArray.end() - 1;
-    const int pivotValue = *pivot;
+    Container randomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
+    auto pivot = randomdArray.end() - 1;
+    const int pivotVal = *pivot;
 
     // Run partition
-    Partition<Iterator_type, Comparator_type>(randomdArray.begin(), pivot, randomdArray.end());
-
-    // Value of the pivot no changed
-    EXPECT_EQ(pivotValue, *pivot);
-    // All elements before the pivot are smaller or equal
-    for (Iterator_type it = randomdArray.begin(); it < pivot; ++it)
-      EXPECT_GE(*pivot, *it);
-    // All elements before the pivot are bigger or equal
-    for (Iterator_type it = pivot; it < randomdArray.end(); ++it)
-      EXPECT_LE(*pivot, *it);
+    auto newPivot = Partition<IT>(randomdArray.begin(), pivot, randomdArray.end());
+    CheckPartition<IT>(randomdArray.begin(), randomdArray.end(), newPivot, pivotVal);
   }
 
   // Pivot choose as end - cannot process
   {
-    Container_type randomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
-    Iterator_type pivot = randomdArray.end();
+    Container randomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
+    auto pivot = randomdArray.end();
 
     // Run partition
-    Partition<Iterator_type, Comparator_type>(randomdArray.begin(), pivot, randomdArray.end());
+    Partition<IT>(randomdArray.begin(), pivot, randomdArray.end());
 
     int i = 0;
-    for (Iterator_type it = randomdArray.begin(); it < randomdArray.end(); ++it, ++i)
+    for (auto it = randomdArray.begin(); it < randomdArray.end(); ++it, ++i)
       EXPECT_EQ(RandomArrayInt[i], *it);
   }
 }
@@ -168,52 +160,35 @@ TEST(TestPartition, PartitionGreaterComparator)
 {
   // Normal Run - Should result in: min[begin, pivot[ >= pivot >= max]pivot, end]
   {
-    Container_type randomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
-    Iterator_type pivot = randomdArray.begin() + 5;
-    const int pivotValue = *pivot;
+    Container randomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
+    auto pivot = randomdArray.begin() + 5;
+    const auto pivotVal = *pivot;
 
     // Run partition
-    Partition<Iterator_type, Greater_Comparator_type>(randomdArray.begin(), pivot, randomdArray.end());
-
-    // Value of the pivot no changed
-    EXPECT_EQ(pivotValue, *pivot);
-    // All elements before the pivot are greater or equal
-    for (Iterator_type it = randomdArray.begin(); it < pivot; ++it)
-      EXPECT_LE(*pivot, *it);
-    // All elements before the pivot are less or equal
-    for (Iterator_type it = pivot; it < randomdArray.end(); ++it)
-      EXPECT_GE(*pivot, *it);
+    auto newPivot = Partition<IT, GE_Compare>(randomdArray.begin(), pivot, randomdArray.end());
+    CheckPartition<IT>(randomdArray.begin(), randomdArray.end(), newPivot, pivotVal, false);
   }
 
   // Already InverseSortedArray - Array should not be affected
   {
-    Container_type invSortedArray
-      (InvSortedArrayInt, InvSortedArrayInt + sizeof(InvSortedArrayInt) / sizeof(int));
-    Iterator_type pivot = invSortedArray.begin() + 5;
+    Container invSortedArray(InvSortedArrayInt, InvSortedArrayInt + sizeof(InvSortedArrayInt) / sizeof(int));
+    auto pivot = invSortedArray.begin() + 5;
 
-    Partition<Iterator_type, Greater_Comparator_type>(invSortedArray.begin(), pivot, invSortedArray.end());
+    Partition<IT, GE_Compare>(invSortedArray.begin(), pivot, invSortedArray.end());
 
     int i = 0;
-    for (Iterator_type it = invSortedArray.begin(); it < invSortedArray.end(); ++it, ++i)
+    for (auto it = invSortedArray.begin(); it < invSortedArray.end(); ++it, ++i)
       EXPECT_EQ(invSortedArray[i], *it);
   }
 
   // String collection - Should result in: min[begin, pivot[ >= pivot >= max]pivot, end]
   {
     std::string randomStr = RandomStr;
-    std::string::iterator pivot = randomStr.begin() + 5;
-    const int pivotValue = *pivot;
+    auto pivot = randomStr.begin() + 5;
+    const auto pivotVal = *pivot;
 
     // Run partition
-    Partition<std::string::iterator, std::greater_equal<char>>(randomStr.begin(), pivot, randomStr.end());
-
-    // Value of the pivot no changed
-    EXPECT_EQ(pivotValue, *pivot);
-    // All elements before the pivot are greater or equal
-    for (std::string::iterator it = randomStr.begin(); it < pivot; ++it)
-      EXPECT_LE(*pivot, *it);
-    // All elements before the pivot are less or equal
-    for (std::string::iterator it = pivot; it < randomStr.end(); ++it)
-      EXPECT_GE(*pivot, *it);
+    auto newPivot = Partition<std::string::iterator, std::greater_equal<char>>(randomStr.begin(), pivot, randomStr.end());
+    CheckPartition<std::string::iterator>(randomStr.begin(), randomStr.end(), newPivot, pivotVal, false);
   }
 }

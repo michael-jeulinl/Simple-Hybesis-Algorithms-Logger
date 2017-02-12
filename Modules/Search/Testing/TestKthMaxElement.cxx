@@ -31,71 +31,52 @@ namespace {
   const int RandomArrayInt[] = {4, 3, 5, 2, -18, 3, 2, 3, 4, 5, -5}; // Simple random array of integers with negative values
   const std::string RandomStr = "xacvgeze";                          // Random string
 
-  typedef std::vector<int> Container_Type;
-  typedef Container_Type::iterator Iterator_Type;
-  typedef std::less_equal<Container_Type::value_type> Comparator_type;
-  typedef std::greater_equal<Container_Type::value_type> Greater_Comparator_type;
+  typedef std::vector<int> Container;
+  typedef Container::iterator IT;
+  typedef std::greater_equal<Container::value_type> GR_Compare;
 }
 #endif /* DOXYGEN_SKIP */
 
 // Test kth smallest elements
-TEST(TestSearch, KthSmallests)
+TEST(TestSearch, MaxKthElement)
 {
+  {
+    // Basic run on random array - Should return 4
+    Container krandomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
+    EXPECT_EQ(4, *MaxKthElement<IT>(krandomdArray.begin(), krandomdArray.end(), 7));
+  }
+
+  Container ksortedArray(SortedArrayInt, SortedArrayInt + sizeof(SortedArrayInt) / sizeof(int));
+
   // Basic run on sorted array with unique element - Should the kth element
-  {
-    Container_Type ksortedArray(SortedArrayInt, SortedArrayInt + sizeof(SortedArrayInt) / sizeof(int));
-    Iterator_Type it = KthMaxElement<Iterator_Type, Comparator_type>
-      (ksortedArray.begin(), ksortedArray.end(), 4);
-    EXPECT_EQ(ksortedArray.begin() + 4, it);
-  }
+  EXPECT_EQ(ksortedArray.begin() + 4, MaxKthElement<IT>(ksortedArray.begin(), ksortedArray.end(), 4));
 
-  // Basic run on random array - Should return 4
-  {
-    Container_Type krandomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
-    Iterator_Type::value_type value = *KthMaxElement<Iterator_Type, Comparator_type>
-      (krandomdArray.begin(), krandomdArray.end(), 7);
-    EXPECT_EQ(4, value);
-  }
+  // Empty sequence - Should return end on empty sequence
+  EXPECT_EQ(ksortedArray.begin(), MaxKthElement<IT>(ksortedArray.begin(), ksortedArray.begin(), 0));
 
-  // Basic run with extreme values
-  {
-    Container_Type ksortedArray(SortedArrayInt, SortedArrayInt + sizeof(SortedArrayInt) / sizeof(int));
-    Iterator_Type it;
+  // Unique element sequence - Should return the unique element
+  EXPECT_EQ(ksortedArray.begin(), MaxKthElement<IT>(ksortedArray.begin(), ksortedArray.begin() + 1, 0));
 
-    // Empty sequence - Should return end on empty sequence
-    it = KthMaxElement<Iterator_Type, Comparator_type>(ksortedArray.begin(), ksortedArray.begin(), 0);
-    EXPECT_EQ(ksortedArray.begin(), it);
+  // Negative index - Should return end for out of scope search (k = 0)
+  EXPECT_EQ(ksortedArray.begin(), MaxKthElement<IT>(ksortedArray.begin(), ksortedArray.end(), 0));
 
-    // Unique element sequence - Should return the unique element
-    it = KthMaxElement<Iterator_Type, Comparator_type>(ksortedArray.begin(), ksortedArray.begin() + 1, 0);
-    EXPECT_EQ(ksortedArray.begin(), it);
-
-    // Negative index - Should return end for out of scope search (k = -1)
-    it = KthMaxElement<Iterator_Type, Comparator_type>(ksortedArray.begin(), ksortedArray.end(), -1);
-    EXPECT_EQ(ksortedArray.end(), it);
-
-    // k bigger than the size of the sequence - Should return end for out of scope search
-    it =  KthMaxElement<Iterator_Type, Comparator_type>(ksortedArray.begin(), ksortedArray.end(), 100);
-    EXPECT_EQ(ksortedArray.end(), it);
-  }
+  // k bigger than the size of the sequence - Should return end for out of scope search
+  EXPECT_EQ(ksortedArray.end(), MaxKthElement<IT>(ksortedArray.begin(), ksortedArray.end(), 100));
 
   // String
   {
     std::string randomStr = RandomStr;
-    const char secondSmallestLetter = *KthMaxElement
+    const char secondSmallestLetter = *MaxKthElement
       <std::string::iterator, std::less_equal<char>>(randomStr.begin(), randomStr.end(), 1);
     EXPECT_EQ('c', secondSmallestLetter);
   }
 }
 
-// Test kth biggest element
-TEST(TestSearch, KthBiggests)
+// Test kth min element
+TEST(TestSearch, MinKthElement)
 {
   // Basic run on random array - Should return 5 (second biggest value)
-  {
-    Container_Type krandomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
-    Iterator_Type::value_type value = *KthMaxElement<Iterator_Type, Greater_Comparator_type>
-      (krandomdArray.begin(), krandomdArray.end(), 1);
-    EXPECT_EQ(5, value);
-  }
+  Container krandomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
+  IT::value_type value = *MaxKthElement<IT, GR_Compare>(krandomdArray.begin(), krandomdArray.end(), 1);
+  EXPECT_EQ(5, value);
 }
