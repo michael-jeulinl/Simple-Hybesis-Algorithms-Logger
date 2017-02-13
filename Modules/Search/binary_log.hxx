@@ -39,15 +39,15 @@ namespace SHA_Logger
   {
     public:
       /// Write algorithm information
-      /// @TODO Use string litteral for JSON description within c++ code --> binary_desc.json.hxx
+      /// @todo Use string litteral for JSON description within c++ code --> binary_desc.json.hxx
       static bool WriteInfo(Writer_Type& writer) { return true; }
 
       /// Write algorithm decription
-      /// @TODO Use string litteral for JSON description within c++ code --> binary_desc.json.hxx
+      /// @todo Use string litteral for JSON description within c++ code --> binary_desc.json.hxx
       static bool WriteDoc(Writer_Type& writer) { return true; }
 
       /// Write algorithm sources
-      /// @TODO Use string litteral for JSON description within c++ code --> binary_desc.json.hxx
+      /// @todo Use string litteral for JSON description within c++ code --> binary_desc.json.hxx
       static bool WriteSrc(Writer_Type& writer) { return true; }
 
       // Assert correct JSON construction.

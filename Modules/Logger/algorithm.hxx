@@ -36,10 +36,10 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with Algo object information,
       ///         error information in case of failure.
-      static std::ostream& Build(std::ostream& os, Options opts)
+      static Ostream& Build(Ostream& os, Options opts)
       {
-        auto algo = Algo_Traits(os);
-        algo.Write(opts);
+        std::unique_ptr<Algo_Traits> algo = std::unique_ptr<Algo_Traits>(new Algo_Traits(os));
+        algo->Write(opts);
 
         return os;
       }
@@ -48,7 +48,7 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with Algo object information,
       ///         error information in case of failure.
-      static Writer_Type& Build(Writer_Type& writer, Options opts)
+      static Writer& Build(Writer& writer, Options opts)
       {
         Write(writer, opts);
 
@@ -56,30 +56,31 @@ namespace SHA_Logger
       }
 
     private:
-      Algo_Traits(std::ostream& os) : stream(os), writer(this->stream) {}
-      Algo_Traits operator=(Algo_Traits&) {}                              // Not Implemented
+      Algo_Traits(Ostream& os) : stream(std::unique_ptr<Stream>(new Stream(os))),
+                                 writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
+      Algo_Traits operator=(Algo_Traits&) {} // Not Implemented
 
-      bool Write(Options opts) { return Write(this->writer, opts); }
+      bool Write(Options opts) { return Write(*this->writer, opts); }
 
-      static bool Write(Writer_Type& writer, Options opts)
+      static bool Write(Writer& writer, Options opts)
       {
         writer.Key("type");
         writer.String(GetType());
-        if (opts & OpGetDoc)
+        /*if (opts & OpGetDoc)
           Algo::WriteDoc(writer);
         if (opts & OpGetInfo)
           Algo::WriteInfo(writer);
         if (opts & OpGetSrc)
-          Algo::WriteSrc(writer);
+          Algo::WriteSrc(writer);*/
 
         return true;
       }
 
-      static const std::string GetType() { return "algorithm"; }
+      static const String GetType() { return "algorithm"; }
 
-      Stream_Type stream; // Stream wrapper
-      Writer_Type writer; // Writer used to fill the stream
+      std::unique_ptr<Stream> stream; // Stream wrapper
+      std::unique_ptr<Writer> writer; // Writer used to fill the stream
   };
-};
+}
 
-#endif() // MODULE_LOGGER_ALGORITHM_HXX
+#endif // MODULE_LOGGER_ALGORITHM_HXX

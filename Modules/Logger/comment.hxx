@@ -24,13 +24,13 @@
 
 namespace SHA_Logger
 {
-  /// @class Comment parameter
+  /// @class Comment parameter.
   ///
   class Comment
   {
     public:
       // Assert correct JSON construction.
-      ~Comment() { assert(this->writer.IsComplete()); }
+      ~Comment() { assert(this->writer->IsComplete()); }
 
       /// Instantiate a new json writer using the stream passed as
       /// argument and write value information.
@@ -39,11 +39,11 @@ namespace SHA_Logger
       ///         error information in case of failure.
       ///
       /// @note todo pass extent as an enumered type.
-      static std::ostream& Build(std::ostream& os,
-                                 String_Type& message, int level = 0, String_Type extent = "normal")
+      static Ostream& Build(Ostream& os,
+                            const String& message, int level = 0, const String extent = "normal")
       {
-        auto parameter = Comment(os);
-        parameter.Write(message, level, extent);
+        std::unique_ptr<Comment> builder = std::unique_ptr<Comment>(new Comment(os));
+        builder->Write(message, level, extent);
 
         return os;
       }
@@ -52,8 +52,8 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with Comment object information,
       ///         error information in case of failure.
-      static Writer_Type& Build(Writer_Type& writer,
-                                String_Type& message, int level = 0, String_Type extent = "normal")
+      static Writer& Build(Writer& writer,
+                           const String& message, int level = 0, const String extent = "normal")
       {
         Write(writer, message, level, extent);
 
@@ -61,13 +61,14 @@ namespace SHA_Logger
       }
 
     private:
-      Comment(std::ostream& os) : stream(os), writer(this->stream) {}
-      Comment operator=(Comment&) {}                                    // Not Implemented
+      Comment(Ostream& os) : stream(std::unique_ptr<Stream>(new Stream(os))),
+                             writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
+      Comment operator=(Comment&) {} // Not Implemented
 
-      bool Write(String_Type& message, int level, String_Type& extent)
-      { return Write(this->writer, message, level, extent); }
+      bool Write(const String& message, int level, const String& extent)
+      { return Write(*this->writer, message, level, extent); }
 
-      static bool Write(Writer_Type& writer, String_Type& message, int level, String_Type& extent)
+      static bool Write(Writer& writer, const String& message, int level, const String& extent)
       {
         writer.StartObject();
         writer.Key("type");
@@ -83,9 +84,9 @@ namespace SHA_Logger
         return true;
       }
 
-      Stream_Type stream; // Stream wrapper
-      Writer_Type writer; // Writer used to fill the stream
+      std::unique_ptr<Stream> stream; // Stream wrapper
+      std::unique_ptr<Writer> writer; // Writer used to fill the stream
   };
-};
+}
 
-#endif() // MODULE_LOGGER_COMMENT_HXX
+#endif // MODULE_LOGGER_COMMENT_HXX
