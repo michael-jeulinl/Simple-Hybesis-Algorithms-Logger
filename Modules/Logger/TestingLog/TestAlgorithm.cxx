@@ -41,5 +41,5 @@ TEST(TestAlgo_Traits, build)
 {
   // @todo Passing arguement as: Algo_Quick::Build(std::cout, x1, x2...)
   // { Algo_Traits<Algo_Quick>::Build() };
-  Algo_Traits<Algo_Quick>::Build(std::cout, OpGetAll);
+  //Algo_Traits<Algo_Quick>::Build(std::cout, OpGetAll);
 }

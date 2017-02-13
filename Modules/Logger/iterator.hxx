@@ -25,7 +25,8 @@
 
 namespace SHA_Logger
 {
-  /// @class Iterator parameter
+  /// @class Iterator
+  /// parameter.
   ///
   class Iterator
   {

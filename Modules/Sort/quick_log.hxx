@@ -35,34 +35,34 @@ namespace SHA_Logger
 {
   /// @class QuickLog
   ///
-  template <typename IT, typename Compare>
+  template <typename IT, typename Compare = std::less_equal<typename std::iterator_traits<IT>::value_type>>
   class QuickLog
   {
     public:
       /// Write algorithm information
-      /// @TODO Use string litteral for JSON description within c++ code
-      static bool WriteInfo(Writer_Type& writer) { return true; }
+      /// @todo Use string litteral for JSON description within c++ code
+      static bool WriteInfo(Writer& writer) { return true; }
 
       /// Write algorithm decription
-      /// @TODO Use string litteral for JSON description within c++ code
-      static bool WriteDoc(Writer_Type& writer) { return true; }
+      /// @todo Use string litteral for JSON description within c++ code
+      static bool WriteDoc(Writer& writer) { return true; }
 
       /// Write algorithm sources
-      /// @TODO Use string litteral for JSON description within c++ code
-      static bool WriteSrc(Writer_Type& writer) { return true; }
+      /// @todo Use string litteral for JSON description within c++ code
+      static bool WriteSrc(Writer& writer) { return true; }
 
       // Assert correct JSON construction.
-      ~QuickLog() { assert(this->writer.IsComplete()); }
+      ~QuickLog() { assert(this->writer->IsComplete()); }
 
       /// Instantiate a new json writer using the stream passed as
       /// argument, run and write algorithm computation information.
       ///
       /// @return stream reference filled up with QuickLog object information,
       ///         error object information in case of failure.
-      static Ostream_T& Build(Ostream_T& os, Options opts, IT& begin, IT& end)
+      static Ostream& Build(Ostream& os, Options opts, const IT& begin, const IT& end)
       {
-        auto parameter = QuickLog(os);
-        parameter.Write(opts, begin, end);
+        std::unique_ptr<QuickLog> builder = std::unique_ptr<QuickLog>(new QuickLog(os));
+        builder->Write(opts, begin, end);
 
         return os;
       }
@@ -71,7 +71,7 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with QuickLog object information,
       ///         error information in case of failure.
-      static Writer_Type& Build(Writer_Type& writer, Options opts, IT& begin, IT& end)
+      static Writer& Build(Writer& writer, Options opts, const IT& begin, const IT& end)
       {
         Write(writer, opts, begin, end);
 
@@ -79,13 +79,14 @@ namespace SHA_Logger
       }
 
     private:
-      QuickLog(std::ostream& os) : stream(os), writer(this->stream) {}
-      QuickLog operator=(QuickLog&) {}                                  // Not Implemented
+      QuickLog(Ostream& os) : stream(std::unique_ptr<Stream>(new Stream(os))),
+                              writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
+      QuickLog operator=(QuickLog&) {} // Not Implemented
 
-      bool Write(Options opts, IT& begin, IT& end)
-      { return Write(this->writer, opts, begin, end); }
+      bool Write(Options opts, const IT& begin, const IT& end)
+      { return Write(*this->writer, opts, begin, end); }
 
-      static bool Write(Writer_Type& writer, Options opts, IT& begin, IT& end)
+      static bool Write(Writer& writer, Options opts, const IT& begin, const IT& end)
       {
         // Do not write sequence if no data to be processed
         const auto distance = static_cast<const int>(std::distance(begin, end));
@@ -113,7 +114,7 @@ namespace SHA_Logger
       }
 
       ///
-      static bool WriteParameters(Writer_Type& writer, IT& begin, IT& end)
+      static bool WriteParameters(Writer& writer, const IT& begin, const IT& end)
       {
         writer.Key("parameters");
         writer.StartArray();
@@ -124,7 +125,7 @@ namespace SHA_Logger
       }
 
       ///
-      static bool WriteComputation(Writer_Type& writer, IT& begin, IT& end)
+      static bool WriteComputation(Writer& writer, const IT& begin, const IT& end)
       {
         const auto _pivotIdx = static_cast<const int>(rand() % (end - begin));
 
@@ -145,9 +146,9 @@ namespace SHA_Logger
         return true;
       }
 
-      Stream_Type stream; // Stream wrapper
-      Writer_Type writer; // Writer used to fill the stream
+      std::unique_ptr<Stream> stream; // Stream wrapper
+      std::unique_ptr<Writer> writer; // Writer used to fill the stream
   };
-};
+}
 
-#endif() // MODULE_SORT_QUICK_HXX
+#endif // MODULE_SORT_QUICK_HXX

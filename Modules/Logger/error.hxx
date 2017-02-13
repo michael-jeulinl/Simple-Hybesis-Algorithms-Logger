@@ -24,7 +24,8 @@
 
 namespace SHA_Logger
 {
-  /// @class Error parameter
+  /// @class Error
+  /// parameter.
   ///
   class Error
   {

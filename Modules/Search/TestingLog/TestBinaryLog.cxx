@@ -21,7 +21,7 @@
 #include <binary_log.hxx>
 
 // Testing namespace
-using namespace SHA_Search;
+using namespace SHA_Logger;
 
 #ifndef DOXYGEN_SKIP
 namespace {
