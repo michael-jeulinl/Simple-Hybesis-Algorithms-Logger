@@ -31,7 +31,7 @@ using namespace SHA_Logger;
 #ifndef DOXYGEN_SKIP
 namespace {
   // Simple random array of integers with negative values
-  const int RandomArrayInt[] = {4, 3, 5, 2, -18, 3, 2, 3, 4, 5, -5};
+  const int RandomArrayInt[] = {40, 80, -10, 50, 1, 65, -80, 26, -20, -35, 35, 35, -70, 100, -50};
 
   typedef std::vector<int> Container;
   typedef Container::iterator IT;

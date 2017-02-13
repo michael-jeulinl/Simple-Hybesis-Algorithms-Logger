@@ -25,16 +25,8 @@ using namespace SHA_Logger;
 
 #ifndef DOXYGEN_SKIP
 namespace {
-  const int SortedArrayInt[] = {-3, -2, 0, 2, 8, 15, 36, 212, 366};  // Simple sorted array of integers with negative values
-  const double SortedDoubleArray[] = {-.3, 0.0, 0.12, 2.5, 8};       // Simple sorted array of floats with negative values
-  const std::string OrderedStr = "acegmnoop";                        // Ordered string
-
-  template <typename T>
-  struct EQUIVALENT
-  {
-    bool operator()(const T& a, const T& b) const
-    { return std::abs(a - b) < std::numeric_limits<T>::epsilon(); }
-  };
+  // Simple sorted array of integers with negative values
+  const int SortedArrayInt[] = {-3, -2, 0, 2, 8, 15, 36, 212, 366};
 
   template <typename T>
   struct EQUAL
@@ -42,30 +34,23 @@ namespace {
     bool operator()(const T& a, const T& b) const { return a == b; }
   };
 
-  typedef std::vector<int> Container_Type;
-  typedef Container_Type::const_iterator Const_Iterator_Type;
-  typedef BinaryLog<Const_Iterator_Type, int, EQUAL<int>> BinaryLog_Type;
+  typedef std::vector<int> Container;
+  typedef Container::const_iterator IT;
+  typedef BinaryLog<IT, int, EQUAL<int>> BinaryLog;
 }
 #endif /* DOXYGEN_SKIP */
 
 // Test TestAlgo Construction
 TEST(TestBinaryLog, build)
 {
-  const Container_Type sortedArray(SortedArrayInt, SortedArrayInt + sizeof(SortedArrayInt) / sizeof(int));
+  const Container sortedArray(SortedArrayInt, SortedArrayInt + sizeof(SortedArrayInt) / sizeof(int));
 
   // Empty array
   {
-    Container_Type emptyArray = Container_Type();
-    BinaryLog_Type::Build(std::cout, OpGetAll, emptyArray.begin(), emptyArray.end(), 0);
+    Container emptyArray = Container();
+    BinaryLog::Build(std::cout, OpGetAll, emptyArray.begin(), emptyArray.end(), 0);
   }
 
-  // First element
-  {
-    BinaryLog_Type::Build(std::cout, OpGetMin, sortedArray.begin(), sortedArray.end(), -3);
-  }
-
-  // Existing random value
-  {
-    BinaryLog_Type::Build(std::cout, OpGetMin, sortedArray.begin(), sortedArray.end(), 8);
-  }
+  BinaryLog::Build(std::cout, OpGetMin, sortedArray.begin(), sortedArray.end(), -3);// First element
+  BinaryLog::Build(std::cout, OpGetMin, sortedArray.begin(), sortedArray.end(), 8); // Existing random value
 }
