@@ -25,25 +25,26 @@
 
 namespace SHA_Logger
 {
-  /// @class Array parameter
+  /// @class Array
+  /// used to write array parameter.
   ///
-  template <typename IteratorT>
+  template <typename IT>
   class Array
   {
     public:
-      ~Array() { assert(this->writer.IsComplete()); }
+      ~Array() { assert(this->writer->IsComplete()); }
 
       /// Instantiate a new json writer using the stream passed as
       /// argument and write array information.
       ///
       /// @return stream reference filled up with Iterator object information,
       ///         error information in case of failure.
-      static std::ostream& Build(std::ostream& os, String_Type& name,
-                                 String_Type& beginName, const IteratorT& begin,
-                                 String_Type& endName, const IteratorT& end)
+      static Ostream& Build(Ostream& os, const String& name,
+                            const String& beginName, const IT& begin,
+                            const String& endName, const IT& end)
       {
-        auto parameter = Array(os);
-        parameter.Write(name, beginName, begin, endName, end);
+        std::unique_ptr<Array> builder = std::unique_ptr<Array>(new Array(os));
+        builder->Write(name, beginName, begin, endName, end);
 
         return os;
       }
@@ -52,9 +53,9 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with Array object information,
       ///         error information in case of failure.
-      static Writer_Type& Build(Writer_Type& writer, String_Type& name,
-                                String_Type& beginName, const IteratorT& begin,
-                                String_Type& endName, const IteratorT& end)
+      static Writer& Build(Writer& writer, const String& name,
+                           const String& beginName, const IT& begin,
+                           const String& endName, const IT& end)
       {
         Write(writer, name, beginName, begin, endName, end);
 
@@ -62,17 +63,18 @@ namespace SHA_Logger
       }
 
     private:
-      Array(std::ostream& os) : stream(os), writer(this->stream) {}
-      Array operator=(Array&) {}                                    // Not Implemented
+      Array(Ostream& os) : stream(std::unique_ptr<Stream>(new Stream(os))),
+                           writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
+      Array operator=(Array&) {} // Not Implemented
 
-      bool Write(String_Type& name,
-                 String_Type& beginName, const IteratorT& begin,
-                 String_Type& endName, const IteratorT& end)
-      { return Write(this->writer, name, beginName, begin, endName, end); }
+      bool Write(const String& name,
+                 const String& beginName, const IT& begin,
+                 const String& endName, const IT& end)
+      { return Write(*this->writer, name, beginName, begin, endName, end); }
 
-      static bool Write(Writer_Type& writer, String_Type& name,
-                        String_Type& beginName, const IteratorT& begin,
-                        String_Type& endName, const IteratorT& end)
+      static bool Write(Writer& writer, const String& name,
+                        const String& beginName, const IT& begin,
+                        const String& endName, const IT& end)
       {
         // Add Error Object log in case of failure
         if (name.empty() || beginName.empty() || endName.empty())
@@ -102,7 +104,7 @@ namespace SHA_Logger
 
         // Add data
         writer.Key("data");
-        ValueType::BuildArray<IteratorT>(writer, begin, end);
+        ValueType::BuildArray<IT>(writer, begin, end);
 
         // Add Iterators
         writer.Key("iterators");
@@ -117,9 +119,9 @@ namespace SHA_Logger
         return true;
       }
 
-      Stream_Type stream; // Stream wrapper
-      Writer_Type writer; // Writer used to fill the stream
+      std::unique_ptr<Stream> stream; // Stream wrapper
+      std::unique_ptr<Writer> writer; // Writer used to fill the stream
   };
-};
+}
 
-#endif() // MODULE_LOGGER_ARRAY_HXX
+#endif // MODULE_LOGGER_ARRAY_HXX

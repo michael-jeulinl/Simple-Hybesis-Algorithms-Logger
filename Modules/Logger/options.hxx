@@ -30,6 +30,6 @@ namespace SHA_Logger
     OpGetSrc = 0x04,
     OpGetAll = OpGetDoc | OpGetInfo | OpGetSrc
   };
-};
+}
 
-#endif() // MODULE_LOGGER_OPTIONS_HXX
+#endif // MODULE_LOGGER_OPTIONS_HXX

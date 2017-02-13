@@ -36,7 +36,7 @@ namespace SHA_Logger
   {
     public:
       // Assert correct JSON construction.
-      ~Operation() { assert(this->writer.IsComplete()); }
+      ~Operation() { assert(this->writer->IsComplete()); }
 
       /// Instantiate a new json writer using the stream passed as
       /// argument and write value information.
@@ -46,40 +46,40 @@ namespace SHA_Logger
       ///
       /// @note todo pass extent as an enumered type.
       template <typename T>
-      static std::ostream& Set(std::ostream& os, String_Type& name, const T& value)
+      static Ostream& Set(Ostream& os, const String& name, const T& value)
       {
-        auto operation = Operation(os);
-        operation.WriteSet(name, value);
+        std::unique_ptr<Operation> builder = std::unique_ptr<Operation>(new Operation(os));
+        builder->WriteSet(name, value);
 
         return os;
       }
 
       /// @inherit doc
       template <typename T>
-      static std::ostream& Return(std::ostream& os, const T& value)
+      static Ostream& Return(Ostream& os, const T& value)
       {
-        auto operation = Operation(os);
-        operation.WriteReturn(value);
+        std::unique_ptr<Operation> builder = std::unique_ptr<Operation>(new Operation(os));
+        builder->WriteReturn(value);
 
         return os;
       }
 
       /// @inherit doc
       template <typename T>
-      static std::ostream& OffSet(std::ostream& os, String_Type& name, const T& offset)
+      static Ostream& OffSet(Ostream& os, const String& name, const T& offset)
       {
-        auto operation = Operation(os);
-        operation.WriteOffSet(name, offset);
+        std::unique_ptr<Operation> builder = std::unique_ptr<Operation>(new Operation(os));
+        builder->WriteOffSet(name, offset);
 
         return os;
       }
 
       /// @inherit doc
 
-      static std::ostream& Swap(std::ostream& os, String_Type& aName, String_Type& bName)
+      static Ostream& Swap(Ostream& os, const String& aName, const String& bName)
       {
-        auto operation = Operation(os);
-        operation.WriteSwap(aName, bName);
+        std::unique_ptr<Operation> builder = std::unique_ptr<Operation>(new Operation(os));
+        builder->WriteSwap(aName, bName);
 
         return os;
       }
@@ -89,7 +89,7 @@ namespace SHA_Logger
       /// @return stream reference filled up with Operation object information,
       ///         error information in case of failure.
       template <typename T>
-      static Writer_Type& Set(Writer_Type& writer, String_Type& name, const T& value)
+      static Writer& Set(Writer& writer, const String& name, const T& value)
       {
         WriteSet(writer, name, value);
 
@@ -98,7 +98,7 @@ namespace SHA_Logger
 
       /// @inherit doc
       template <typename T>
-      static Writer_Type& Return(Writer_Type& writer, const T& value)
+      static Writer& Return(Writer& writer, const T& value)
       {
         WriteReturn(writer, value);
 
@@ -107,7 +107,7 @@ namespace SHA_Logger
 
       /// @inherit doc
       template <typename T>
-      static Writer_Type& OffSet(Writer_Type& writer, String_Type& name, const T& offset)
+      static Writer& OffSet(Writer& writer, const String& name, const T& offset)
       {
         WriteOffSet(writer, name, offset);
 
@@ -115,7 +115,7 @@ namespace SHA_Logger
       }
 
       /// @inherit doc
-      static Writer_Type& Swap(Writer_Type& writer, String_Type& aName, String_Type& bName)
+      static Writer& Swap(Writer& writer, const String& aName, const String& bName)
       {
         WriteSwap(writer, aName, bName);
 
@@ -123,26 +123,27 @@ namespace SHA_Logger
       }
 
     private:
-      Operation(std::ostream& os) : stream(os), writer(this->stream) {}
-      Operation operator=(Operation&) {}                                    // Not Implemented
+      Operation(Ostream& os) : stream(std::unique_ptr<Stream>(new Stream(os))),
+                                    writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
+      Operation operator=(Operation&) {} // Not Implemented
 
       template <typename T>
-      bool WriteSet(String_Type& name, const T& value)
-      { return WriteSet(this->writer, name, value); }
+      bool WriteSet(const String& name, const T& value)
+      { return WriteSet(*this->writer, name, value); }
 
       template <typename T>
-      bool WriteOffSet(String_Type& name, const T& offset)
-      { return WriteOffSet(this->writer, name, offset); }
+      bool WriteOffSet(const String& name, const T& offset)
+      { return WriteOffSet(*this->writer, name, offset); }
 
       template <typename T>
       bool WriteReturn(const T& value)
-      { return WriteReturn(this->writer, value); }
+      { return WriteReturn(*this->writer, value); }
 
-      bool WriteSwap(String_Type& aName, String_Type& bName)
-      { return WriteSwap(this->writer, aName, bName); }
+      bool WriteSwap(const String& aName, const String& bName)
+      { return WriteSwap(*this->writer, aName, bName); }
 
       template <typename T>
-      static bool WriteSet(Writer_Type& writer, String_Type& name, const T& value)
+      static bool WriteSet(Writer& writer, const String& name, const T& value)
       {
         writer.StartObject();
         writer.Key("type");
@@ -159,7 +160,7 @@ namespace SHA_Logger
       }
 
       template <typename T>
-      static bool WriteOffSet(Writer_Type& writer, String_Type& name, const T& offset)
+      static bool WriteOffSet(Writer& writer, const String& name, const T& offset)
       {
         writer.StartObject();
         writer.Key("type");
@@ -176,7 +177,7 @@ namespace SHA_Logger
       }
 
       template <typename T>
-      static bool WriteReturn(Writer_Type& writer, const T& value)
+      static bool WriteReturn(Writer& writer, const T& value)
       {
         writer.StartObject();
         writer.Key("type");
@@ -190,7 +191,7 @@ namespace SHA_Logger
         return true;
       }
 
-      static bool WriteSwap(Writer_Type& writer, String_Type& aName, String_Type& bName)
+      static bool WriteSwap(Writer& writer, const String& aName, const String& bName)
       {
         writer.StartObject();
         writer.Key("type");
@@ -206,9 +207,9 @@ namespace SHA_Logger
         return true;
       }
 
-      Stream_Type stream; // Stream wrapper
-      Writer_Type writer; // Writer used to fill the stream
+      std::unique_ptr<Stream> stream; // Stream wrapper
+      std::unique_ptr<Writer> writer; // Writer used to fill the stream
   };
-};
+}
 
-#endif() // MODULE_LOGGER_OPERATION_HXX
+#endif // MODULE_LOGGER_OPERATION_HXX

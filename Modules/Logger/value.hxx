@@ -26,25 +26,25 @@
 
 namespace SHA_Logger
 {
-  /// @class Value parameter
+  /// @class Value
+  /// Value parameter
   ///
   template <typename T>
   class Value
   {
     public:
       // Assert correct JSON construction.
-      ~Value() { assert(this->writer.IsComplete()); }
+      ~Value() { assert(this->writer->IsComplete()); }
 
       /// Instantiate a new json writer using the stream passed as
       /// argument and write value information.
       ///
       /// @return stream reference filled up with Value object information,
       ///         error information in case of failure.
-      static std::ostream& Build
-        (std::ostream& os, String_Type& name, const T& value, String_Type& comment = "")
+      static Ostream& Build(Ostream& os, const String& name, const T& value, const String& comment = "")
       {
-        auto parameter = Value(os);
-        parameter.Write(name, value, comment);
+        std::unique_ptr<Value> builder = std::unique_ptr<Value>(new Value(os));
+        builder->Write(name, value, comment);
 
         return os;
       }
@@ -54,7 +54,7 @@ namespace SHA_Logger
       /// @return stream reference filled up with Value object information,
       ///         error information in case of failure.
       static const T& BuildValue
-        (Writer_Type& writer, String_Type& name, const T& value, String_Type& comment = "")
+        (Writer& writer, const String& name, const T& value, const String& comment = "")
       {
         Write(writer, name, value, comment);
 
@@ -66,11 +66,10 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with Value object information,
       ///         error information in case of failure.
-      static const T& BuildValue
-        (std::ostream& os, String_Type& name, const T& value, String_Type& comment = "")
+      static const T& BuildValue(Ostream& os, const String& name, const T& value, const String& comment = "")
       {
-        auto parameter = Value(os);
-        parameter.Write(name, value, comment);
+        std::unique_ptr<Value> builder = std::unique_ptr<Value>(new Value(os));
+        builder->Write(name, value, comment);
 
         return value;
       }
@@ -79,8 +78,7 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with Value object information,
       ///         error information in case of failure.
-      static Writer_Type& Build
-        (Writer_Type& writer, String_Type& name, const T& value, String_Type& comment = "")
+      static Writer& Build(Writer& writer, const String& name, const T& value, const String& comment = "")
       {
         Write(writer, name, value, comment);
 
@@ -88,13 +86,14 @@ namespace SHA_Logger
       }
 
     private:
-      Value(std::ostream& os) : stream(os), writer(this->stream) {}
-      Value operator=(Value&) {}                                    // Not Implemented
+      Value(Ostream& os) : stream(std::unique_ptr<Stream>(new Stream(os))),
+                           writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
+      Value operator=(Value&) {} // Not Implemented
 
-      bool Write(String_Type& name, const T& value, String_Type& comment)
-      { return Write(this->writer, name, value, comment); }
+      bool Write(const String& name, const T& value, const String& comment)
+      { return Write(*this->writer, name, value, comment); }
 
-      static bool Write(Writer_Type& writer, String_Type& name, const T& value, String_Type& comment)
+      static bool Write(Writer& writer, const String& name, const T& value, const String& comment)
       {
         // Add Error Object log in case of failure
         if (name.empty())
@@ -124,9 +123,9 @@ namespace SHA_Logger
         return true;
       }
 
-      Stream_Type stream; // Stream wrapper
-      Writer_Type writer; // Writer used to fill the stream
+      std::unique_ptr<Stream> stream; // Stream wrapper
+      std::unique_ptr<Writer> writer; // Writer used to fill the stream
   };
-};
+}
 
-#endif() // MODULE_LOGGER_VALUE_HXX
+#endif // MODULE_LOGGER_VALUE_HXX

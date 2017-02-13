@@ -34,34 +34,34 @@ namespace SHA_Logger
 {
   /// @class PartitionLog
   ///
-  template <typename IT, typename Compare>
+  template <typename IT, typename Compare = std::less_equal<typename std::iterator_traits<IT>::value_type>>
   class PartitionLog
   {
     public:
       /// Write algorithm information
-      /// @TODO Use string litteral for JSON description within c++ code --> partition_desc.json.hxx
-      static bool WriteInfo(Writer_Type& writer) { return true; }
+      /// @todo Use string litteral for JSON description within c++ code --> partition_desc.json.hxx
+      static bool WriteInfo(Writer& writer) { return true; }
 
       /// Write algorithm decription
-      /// @TODO Use string litteral for JSON description within c++ code --> partition_desc.json.hxx
-      static bool WriteDoc(Writer_Type& writer) { return true; }
+      /// @todo Use string litteral for JSON description within c++ code --> partition_desc.json.hxx
+      static bool WriteDoc(Writer& writer) { return true; }
 
       /// Write algorithm sources
-      /// @TODO Use string litteral for JSON description within c++ code --> partition_desc.json.hxx
-      static bool WriteSrc(Writer_Type& writer) { return true; }
+      /// @todo Use string litteral for JSON description within c++ code --> partition_desc.json.hxx
+      static bool WriteSrc(Writer& writer) { return true; }
 
       // Assert correct JSON construction.
-      ~PartitionLog() { assert(this->writer.IsComplete()); }
+      ~PartitionLog() { assert(this->writer->IsComplete()); }
 
       /// Instantiate a new json writer using the stream passed as
       /// argument, run and write algorithm computation information.
       ///
       /// @return stream reference filled up with PartitionLog object information,
       ///         error object information in case of failure.
-      static Ostream_T& Build(Ostream_T& os, Options opts, const IT& begin, IT& pivot, const IT& end)
+      static Ostream& Build(Ostream& os, Options opts, const IT& begin, IT& pivot, const IT& end)
       {
-        auto parameter = PartitionLog(os);
-        parameter.Write(opts, begin, pivot, end);
+        std::unique_ptr<PartitionLog> builder = std::unique_ptr<PartitionLog>(new PartitionLog(os));
+        builder->Write(opts, begin, pivot, end);
 
         return os;
       }
@@ -70,7 +70,7 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with PartitionLog object information,
       ///         error information in case of failure.
-      static Writer_Type& Build(Writer_Type& writer, Options opts, const IT& begin, IT& pivot, const IT& end)
+      static Writer& Build(Writer& writer, Options opts, const IT& begin, IT& pivot, const IT& end)
       {
         Write(writer, opts, begin, pivot, end);
 
@@ -78,13 +78,14 @@ namespace SHA_Logger
       }
 
     private:
-      PartitionLog(std::ostream& os) : stream(os), writer(this->stream) {}
-      PartitionLog operator=(PartitionLog&) {}                                  // Not Implemented
+      PartitionLog(Ostream& os) : stream(std::unique_ptr<Stream>(new Stream(os))),
+                                  writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
+      PartitionLog operator=(PartitionLog&) {} // Not Implemented
 
       bool Write(Options opts, const IT& begin, IT& pivot, const IT& end)
-      { return Write(this->writer, opts, begin, pivot, end); }
+      { return Write(*this->writer, opts, begin, pivot, end); }
 
-      static bool Write(Writer_Type& writer, Options opts, const IT& begin, IT& pivot, const IT& end)
+      static bool Write(Writer& writer, Options opts, const IT& begin, IT& pivot, const IT& end)
       {
         writer.StartObject();
 
@@ -103,7 +104,7 @@ namespace SHA_Logger
       }
 
       ///
-      static bool WriteParameters(Writer_Type& writer, const IT& begin, IT& pivot, const IT& end)
+      static bool WriteParameters(Writer& writer, const IT& begin, IT& pivot, const IT& end)
       {
         // Do not write sequence if no data to be processed
         if (std::distance(begin, end) < 2 || pivot == end)
@@ -123,7 +124,7 @@ namespace SHA_Logger
       }
 
       ///
-      static bool WriteComputation(Writer_Type& writer, const IT& begin, IT& pivot, const IT& end)
+      static bool WriteComputation(Writer& writer, const IT& begin, IT& pivot, const IT& end)
       {
         // Not part of the logs
         auto _seqSize = static_cast<int>(std::distance(begin, end));
@@ -135,7 +136,8 @@ namespace SHA_Logger
         writer.StartArray();
         auto it = Iterator::BuildIt<IT>(writer, kSeqName, "it", 0, begin, "Current element iterator.");
         auto last = Iterator::BuildIt<IT>(writer, kSeqName, "last", _seqSize - 1, end - 1, "Last element.");
-        auto pivotValue = Value<IT::value_type>::BuildValue(writer, "pivotValue", *pivot, "Keet pivot val.");
+        auto pivotValue = Value<typename std::iterator_traits<IT>::value_type>::
+            BuildValue(writer, "pivotValue", *pivot, "Keet pivot val.");
         auto store = Iterator::BuildIt<IT>(writer, kSeqName, "store", 0, begin, "Current store iterator.");
         writer.EndArray();
 
@@ -172,9 +174,9 @@ namespace SHA_Logger
         return true;
       }
 
-      Stream_Type stream; // Stream wrapper
-      Writer_Type writer; // Writer used to fill the stream
+      std::unique_ptr<Stream> stream; // Stream wrapper
+      std::unique_ptr<Writer> writer; // Writer used to fill the stream
   };
-};
+}
 
-#endif() // MODULE_SORT_PARTITION_HXX
+#endif // MODULE_SORT_PARTITION_HXX

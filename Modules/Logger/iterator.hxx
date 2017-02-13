@@ -25,24 +25,25 @@
 
 namespace SHA_Logger
 {
-  /// @class Iterator parameter
+  /// @class Iterator
+  /// parameter.
   ///
   class Iterator
   {
     public:
       // Assert correct JSON construction.
-      ~Iterator() { assert(this->writer.IsComplete()); }
+      ~Iterator() { assert(this->writer->IsComplete()); }
 
       /// Instantiate a new json writer using the stream passed as
       /// argument and write iterator information.
       ///
       /// @return stream reference filled up with Iterator object information,
       ///         error information in case of failure.
-      static std::ostream& Build
-        (std::ostream& os, String_Type& parentId, String_Type& name, int index, String_Type& comment = "")
+      static Ostream& Build
+        (Ostream& os, const String& parentId, const String& name, int index, const String& comment = "")
       {
-        auto parameter = Iterator(os);
-        parameter.Write(parentId, name, index, comment);
+        std::unique_ptr<Iterator> builder = std::unique_ptr<Iterator>(new Iterator(os));
+        builder->Write(parentId, name, index, comment);
 
         return os;
       }
@@ -51,8 +52,8 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with Iterator object information,
       ///         error information in case of failure.
-      static Writer_Type& Build
-        (Writer_Type& writer, String_Type& parentId, String_Type& name, int index, String_Type& comment = "")
+      static Writer& Build
+        (Writer& writer, const String& parentId, const String& name, int index, const String& comment = "")
       {
         Write(writer, parentId, name, index, comment);
 
@@ -65,11 +66,11 @@ namespace SHA_Logger
       /// @return stream reference filled up with Iterator object information,
       ///         error information in case of failure.
       template <typename T>
-      static const T& BuildIt (Ostream_T& os, String_Type& parentId, String_Type& name, int index,
-                              const T& it, String_Type& comment = "")
+      static const T& BuildIt (Ostream& os, const String& parentId, const String& name, int index,
+                              const T& it, const String& comment = "")
       {
-        auto parameter = Iterator(os);
-        parameter.Write(parentId, name, index, comment);
+        std::unique_ptr<Iterator> builder = std::unique_ptr<Iterator>(new Iterator(os));
+        builder->Write(parentId, name, index, comment);
 
         return it;
       }
@@ -79,8 +80,8 @@ namespace SHA_Logger
       /// @return stream reference filled up with Iterator object information,
       ///         error information in case of failure.
       template <typename T>
-      static const T& BuildIt (Writer_Type& writer, String_Type& parentId, String_Type& name, int index,
-                               const T& it, String_Type& comment = "")
+      static const T& BuildIt (Writer& writer, const String& parentId, const String& name, int index,
+                               const T& it, const String& comment = "")
       {
         Write(writer, parentId, name, index, comment);
 
@@ -88,14 +89,15 @@ namespace SHA_Logger
       }
 
     private:
-      Iterator(Ostream_T& os) : stream(os), writer(this->stream) {}
-      Iterator operator=(Iterator&) {}                                  // Not Implemented
+      Iterator(Ostream& os) : stream(std::unique_ptr<Stream>(new Stream(os))),
+                              writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
+      Iterator operator=(Iterator&) {} // Not Implemented
 
-      bool Write(String_Type& parentId, String_Type& name, int index, String_Type& comment)
-      { return Write(this->writer, parentId, name, index, comment); }
+      bool Write(const String& parentId, const String& name, int index, const String& comment)
+      { return Write(*this->writer, parentId, name, index, comment); }
 
       static bool Write
-        (Writer_Type& writer, String_Type& parentId, String_Type& name, int index, String_Type& comment)
+        (Writer& writer, const String& parentId, const String& name, int index, const String& comment)
       {
         // Add Error Object log in case of failure
         if (parentId.empty() || name.empty())
@@ -131,9 +133,9 @@ namespace SHA_Logger
         return true;
       }
 
-      Stream_Type stream; // Stream wrapper
-      Writer_Type writer; // Writer used to fill the stream
+      std::unique_ptr<Stream> stream; // Stream wrapper
+      std::unique_ptr<Writer> writer; // Writer used to fill the stream
   };
-};
+}
 
-#endif() // MODULE_LOGGER_ITERATOR_HXX
+#endif // MODULE_LOGGER_ITERATOR_HXX
