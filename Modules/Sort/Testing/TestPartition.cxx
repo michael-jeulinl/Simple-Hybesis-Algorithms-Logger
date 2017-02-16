@@ -30,10 +30,14 @@ using namespace SHA_Sort;
 
 #ifndef DOXYGEN_SKIP
 namespace {
-  const int SortedArrayInt[] = {-3, -2, 0, 2, 8, 15, 36, 212, 366};       // Simple sorted array of integers with negative values
-  const int InvSortedArrayInt[] = {366, 212, 36, 15, 8, 2, 0, -2, -3};    // Simple sorted array of integers with negative values
-  const int RandomArrayInt[] = {4, 3, 5, 2, -18, 3, 2, 3, 4, 5, -5};      // Simple random array of integers with negative values
-  const std::string RandomStr = "xacvgeze";                               // Random string
+  // Simple sorted array of integers with negative values
+  const int SortedArrayInt[] = {-3, -2, 0, 2, 8, 15, 36, 212, 366};
+  // Simple sorted array of integers with negative values
+  const int InvSortedArrayInt[] = {366, 212, 36, 15, 8, 2, 0, -2, -3};
+  // Simple random array of integers with negative values
+  const int RandomArrayInt[] = {4, 3, 5, 2, -18, 3, 2, 3, 4, 5, -5};
+  // Random string
+  const std::string RandomStr = "xacvgeze";
 
   typedef std::vector<int> Container;
   typedef Container::iterator IT;
