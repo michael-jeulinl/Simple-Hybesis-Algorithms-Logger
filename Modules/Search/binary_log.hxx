@@ -29,39 +29,40 @@
 
 namespace SHA_Logger
 {
-  namespace
-  { static const std::string kSeqName = "sequence"; } // Name used as id for Array build from iterators.
-
   /// @class BinaryLog
   ///
   template <typename IT, typename T, typename IsEqualT>
   class BinaryLog
   {
     public:
+    /// @todo Use string litteral for JSON description within c++ code
+    /// eg https://cs.chromium.org/chromium/src/gpu/config/software_rendering_list_json.cc
+    static const String GetName() { return "Binary_Sort"; }
+
       /// Write algorithm information
       /// @todo Use string litteral for JSON description within c++ code --> binary_desc.json.hxx
-      static bool WriteInfo(Writer_Type& writer) { return true; }
+      static bool WriteInfo(Writer& writer) { return true; }
 
       /// Write algorithm decription
       /// @todo Use string litteral for JSON description within c++ code --> binary_desc.json.hxx
-      static bool WriteDoc(Writer_Type& writer) { return true; }
+      static bool WriteDoc(Writer& writer) { return true; }
 
       /// Write algorithm sources
       /// @todo Use string litteral for JSON description within c++ code --> binary_desc.json.hxx
-      static bool WriteSrc(Writer_Type& writer) { return true; }
+      static bool WriteSrc(Writer& writer) { return true; }
 
       // Assert correct JSON construction.
-      ~BinaryLog() { assert(this->writer.IsComplete()); }
+      ~BinaryLog() { assert(this->writer->IsComplete()); }
 
       /// Instantiate a new json writer using the stream passed as
       /// argument, run and write algorithm computation information.
       ///
       /// @return stream reference filled up with BinaryLog object information,
       ///         error object information in case of failure.
-      static Ostream_T& Build(Ostream_T& os, Options opts, const IT& begin, const IT& end, const T& key)
+      static Ostream& Build(Ostream& os, Options opts, const IT& begin, const IT& end, const T& key)
       {
-        auto parameter = BinaryLog(os);
-        parameter.Write(opts, begin, end, key);
+        std::unique_ptr<BinaryLog> builder = std::unique_ptr<BinaryLog>(new BinaryLog(os));
+        builder->Write(opts, begin, end, key);
 
         return os;
       }
@@ -70,8 +71,7 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with BinaryLog object information,
       ///         error information in case of failure.
-      static Writer_Type& Build(Writer_Type& writer, Options opts,
-                                const IT& begin, const IT& end, const T& key)
+      static Writer& Build(Writer& writer, Options opts, const IT& begin, const IT& end, const T& key)
       {
         Write(writer, opts, begin, end, key);
 
@@ -79,13 +79,14 @@ namespace SHA_Logger
       }
 
     private:
-      BinaryLog(std::ostream& os) : stream(os), writer(this->stream) {}
-      BinaryLog operator=(BinaryLog&) {}                                  // Not Implemented
+      BinaryLog(Ostream& os) : stream(std::unique_ptr<Stream>(new Stream(os))),
+                               writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
+      BinaryLog operator=(BinaryLog&) {} // Not Implemented
 
       bool Write(Options opts, const IT& begin, const IT& end, const T& key)
-      { return Write(this->writer, opts, begin, end, key); }
+      { return Write(*this->writer, opts, begin, end, key); }
 
-      static bool Write(Writer_Type& writer, Options opts, const IT& begin, const IT& end, const T& key)
+      static bool Write(Writer& writer, Options opts, const IT& begin, const IT& end, const T& key)
       {
         writer.StartObject();
 
@@ -104,7 +105,7 @@ namespace SHA_Logger
       }
 
       ///
-      static bool WriteParameters(Writer_Type& writer, const IT& begin, const IT& end, const T& key)
+      static bool WriteParameters(Writer& writer, const IT& begin, const IT& end, const T& key)
       {
         writer.Key("parameters");
         writer.StartArray();
@@ -116,7 +117,7 @@ namespace SHA_Logger
       }
 
       ///
-      static bool WriteComputation(Writer_Type& writer, const IT& begin, const IT& end, const T& key)
+      static bool WriteComputation(Writer& writer, const IT& begin, const IT& end, const T& key)
       {
         // Not part of the logs
         int _lowIdx = 0;
@@ -178,9 +179,9 @@ namespace SHA_Logger
         return true;
       }
 
-      Stream_Type stream; // Stream wrapper
-      Writer_Type writer; // Writer used to fill the stream
+      std::unique_ptr<Stream> stream; // Stream wrapper
+      std::unique_ptr<Writer> writer; // Writer used to fill the stream
   };
-};
+}
 
-#endif() // MODULE_SEARCH_BINARY_LOG_HXX
+#endif // MODULE_SEARCH_BINARY_LOG_HXX

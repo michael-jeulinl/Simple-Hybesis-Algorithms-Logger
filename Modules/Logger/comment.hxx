@@ -24,7 +24,8 @@
 
 namespace SHA_Logger
 {
-  /// @class Comment parameter.
+  /// @class Comment
+  /// parameter.
   ///
   class Comment
   {

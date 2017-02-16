@@ -31,28 +31,23 @@ using namespace SHA_Logger;
 
 #ifndef DOXYGEN_SKIP
 namespace {
-  const int SortedArrayInt[] = {-3, -2, 0, 2, 8, 15, 36, 212, 366};       // Simple sorted array of integers with negative values
-  const int InvSortedArrayInt[] = {366, 212, 36, 15, 8, 2, 0, -2, -3};    // Simple sorted array of integers with negative values
-  const int RandomArrayInt[] = {4, 3, 5, 2, -18, 3, 2, 3, 4, 5, -5};      // Simple random array of integers with negative values
-  const std::string RandomStr = "xacvgeze";                               // Random string
+  // Simple random array of integers with negative values
+//  const int RandomArrayInt[] = {40, 80, -10, 50, 1, 65, -80, 26, -20, -35, 35, 35, -70, 100, -50};
+  const int RandomArrayInt[] = {-1, 6, -4, 5, 8, 4, -5, -6, 7, 0, 2, -2, -3, 3, 3, -7, -8, 1};
 
-  typedef std::vector<int> Container_type;
-  typedef Container_type::iterator Iterator_type;
-  typedef std::less_equal<Iterator_type::value_type> Comparator_type;
-  typedef std::greater_equal<Iterator_type::value_type> Greater_Comparator_type;
+  typedef std::vector<int> Container;
+  typedef Container::iterator IT;
 }
 #endif /* DOXYGEN_SKIP */
 
 // Test TestAlgo Construction
 TEST(TestPartitionLog, build)
 {
-  Container_type randomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
-  Iterator_type pivot = randomdArray.begin() + 5;
-  const int pivotValue = *pivot;
+  Container randomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
+  IT pivot = randomdArray.begin() + std::distance(randomdArray.begin(), randomdArray.end()) / 2;
 
-  OFStream_T fileStream("partition_output.json");
+  OFStream fileStream("partition_output.json");
 
   // Run partition - Should result in: max[begin, pivot[ <= pivot <= min]pivot, end]
-  PartitionLog<Iterator_type, Comparator_type>::Build
-    (fileStream, OpGetAll, randomdArray.begin(), pivot, randomdArray.end());
+  PartitionLog<IT>::Build(fileStream, OpGetAll, randomdArray.begin(), pivot, randomdArray.end());
 }

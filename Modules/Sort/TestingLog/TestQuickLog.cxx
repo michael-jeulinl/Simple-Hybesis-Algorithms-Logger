@@ -30,18 +30,19 @@ using namespace SHA_Logger;
 
 #ifndef DOXYGEN_SKIP
 namespace {
-  const int RandomArrayInt[] = {4, 3, 5, 2, -18, 3, 2, 3, 4, 5, -5}; // Simple random array of integers with negative values
+  // Simple random array of integers with negative values
+  //const int RandomArrayInt[] = {40, 80, -10, 50, 1, 65, -80, 26, -20, -35, 35, 35, -70, 100, -50};
+  const int RandomArrayInt[] = {-1, 6, -4, 5, 8, 4, -5, -6, 7, 0, 2, -2, -3, 3, 3, -7, -8, 1};
 
-  typedef std::vector<int> Container_Type;
-  typedef Container_Type::iterator Iterator_Type;
-  typedef QuickLog<Iterator_Type, std::less_equal<int>> QuickLog_Type;
+  typedef std::vector<int> Container;
+  typedef Container::iterator IT;
 }
 #endif /* DOXYGEN_SKIP */
 
 // Test TestAlgo Construction
 TEST(TestQuickLog, build)
 {
-  Container_Type randomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
-  OFStream_T fileStream("quick_output.json");
-  QuickLog_Type::Build(fileStream, OpGetMin, randomdArray.begin(), randomdArray.end());
+  Container randomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
+  OFStream fileStream("quick_output.json");
+  QuickLog<IT>::Build(fileStream, OpGetMin, randomdArray.begin(), randomdArray.end());
 }
