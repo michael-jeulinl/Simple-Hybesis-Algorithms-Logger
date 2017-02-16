@@ -35,6 +35,10 @@ namespace SHA_Logger
   class BinaryLog
   {
     public:
+    /// @todo Use string litteral for JSON description within c++ code
+    /// eg https://cs.chromium.org/chromium/src/gpu/config/software_rendering_list_json.cc
+    static const String GetName() { return "Binary_Sort"; }
+
       /// Write algorithm information
       /// @todo Use string litteral for JSON description within c++ code --> binary_desc.json.hxx
       static bool WriteInfo(Writer& writer) { return true; }

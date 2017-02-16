@@ -39,6 +39,9 @@ namespace SHA_Logger
   class QuickLog
   {
     public:
+      /// eg https://cs.chromium.org/chromium/src/gpu/config/software_rendering_list_json.cc
+      static const String GetName() { return "Quick_Sort"; }
+
       /// Write algorithm information
       /// @todo Use string litteral for JSON description within c++ code
       static bool WriteInfo(Writer& writer) { return true; }
@@ -59,10 +62,10 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with QuickLog object information,
       ///         error object information in case of failure.
-      static Ostream& Build(Ostream& os, Options opts, const IT& begin, const IT& end)
+      static Ostream& Build(Ostream& os, Options opts, const IT& begin, const IT& end, const int offset = 0)
       {
         std::unique_ptr<QuickLog> builder = std::unique_ptr<QuickLog>(new QuickLog(os));
-        builder->Write(opts, begin, end);
+        builder->Write(opts, begin, end, offset);
 
         return os;
       }
@@ -71,9 +74,9 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with QuickLog object information,
       ///         error information in case of failure.
-      static Writer& Build(Writer& writer, Options opts, const IT& begin, const IT& end)
+      static Writer& Build(Writer& writer, Options opts, const IT& begin, const IT& end, const int offset = 0)
       {
-        Write(writer, opts, begin, end);
+        Write(writer, opts, begin, end, offset);
 
         return writer;
       }
@@ -83,14 +86,14 @@ namespace SHA_Logger
                               writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
       QuickLog operator=(QuickLog&) {} // Not Implemented
 
-      bool Write(Options opts, const IT& begin, const IT& end)
-      { return Write(*this->writer, opts, begin, end); }
+      bool Write(Options opts, const IT& begin, const IT& end, const int offset)
+      { return Write(*this->writer, opts, begin, end, offset); }
 
-      static bool Write(Writer& writer, Options opts, const IT& begin, const IT& end)
+      static bool Write(Writer& writer, Options opts, const IT& begin, const IT& end, const int offset)
       {
         // Do not write sequence if no data to be processed
-        const auto distance = static_cast<const int>(std::distance(begin, end));
-        if (distance < 2)
+        const int _seqSize = static_cast<int>(std::distance(begin, end));
+        if (_seqSize < 2)
         {
           Comment::Build(writer, "Sequence size too small to be processed.", 0);
           Operation::Return<bool>(writer, true);
@@ -103,10 +106,10 @@ namespace SHA_Logger
         Algo_Traits<QuickLog>::Build(writer, opts);
 
         // Write parameters
-        WriteParameters(writer, begin, end);
+        WriteParameters(writer, opts, begin, end, offset);
 
         // Write computation
-        WriteComputation(writer, begin, end);
+        WriteComputation(writer, begin, end, offset);
 
         writer.EndObject();
 
@@ -114,33 +117,48 @@ namespace SHA_Logger
       }
 
       ///
-      static bool WriteParameters(Writer& writer, const IT& begin, const IT& end)
+      static bool WriteParameters(Writer& writer, Options opts,
+                                  const IT& begin, const IT& end, const int offset)
       {
         writer.Key("parameters");
         writer.StartArray();
-        Array<IT>::Build(writer, kSeqName, "begin", begin, "end", end);
+        if (opts & OpIsSub)
+        {
+          const int _seqSize = static_cast<int>(std::distance(begin, end));
+          Iterator::Build(writer, kSeqName, "begin", offset);
+          Iterator::Build(writer, kSeqName, "end", offset + _seqSize);
+        }
+        else
+        {
+          Array<IT>::Build(writer, kSeqName, "begin", begin, "end", end);
+        }
         writer.EndArray();
 
         return true;
       }
 
       ///
-      static bool WriteComputation(Writer& writer, const IT& begin, const IT& end)
+      static bool WriteComputation(Writer& writer, const IT& begin, const IT& end, const int offset)
       {
-        const auto _pivotIdx = static_cast<const int>(rand() % (end - begin));
+        const auto _pivotIdx = rand() % static_cast<const int>(std::distance(begin, end));
 
         // Local logged variables
         writer.Key("locals");
         writer.StartArray();
-        auto pivot = Iterator::BuildIt<IT>
-          (writer, kSeqName, "pivot", _pivotIdx, begin + _pivotIdx, "Pick Random Pivot within [begin, end]");
+        auto pivot = Iterator::BuildIt<IT>(writer, kSeqName, "pivot", offset + _pivotIdx, begin + _pivotIdx,
+                                           "Pick Random Pivot within [begin, end]");
         writer.EndArray();
 
         writer.Key("logs");
         writer.StartArray();
-        PartitionLog<IT, Compare>::Build(writer, OpGetMin, begin, pivot, end); // Proceed partition
-        QuickLog<IT, Compare>::Build(writer, OpGetMin, begin, pivot);          // Recurse on first partition
-        QuickLog<IT, Compare>::Build(writer, OpGetMin, pivot + 1, end);        // Recurse on second partition
+        // Proceed partition
+        auto newPivot = PartitionLog<IT, Compare>::Build(writer, OpIsSub, begin, pivot, end, offset);
+        auto newOffset = offset + std::distance(begin, newPivot);
+
+        // Recurse on first partition
+        QuickLog<IT, Compare>::Build(writer, OpIsSub, begin, newPivot, offset);
+        // Recurse on second partition
+        QuickLog<IT, Compare>::Build(writer, OpIsSub, newPivot + 1, end, newOffset + 1);
         writer.EndArray();
 
         return true;

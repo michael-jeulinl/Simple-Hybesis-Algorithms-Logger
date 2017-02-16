@@ -24,11 +24,13 @@ namespace SHA_Logger
 {
   enum Options
   {
-    OpGetMin = 0x00,
-    OpGetDoc = 0x01,
-    OpGetInfo = 0x02,
-    OpGetSrc = 0x04,
-    OpGetAll = OpGetDoc | OpGetInfo | OpGetSrc
+    OpGetMin = 0x00,   // Retrieve only logs
+    OpGetName = 0x01,  // Retrieve the name
+    OpGetDoc = 0x02,   // Retrieve the technical documentation
+    OpGetInfo = 0x04,  // Retrieve diverse information
+    OpGetSrc = 0x08,   // Retrieve the original source code
+    OpIsSub = 0x10,    // !SubRoutine Call - Do not build parameter but only indexes!
+    OpGetAll = OpGetName | OpGetDoc | OpGetInfo | OpGetSrc  // Retrieve all information
   };
 }
 

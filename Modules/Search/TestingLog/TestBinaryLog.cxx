@@ -36,7 +36,7 @@ namespace {
 
   typedef std::vector<int> Container;
   typedef Container::const_iterator IT;
-  typedef BinaryLog<IT, int, EQUAL<int>> BinaryLog;
+  typedef BinaryLog<IT, int, EQUAL<int>> BinaryLogT;
 }
 #endif /* DOXYGEN_SKIP */
 
@@ -48,9 +48,9 @@ TEST(TestBinaryLog, build)
   // Empty array
   {
     Container emptyArray = Container();
-    BinaryLog::Build(std::cout, OpGetAll, emptyArray.begin(), emptyArray.end(), 0);
+    BinaryLogT::Build(std::cout, OpGetAll, emptyArray.begin(), emptyArray.end(), 0);
   }
 
-  BinaryLog::Build(std::cout, OpGetMin, sortedArray.begin(), sortedArray.end(), -3);// First element
-  BinaryLog::Build(std::cout, OpGetMin, sortedArray.begin(), sortedArray.end(), 8); // Existing random value
+  BinaryLogT::Build(std::cout, OpGetMin, sortedArray.begin(), sortedArray.end(), -3);// First element
+  BinaryLogT::Build(std::cout, OpGetMin, sortedArray.begin(), sortedArray.end(), 8); // Existing random value
 }
