@@ -132,17 +132,24 @@ option(BUILD_TESTING "Compile tests on the project sources" ON)
 option(BUILD_TESTING_LOG "Compile logging tests on the project sources" ON)
 if(BUILD_TESTING OR BUILD_TESTING_LOG)
   include("CMake/GTest.cmake")
+  ENABLE_TESTING()
+  INCLUDE(CTest)
 endif()
 
 #-----------------------------------------------------------------------------
 # Set coverage Flags
 #
+option(WITH_COVERAGE "Run tests with coverage on the project sources" ON)
 if(WITH_COVERAGE)
   if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     set(coverage_flags "-g -fprofile-arcs -ftest-coverage -O0 -DNDEBUG")
     set(COVERAGE_CXX_FLAGS ${coverage_flags})
     set(COVERAGE_C_FLAGS ${coverage_flags})
   endif()
+
+  # CTest coverage configuration
+  configure_file("CMake/CTestCustom.cmake.in"
+                 ${CMAKE_BINARY_DIR}/CTestCustom.cmake @ONLY)
 endif()
 
 #-----------------------------------------------------------------------------

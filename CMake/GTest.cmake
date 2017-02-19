@@ -36,10 +36,8 @@ ExternalProject_Add(gtest_ext
 
 set(GTEST_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/gtest-src/googletest/include")
 set(GTEST_SRC_DIRS "${CMAKE_BINARY_DIR}/gtest-src/googletest")
-message(${GTEST_INCLUDE_DIRS})
 enable_testing()
 function(cxx_gtest name sources sourcesDirectory)
-  message("${name}:  \n\t ${sources}")
   if(MSVC)
     link_directories("${CMAKE_BINARY_DIR}/gtest-build/googlemock/gtest/${CMAKE_BUILD_TYPE}")
   else()

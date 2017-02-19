@@ -45,7 +45,15 @@ It allows to very quickly get set up with C++ and google test:
 - Setup the Unit Testings
 - Compile GTest at build time
 
+Use the CMake **'WITH_COVERAGE'** (default to true) option to automatically setup Coverage Generation.
+The minimal requiered coverage is **95%**.
+
+Please find the last testing dashboard here:
+http://my.cdash.org/index.php?project=Simple-Hybesis-Algorithm
+
 ## Running Unit Tests (UTs)
+You can whether use CTest or manually run the unit tests.
+
 E.g. to manually run the 'TestBasicBinary' Unit Test (using GTest):
 
     Simple-Hybesis-Algorithms-Build/Modules/Search/Testing/Debug/TestBinary.exe  (Win)
