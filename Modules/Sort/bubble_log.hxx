@@ -175,9 +175,11 @@ namespace SHA_Logger
             break;
 
           Operation::Set<int>(writer, "it", 0);
+          Operation::Set<int>(writer, "pivot", 1);
           curIt = begin;
         }
 
+        Operation::Return<bool>(writer, true);
         writer.EndArray();
 
         return true;
