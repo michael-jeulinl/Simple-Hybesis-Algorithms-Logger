@@ -56,6 +56,7 @@ E.g. to manually run the 'TestBasicBinary' Unit Test (using GTest):
 - **Binary Search:** Iteratively proceed a dichotomous search, within a sorted sequence, on the first occurrence of the key.
 
 #### Sort
+- **Bubble Sort:** Sometimes referred to as sinking sort: proceed an in-place bubble-sort on the elements.
 - **Partition-Exchange:** Proceed an in-place partitioning on the elements.
 - **Quick Sort - Partition-Exchange Sort:** Proceed an in-place quick-sort on the elements.
 
