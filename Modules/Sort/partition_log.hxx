@@ -88,7 +88,8 @@ namespace SHA_Logger
       { return Write(*this->writer, opts, begin, pivot, end, offset); }
 
       static IT Write(Writer& writer, Options opts,
-                      const IT& begin, const IT& pivot, const IT& end, const int offset)
+                      const IT& begin, const IT& pivot, const IT& end,
+                      const int offset)
       {
         writer.StartObject();
 
@@ -118,7 +119,8 @@ namespace SHA_Logger
 
       ///
       static bool WriteParameters(Writer& writer, Options opts,
-                                  const IT& begin, const IT& pivot, const IT& end, const int offset)
+                                  const IT& begin, const IT& pivot, const IT& end,
+                                  const int offset)
       {
         const int _pivIdx = static_cast<int>(std::distance(begin,pivot));
         writer.Key("parameters");
@@ -141,8 +143,9 @@ namespace SHA_Logger
       }
 
       ///
-      static IT WriteComputation
-      (Writer& writer, const IT& begin, const IT& pivot, const IT& end, const int offset)
+      static IT WriteComputation(Writer& writer,
+                                 const IT& begin, const IT& pivot, const IT& end,
+                                 const int offset)
       {
         // Not part of the logs
         auto _seqSize = static_cast<int>(std::distance(begin, end));
