@@ -42,37 +42,33 @@ namespace SHA_Sort
   /// first and last, including the element pointed by first but not the element pointed by last.
   ///
   /// @return void.
-  template <typename IT>
+  template <typename IT, typename Compare = std::less<typename std::iterator_traits<IT>::value_type>>
   class MergeInPlace
   {
   public:
-    void operator()(IT begin, IT middle, IT end)
+    void operator()(const IT& begin, const IT& pivot, const IT& end)
     {
-      if (std::distance(begin, middle) < 1 || std::distance(middle, end) < 1)
+      if (std::distance(begin, pivot) < 1 || std::distance(pivot, end) < 1)
         return;
 
       // Use first half as receiver
-      for(; begin < middle; ++begin)
+      for(auto curBegin = begin; curBegin < pivot; ++curBegin)
       {
-        if (*middle >= *begin)
+        if (Compare()(*curBegin, *pivot))
           continue;
 
-        typename std::iterator_traits<IT>::value_type value;
-        std::swap(value, *begin);    // keep the higher value
-        std::swap(*begin, *middle);  // Place it at the beginning of the second list
+        // Place it at the beginning of the second list
+        std::swap(*curBegin, *pivot);
 
         // Displace the higher value in the right place of the second list by swapping
-        auto it = middle;
+        auto it = pivot;
         for (; it != end - 1; ++it)
         {
-          if (*(it + 1) >= value)
+          if (Compare()(*it, *(it + 1)))
             break;
 
           std::swap(*it, *(it + 1));
         }
-
-        // Restore the value at his right place
-        std::swap(*it, value);
       }
     }
   };
@@ -95,7 +91,7 @@ namespace SHA_Sort
   /// first and last, including the element pointed by first but not the element pointed by last.
   ///
   /// @return void.
-  template <typename Container, typename IT>
+  template <typename IT>
   class MergeWithBuffer
   {
   public:
@@ -104,8 +100,9 @@ namespace SHA_Sort
       if (std::distance(begin, middle) < 1 || std::distance(middle, end) < 1)
         return;
 
-      Container buffer;
-      buffer.resize(std::distance(begin, end)); // Reserve right space (e.g. string container)
+      // Create buffer with appropriate space
+      std::vector<typename std::iterator_traits<IT>::value_type> buffer;
+      buffer.resize(std::distance(begin, end));
       auto buffIt = buffer.begin();
       auto tmpBegin = begin;
 
@@ -144,21 +141,21 @@ namespace SHA_Sort
   ///
   /// @return void.
   /// @todo add compare template functor
-  template <typename Container, typename IT, typename Aggregator = MergeWithBuffer<Container, IT>>
+  template <typename IT, typename Aggregator = MergeWithBuffer<IT>>
   void MergeSort(const IT& begin, const IT& end)
   {
     const auto ksize = static_cast<const int>(std::distance(begin, end));
     if (ksize < 2)
       return;
 
-    auto middle = begin + ksize / 2;
+    auto pivot = begin + ksize / 2;
 
     // Recursively break the vector into two pieces
-    MergeSort<Container, IT, Aggregator>(begin, middle);
-    MergeSort<Container, IT, Aggregator>(middle, end);
+    MergeSort<IT, Aggregator>(begin, pivot);
+    MergeSort<IT, Aggregator>(pivot, end);
 
     // Merge the two pieces
-    Aggregator()(begin, middle, end);
+    Aggregator()(begin, pivot, end);
   }
 }
 

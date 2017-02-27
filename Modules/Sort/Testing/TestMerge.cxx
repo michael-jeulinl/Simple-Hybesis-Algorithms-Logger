@@ -47,7 +47,7 @@ namespace {
 
   typedef std::vector<int> Container;
   typedef Container::iterator IT;
-  typedef MergeWithBuffer<std::string, std::string::iterator> Aggregator_Str;
+  typedef MergeWithBuffer<std::string::iterator> Aggregator_Str;
 }
 #endif /* DOXYGEN_SKIP */
 
@@ -103,24 +103,22 @@ TEST(TestMerge, MergeInPlaces)
 
   // Double values array - Order should be made
   {
-    Container doubleValuesArray(1, 511);
-    doubleValuesArray.push_back(66);
+    Container doubleValues(1, 511);
+    doubleValues.push_back(66);
 
-    MergeInPlace<IT>()
-      (doubleValuesArray.begin(), doubleValuesArray.begin() + 1, doubleValuesArray.end());
+    MergeInPlace<IT>()(doubleValues.begin(), doubleValues.begin() + 1, doubleValues.end());
 
-    EXPECT_EQ(66, doubleValuesArray[0]);
-    EXPECT_EQ(511, doubleValuesArray[1]);
+    EXPECT_EQ(66, doubleValues[0]);
+    EXPECT_EQ(511, doubleValues[1]);
   }
 
   // String Collection - All elements should be sorted in order
   {
-    std::string stringToMerge = StringWithPivot;
-    MergeInPlace<std::string::iterator>()
-      (stringToMerge.begin(), stringToMerge.begin() + 4, stringToMerge.end());
+    std::string str = StringWithPivot;
+    MergeInPlace<std::string::iterator>()(str.begin(), str.begin() + 4, str.end());
 
     // All elements of the final array are sorted
-    for (auto it = stringToMerge.begin(); it < stringToMerge.end() - 1; ++it)
+    for (auto it = str.begin(); it < str.end() - 1; ++it)
       EXPECT_LE(*it, *(it + 1));
   }
 }
@@ -133,7 +131,7 @@ TEST(TestMerge, MergeWithBuffers)
   {
     Container sortedArrayWithRot
       (SortedArrayIntWithRot, SortedArrayIntWithRot + sizeof(SortedArrayIntWithRot) / sizeof(int));
-    MergeWithBuffer<Container, IT>()
+    MergeWithBuffer<IT>()
       (sortedArrayWithRot.begin(), sortedArrayWithRot.begin() + 4, sortedArrayWithRot.end());
 
     // All elements of the final array are sorted
@@ -143,10 +141,8 @@ TEST(TestMerge, MergeWithBuffers)
 
   // Already sortedArray - Array should not be affected
   {
-    Container sortedArrayPos
-      (SortedArrayIntPos, SortedArrayIntPos + sizeof(SortedArrayIntPos) / sizeof(int));
-    MergeWithBuffer<Container, IT>()
-      (sortedArrayPos.begin(), sortedArrayPos.begin() + 5, sortedArrayPos.end());
+    Container sortedArrayPos(SortedArrayIntPos, SortedArrayIntPos + sizeof(SortedArrayIntPos) / sizeof(int));
+    MergeWithBuffer<IT>()(sortedArrayPos.begin(), sortedArrayPos.begin() + 5, sortedArrayPos.end());
 
     // All elements are still sorted
     for (auto it = sortedArrayPos.begin(); it < sortedArrayPos.end() - 1; ++it)
@@ -155,10 +151,8 @@ TEST(TestMerge, MergeWithBuffers)
 
   // Inverse iterator order - Array should not be affected
   {
-    Container randomArrayPos
-      (RandomArrayIntPos, RandomArrayIntPos + sizeof(RandomArrayIntPos) / sizeof(int));
-    MergeWithBuffer<Container, IT>()
-      (randomArrayPos.end(), randomArrayPos.begin() + 3, randomArrayPos.begin());
+    Container randomArrayPos(RandomArrayIntPos, RandomArrayIntPos + sizeof(RandomArrayIntPos) / sizeof(int));
+    MergeWithBuffer<IT>()(randomArrayPos.end(), randomArrayPos.begin() + 3, randomArrayPos.begin());
 
     int i = 0;
     for (auto it = randomArrayPos.begin(); it < randomArrayPos.end(); ++it, ++i)
@@ -168,13 +162,13 @@ TEST(TestMerge, MergeWithBuffers)
   // No error empty array
   {
     Container emptyArray;
-    MergeWithBuffer<Container, IT>()(emptyArray.begin(), emptyArray.begin(), emptyArray.end());
+    MergeWithBuffer<IT>()(emptyArray.begin(), emptyArray.begin(), emptyArray.end());
   }
 
   // Unique value array - Array should not be affected
   {
     Container uniqueValueArray(1, 511);
-    MergeWithBuffer<Container, IT>()
+    MergeWithBuffer<IT>()
       (uniqueValueArray.begin(), uniqueValueArray.end(), uniqueValueArray.end());
     EXPECT_EQ(511, uniqueValueArray[0]);
   }
@@ -184,7 +178,7 @@ TEST(TestMerge, MergeWithBuffers)
     Container doubleValuesArray(1, 511);
     doubleValuesArray.push_back(66);
 
-    MergeWithBuffer<Container, IT>()
+    MergeWithBuffer<IT>()
       (doubleValuesArray.begin(), doubleValuesArray.begin() + 1, doubleValuesArray.end());
 
     EXPECT_EQ(66, doubleValuesArray[0]);
@@ -194,7 +188,7 @@ TEST(TestMerge, MergeWithBuffers)
   // String Collection - All elements should be sorted in order
   {
     std::string stringToMerge = "eknxasuw"; // Left sorted part [e,k,n,x] - Right sorted part [a,s,u,w]
-    MergeWithBuffer<std::string, std::string::iterator>()
+    MergeWithBuffer<std::string::iterator>()
       (stringToMerge.begin(), stringToMerge.begin() + 4, stringToMerge.end());
 
     // All elements of the final array are sorted
@@ -209,7 +203,7 @@ TEST(TestMerge, MergeSorts)
   // Normal Run - all elements should be sorter in order
   {
     Container randomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
-    MergeSort<Container, IT>(randomdArray.begin(), randomdArray.end());
+    MergeSort<IT>(randomdArray.begin(), randomdArray.end());
 
     // All elements are sorted
     for (auto it = randomdArray.begin(); it < randomdArray.end() - 1; ++it)
@@ -219,7 +213,7 @@ TEST(TestMerge, MergeSorts)
   // Already sortedArray - Array should not be affected
   {
     Container sortedArray(SortedArrayInt, SortedArrayInt + sizeof(SortedArrayInt) / sizeof(int));
-    MergeSort<Container, IT>(sortedArray.begin(), sortedArray.end());
+    MergeSort<IT>(sortedArray.begin(), sortedArray.end());
 
     // All elements are still sorted
     for (auto it = sortedArray.begin(); it < sortedArray.end() - 1; ++it)
@@ -229,7 +223,7 @@ TEST(TestMerge, MergeSorts)
   // Inverse iterator order - Array should not be affected
   {
     Container randomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
-    MergeSort<Container, IT>(randomdArray.end(), randomdArray.begin());
+    MergeSort<IT>(randomdArray.end(), randomdArray.begin());
 
     int i = 0;
     for (auto it = randomdArray.begin(); it < randomdArray.end(); ++it, ++i)
@@ -239,20 +233,20 @@ TEST(TestMerge, MergeSorts)
   // No error empty array
   {
     Container emptyArray;
-    MergeSort<Container, IT>(emptyArray.begin(), emptyArray.end());
+    MergeSort<IT>(emptyArray.begin(), emptyArray.end());
   }
 
   // Unique value array - Array should not be affected
   {
     Container uniqueValueArray(1, 511);
-    MergeSort<Container, IT>(uniqueValueArray.begin(), uniqueValueArray.end());
+    MergeSort<IT>(uniqueValueArray.begin(), uniqueValueArray.end());
     EXPECT_EQ(511, uniqueValueArray[0]);
   }
 
   // String collection - all elements should be sorter in order
   {
     std::string randomStr = RandomStr;
-    MergeSort<std::string, std::string::iterator, Aggregator_Str>(randomStr.begin(), randomStr.end());
+    MergeSort<std::string::iterator, Aggregator_Str>(randomStr.begin(), randomStr.end());
 
     // All elements are sorted
     for (auto it = randomStr.begin(); it < randomStr.end() - 1; ++it)
