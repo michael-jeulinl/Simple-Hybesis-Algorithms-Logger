@@ -39,7 +39,7 @@ namespace {
 
   typedef std::vector<int> Container;
   typedef Container::iterator IT;
-  typedef std::greater_equal<IT::value_type> GE_Comparator;
+  typedef std::greater<IT::value_type> GE_Comparator;
 }
 #endif /* DOXYGEN_SKIP */
 
@@ -92,7 +92,7 @@ TEST(TestSort, BubbleSorts)
   // String - String should be sorted as an array
   {
     std::string stringToSort = RandomStr;
-    Bubble<std::string::iterator, std::less_equal<char>>(stringToSort.begin(), stringToSort.end());
+    Bubble<std::string::iterator, std::less<char>>(stringToSort.begin(), stringToSort.end());
     for (auto it = stringToSort.begin(); it < stringToSort.end() - 1; ++it)
       EXPECT_LE(*it, *(it + 1));
   }
@@ -124,7 +124,7 @@ TEST(TestSort, BubbleGreaterComparator)
   // String - String should be sorted in inverse order
   {
     std::string stringToSort = RandomStr;
-    Bubble<std::string::iterator, std::greater_equal<char>>(stringToSort.begin(), stringToSort.end());
+    Bubble<std::string::iterator, std::greater<char>>(stringToSort.begin(), stringToSort.end());
 
     // All elements are sorted in inverse order
     for (auto it = stringToSort.begin(); it < stringToSort.end() - 1; ++it)

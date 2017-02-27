@@ -18,7 +18,7 @@
  *
  *=========================================================================================================*/
 #include <gtest/gtest.h>
-#include <cocktail.hxx>
+#include <comb.hxx>
 
 // STD includes
 #include <functional>
@@ -43,13 +43,13 @@ namespace {
 }
 #endif /* DOXYGEN_SKIP */
 
-// Basic Cocktail-Sort tests
-TEST(TestSort, CocktailSorts)
+// Basic Comb-Sort tests
+TEST(TestSort, CombSorts)
 {
   // Normal Run
   {
     Container randomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
-    Cocktail<IT>(randomdArray.begin(), randomdArray.end());
+    Comb<IT>(randomdArray.begin(), randomdArray.end());
 
     // All elements are sorted
     for (auto it = randomdArray.begin(); it < randomdArray.end() - 1; ++it)
@@ -59,7 +59,7 @@ TEST(TestSort, CocktailSorts)
   // Already sortedArray - Array should not be affected
   {
     Container sortedArray(SortedArrayInt, SortedArrayInt + sizeof(SortedArrayInt) / sizeof(int));
-    Cocktail<IT>(sortedArray.begin(), sortedArray.end());
+    Comb<IT>(sortedArray.begin(), sortedArray.end());
 
     // All elements are still sorted
     for (auto it = sortedArray.begin(); it < sortedArray.end() - 1; ++it)
@@ -69,7 +69,7 @@ TEST(TestSort, CocktailSorts)
   // Inverse iterator order - Array should not be affected
   {
     Container randomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
-    Cocktail<IT>(randomdArray.end(), randomdArray.begin());
+    Comb<IT>(randomdArray.end(), randomdArray.begin());
 
     int i = 0;
     for (auto it = randomdArray.begin(); it < randomdArray.end(); ++it, ++i)
@@ -79,32 +79,32 @@ TEST(TestSort, CocktailSorts)
   // No error unitialized array
   {
     Container emptyArray;
-    Cocktail<IT>(emptyArray.begin(), emptyArray.end());
+    Comb<IT>(emptyArray.begin(), emptyArray.end());
   }
 
   // Unique value array - Array should not be affected
   {
     Container uniqueValueArray(1, 511);
-    Cocktail<IT>(uniqueValueArray.begin(), uniqueValueArray.end());
+    Comb<IT>(uniqueValueArray.begin(), uniqueValueArray.end());
     EXPECT_EQ(511, uniqueValueArray[0]);
   }
 
   // String - String should be sorted as an array
   {
     std::string stringToSort = RandomStr;
-    Cocktail<std::string::iterator, std::less<char>>(stringToSort.begin(), stringToSort.end());
+    Comb<std::string::iterator, std::less<char>>(stringToSort.begin(), stringToSort.end());
     for (auto it = stringToSort.begin(); it < stringToSort.end() - 1; ++it)
       EXPECT_LE(*it, *(it + 1));
   }
 }
 
-// Basic Cocktail-Sort tests - Inverse Order
-TEST(TestSort, CocktailGreaterComparator)
+// Basic Comb-Sort tests - Inverse Order
+TEST(TestSort, CombGreaterComparator)
 {
   // Normal Run - Elements should be sorted in inverse order
   {
     Container randomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
-    Cocktail<IT, GE_Comparator>(randomdArray.begin(), randomdArray.end());
+    Comb<IT, GE_Comparator>(randomdArray.begin(), randomdArray.end());
 
     // All elements are sorted in inverse order
     for (auto it = randomdArray.begin(); it < randomdArray.end() - 1; ++it)
@@ -114,7 +114,7 @@ TEST(TestSort, CocktailGreaterComparator)
   // Already sorted Array in inverse order - Array should not be affected
   {
     Container invSortedArray(SortedArrayInt, SortedArrayInt + sizeof(SortedArrayInt) / sizeof(int));
-    Cocktail<IT, GE_Comparator>(invSortedArray.begin(), invSortedArray.end());
+    Comb<IT, GE_Comparator>(invSortedArray.begin(), invSortedArray.end());
 
     // All elements are still sorted in inverse order
     for (auto it = invSortedArray.begin(); it < invSortedArray.end() - 1; ++it)
@@ -124,7 +124,7 @@ TEST(TestSort, CocktailGreaterComparator)
   // String - String should be sorted in inverse order
   {
     std::string stringToSort = RandomStr;
-    Cocktail<std::string::iterator, std::greater<char>>(stringToSort.begin(), stringToSort.end());
+    Comb<std::string::iterator, std::greater<char>>(stringToSort.begin(), stringToSort.end());
 
     // All elements are sorted in inverse order
     for (auto it = stringToSort.begin(); it < stringToSort.end() - 1; ++it)

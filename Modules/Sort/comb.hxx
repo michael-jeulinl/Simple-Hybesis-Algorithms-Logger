@@ -17,23 +17,28 @@
  * substantial portions of the Software.
  *
  *=========================================================================================================*/
-#ifndef MODULE_SORT_BUBBLE_HXX
-#define MODULE_SORT_BUBBLE_HXX
+#ifndef MODULE_SORT_COMB_HXX
+#define MODULE_SORT_COMB_HXX
 
 // STD includes
 #include <iterator>
 
 namespace SHA_Sort
 {
-  /// Bubble Sort - Partition-Exchange Sort
-  /// Proceed an in-place bubble-sort on the elements.
-  /// sometimes referred to as sinking sort, is a simple sorting algorithm that repeatedly steps through
-  /// the list to be sorted, compares each pair of adjacent items and swaps them if they are in the wrong
-  /// order.
-  /// The pass through the list is repeated until no swaps needed: it indicates that the list is sorted.
+  /// Comb Sort - Comb Sort
+  /// Proceed an in-place Comb-sort on the elements.
+  /// Proceed an in-place Cocktail-sort on the elements.
+  /// Comb sort is a relatively simple sorting algorithm originally designed by Wlodzimierz Dobosiewicz in
+  /// 1980.
+  /// It was later rediscovered and popularized by Stephen Lacey and Richard Box with a Byte Magazine article
+  ///  published in April 1991. Comb sort improves on bubble sort.
+  /// The basic idea is to eliminate turtles, or small values near the end of the list,
+  /// since in a bubble sort these slow the sorting down tremendously.
+  /// (Rabbits, large values around the beginning of the list, do not pose a problem in bubble sort)
   ///
-  /// @complexity O(N²) in average case and O(N²) on worst case.
-  /// @remark: Although the algorithm is simple, it is too slow and impractical for most problem.
+  /// @complexity O(N²) in average case, O(N²) on worst case and (N log(N)) on best case.
+  /// @remark: Although the algorithm is simple and an optimization of the bubble sort,
+  /// it is too slow and impractical for most problem.
   ///
   /// @tparam IT type using to go through the collection.
   /// @tparam Compare functor type (std::less_equal in order, std::greater_equal for inverse order).
@@ -44,29 +49,33 @@ namespace SHA_Sort
   ///
   /// @return void.
   template <typename IT, typename Compare = std::less<typename std::iterator_traits<IT>::value_type>>
-  void Bubble(const IT& begin, const IT& end)
+  void Comb(const IT& begin, const IT& end)
   {
     const auto distance = static_cast<const int>(std::distance(begin, end));
     if (distance < 2)
       return;
 
-    int endIdx = -1;
-    bool hasSwapped;
-    // for each element - bubble it up until the end.
-    for (auto it = begin; it < end - 1; ++it, --endIdx)
+    int gap = distance;
+    double shrink = 1.3;
+    bool hasSwapped = true;
+    while (hasSwapped)
     {
       hasSwapped = false;
-      for (auto curIt = begin; curIt < end + endIdx; ++curIt)
-        if (Compare()(*(curIt + 1), *curIt))
+
+      gap /= shrink;
+      if (gap > 1)
+        hasSwapped = true;
+      else
+        gap = 1;
+
+      for (auto it = begin; it + gap < end; ++it)
+        if (Compare()(*(it + gap), *it))
         {
-          std::swap(*(curIt + 1), *curIt);
+          std::swap(*it, *(it + gap));
           hasSwapped = true;
         }
-
-      if (!hasSwapped)
-        break;
     }
   }
 }
 
-#endif // MODULE_SORT_BUBBLE_HXX
+#endif // MODULE_SORT_COMB_HXX

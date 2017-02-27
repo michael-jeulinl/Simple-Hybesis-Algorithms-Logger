@@ -23,6 +23,7 @@ set(SHA ${PROJECT_NAME})
 # Source files
 set(MODULE_SORT_SRCS TestBubble.cxx
                      TestCocktail.cxx
+                     TestComb.cxx
                      TestMerge.cxx
                      TestPartition.cxx
                      TestQuick.cxx

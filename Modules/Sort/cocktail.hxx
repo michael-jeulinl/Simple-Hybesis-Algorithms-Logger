@@ -44,7 +44,7 @@ namespace SHA_Sort
   /// first and last, including the element pointed by first but not the element pointed by last.
   ///
   /// @return void.
-  template <typename IT, typename Compare = std::less_equal<typename std::iterator_traits<IT>::value_type>>
+  template <typename IT, typename Compare = std::less<typename std::iterator_traits<IT>::value_type>>
   void Cocktail(const IT& begin, const IT& end)
   {
     const auto distance = static_cast<const int>(std::distance(begin, end));
@@ -54,14 +54,14 @@ namespace SHA_Sort
     int beginIdx = 0;
     int endIdx = distance - 1;
     bool hasSwapped = true;
-    // for each element from beginning - bubble it up until the end.
     while (hasSwapped && beginIdx < distance - 1)
     {
       hasSwapped = false;
-      for (auto curIt = begin + beginIdx; curIt < begin + endIdx; ++curIt)
-        if (Compare()(*(curIt + 1), *curIt))
+      // for each element from beginning - bubble it up until the end.
+      for (auto it = begin + beginIdx; it < begin + endIdx; ++it)
+        if (Compare()(*(it + 1), *it))
         {
-          std::swap(*(curIt + 1), *curIt);
+          std::swap(*it, *(it + 1));
           hasSwapped = true;
         }
       --endIdx;
@@ -70,10 +70,10 @@ namespace SHA_Sort
         break;
 
       // for each element from the end- bubble it down until the beginning.
-      for (auto curIt = begin + endIdx - 1; curIt >= begin + beginIdx; --curIt)
-        if (Compare()(*(curIt + 1), *curIt))
+      for (auto it = begin + endIdx - 1; it >= begin + beginIdx; --it)
+        if (Compare()(*(it + 1), *it))
         {
-          std::swap(*(curIt + 1), *curIt);
+          std::swap(*it, *(it + 1));
           hasSwapped = true;
         }
       ++beginIdx;
