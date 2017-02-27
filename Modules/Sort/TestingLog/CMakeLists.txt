@@ -23,6 +23,7 @@ set(SHA ${PROJECT_NAME})
 # Source files
 set(MODULE_SORT_LOG_SRCS TestAggregateInPlaceLog.cxx
                          TestBubbleLog.cxx
+                         TestCocktailLog.cxx
                          TestPartitionLog.cxx
                          TestMergeInPlaceLog.cxx
                          TestQuickLog.cxx)

@@ -65,6 +65,9 @@ E.g. to manually run the 'TestBasicBinary' Unit Test (using GTest):
 
 #### Sort
 - **Bubble Sort:** Sometimes referred to as sinking sort: proceed an in-place bubble-sort on the elements.
+- **Coktail Sort:** Variation of bubble sort. Optimize a bubble sort bubbling in both directions on each pass.
+- **MergeInplace:** Functor that proceeds a in place merge of two sequences of elements.
+- **MergeSort:** John von Neumann in 1945: Proceed merge-sort on the elements whether using an in-place strategy or using a buffer.
 - **Partition-Exchange:** Proceed an in-place partitioning on the elements.
 - **Quick Sort - Partition-Exchange Sort:** Proceed an in-place quick-sort on the elements.
 
@@ -86,7 +89,5 @@ E.g. to manually run the 'TestBasicBinary' Unit Test (using GTest):
 "Given an array of gains/losses over time, find the period that represents the best/worst cumulative gain."
 
 #### Sort
-- **MergeInplace:** Functor that proceeds a in place merge of two sequences of elements.
-- **MergeSort:** John von Neumann in 1945: Proceed merge-sort on the elements whether using an in-place strategy or using a buffer.
 - **MergeWithBuffer:** Functor that proceeds a merge of two sequences of elements using a buffer to improve time computation.
 - **Raddix Sort - LSD:** Proceed the Least Significant Digit Raddix sort, a non-comparative integer sorting algorithm.
