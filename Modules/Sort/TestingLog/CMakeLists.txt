@@ -24,6 +24,7 @@ set(SHA ${PROJECT_NAME})
 set(MODULE_SORT_LOG_SRCS TestAggregateInPlaceLog.cxx
                          TestBubbleLog.cxx
                          TestPartitionLog.cxx
+                         TestMergeInPlaceLog.cxx
                          TestQuickLog.cxx)
 
 # --------------------------------------------------------------------------
