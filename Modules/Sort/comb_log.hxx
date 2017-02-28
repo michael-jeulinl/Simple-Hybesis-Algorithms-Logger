@@ -17,8 +17,8 @@
  * substantial portions of the Software.
  *
  *=========================================================================================================*/
-#ifndef MODULE_SORT_BUBBLE_LOG_HXX
-#define MODULE_SORT_BUBBLE_LOG_HXX
+#ifndef MODULE_SORT_COMB_LOG_HXX
+#define MODULE_SORT_COMB_LOG_HXX
 
 #include <Logger/algorithm.hxx>
 #include <Logger/array.hxx>
@@ -33,14 +33,14 @@
 
 namespace SHA_Logger
 {
-  /// @class BubbleLog
+  /// @class CombLog
   ///
   template <typename IT, typename Compare = std::less<typename std::iterator_traits<IT>::value_type>>
-  class BubbleLog
+  class CombLog
   {
     public:
       /// eg https://cs.chromium.org/chromium/src/gpu/config/software_rendering_list_json.cc
-      static const String GetName() { return "Bubble_Sort"; }
+      static const String GetName() { return "Comb_Sort"; }
 
       /// Write algorithm information
       /// @todo Use string litteral for JSON description within c++ code
@@ -55,16 +55,16 @@ namespace SHA_Logger
       static bool WriteSrc(Writer& writer) { return true; }
 
       // Assert correct JSON construction.
-      ~BubbleLog() { assert(this->writer->IsComplete()); }
+      ~CombLog() { assert(this->writer->IsComplete()); }
 
       /// Instantiate a new json writer using the stream passed as
       /// argument, run and write algorithm computation information.
       ///
-      /// @return stream reference filled up with BubbleLog object information,
+      /// @return stream reference filled up with CombLog object information,
       ///         error object information in case of failure.
       static Ostream& Build(Ostream& os, Options opts, const IT& begin, const IT& end)
       {
-        std::unique_ptr<BubbleLog> builder = std::unique_ptr<BubbleLog>(new BubbleLog(os));
+        std::unique_ptr<CombLog> builder = std::unique_ptr<CombLog>(new CombLog(os));
         builder->Write(opts, begin, end);
 
         return os;
@@ -72,7 +72,7 @@ namespace SHA_Logger
 
       /// Use json writer passed as parameter to write iterator information.
       ///
-      /// @return stream reference filled up with BubbleLog object information,
+      /// @return stream reference filled up with CombLog object information,
       ///         error information in case of failure.
       static Writer& Build(Writer& writer, Options opts, const IT& begin, const IT& end)
       {
@@ -82,9 +82,9 @@ namespace SHA_Logger
       }
 
     private:
-      BubbleLog(Ostream& os) : stream(std::unique_ptr<Stream>(new Stream(os))),
-                               writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
-      BubbleLog operator=(BubbleLog&) {} // Not Implemented
+      CombLog(Ostream& os) : stream(std::unique_ptr<Stream>(new Stream(os))),
+                             writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
+      CombLog operator=(CombLog&) {} // Not Implemented
 
       bool Write(Options opts, const IT& begin, const IT& end)
       { return Write(*this->writer, opts, begin, end); }
@@ -103,7 +103,7 @@ namespace SHA_Logger
         writer.StartObject();
 
         // Write description
-        Algo_Traits<BubbleLog>::Build(writer, opts);
+        Algo_Traits<CombLog>::Build(writer, opts);
 
         // Write parameters
         WriteParameters(writer, opts, begin, end);
@@ -139,44 +139,46 @@ namespace SHA_Logger
       ///
       static bool WriteComputation(Writer& writer, const IT& begin, const IT& end)
       {
-        int _itIdx = 0;
-        int endIdx = -1;
-        bool hasSwapped;
+        const int ksize = static_cast<int>(std::distance(begin, end));
 
         // Local logged variables
         writer.Key("locals");
         writer.StartArray();
-        auto curIt = Iterator::BuildIt<IT>(writer, kSeqName, "it", 0, begin);
-        auto pivot = Iterator::BuildIt<IT>(writer, kSeqName, "pivot", 1, begin + 1);
+        auto it = Iterator::BuildIt<IT>(writer, kSeqName, "it", 0, begin);
+        auto pivot = Iterator::BuildIt<IT>(writer, kSeqName, "pivot", ksize - 1, end - 1);
         writer.EndArray();
 
         // Proceed sort
         writer.Key("logs");
         writer.StartArray();
-        // for each element - bubble it up until the end.
-        for (auto it = begin; it < end - 1; ++it, --endIdx)
+        int gap = ksize;
+        bool hasSwapped = true;
+        while (hasSwapped)
         {
           hasSwapped = false;
-          _itIdx = 0;
-          for (; curIt < end + endIdx; ++curIt)
+
+          // Compute new gap
+          gap /= 1.25;
+          if (gap > 1)
+            hasSwapped = true;
+          else
+            gap = 1;
+
+          int _itIdx = 0;
+          Operation::Set<int>(writer, "it", _itIdx);
+          Operation::Set<int>(writer, "pivot", _itIdx + gap);
+          for (it = begin; it + gap < end; ++it)
           {
-            if (Compare()(*(curIt + 1), *curIt))
+            if (Compare()(*(it + gap), *it))
             {
               Operation::Swap(writer, "it", "pivot");
-              std::swap(*curIt, *(curIt + 1));
+              std::swap(*it, *(it + gap));
               hasSwapped = true;
             }
 
             Operation::Set<int>(writer, "it", ++_itIdx);
-            Operation::Set<int>(writer, "pivot", _itIdx + 1);
+            Operation::Set<int>(writer, "pivot", _itIdx + gap);
           }
-
-          if (!hasSwapped)
-            break;
-
-          Operation::Set<int>(writer, "it", 0);
-          Operation::Set<int>(writer, "pivot", 1);
-          curIt = begin;
         }
 
         Operation::Return<bool>(writer, true);
@@ -190,4 +192,4 @@ namespace SHA_Logger
   };
 }
 
-#endif // MODULE_SORT_BUBBLE_LOG_HXX
+#endif // MODULE_SORT_COMB_LOG_HXXb

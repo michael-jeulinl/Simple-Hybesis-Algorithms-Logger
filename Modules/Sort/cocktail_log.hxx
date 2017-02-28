@@ -35,7 +35,7 @@ namespace SHA_Logger
 {
   /// @class CocktailLog
   ///
-  template <typename IT, typename Compare = std::less_equal<typename std::iterator_traits<IT>::value_type>>
+  template <typename IT, typename Compare = std::less<typename std::iterator_traits<IT>::value_type>>
   class CocktailLog
   {
     public:
@@ -83,7 +83,7 @@ namespace SHA_Logger
 
     private:
       CocktailLog(Ostream& os) : stream(std::unique_ptr<Stream>(new Stream(os))),
-                               writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
+                                 writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
       CocktailLog operator=(CocktailLog&) {} // Not Implemented
 
       bool Write(Options opts, const IT& begin, const IT& end)
