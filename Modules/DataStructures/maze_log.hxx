@@ -57,6 +57,10 @@ namespace SHA_Logger
     void AddCellConnection(std::shared_ptr<Cell> cell)
     { connectedCells.push_back(cell); }
 
+    // @todo this information should not be part the cell info itself
+    int GetRootDistance() const { return this->rootDistance; }
+    void SetRootDistance(const int distance) { this->rootDistance = distance; }
+
     void Write(Writer& writer)
     {
       writer.StartObject();
@@ -76,6 +80,7 @@ namespace SHA_Logger
     unsigned int y;
 
     bool isVisited; // @todo cf. above
+    int rootDistance; // @todo cf. above
 
     std::vector<std::shared_ptr<Cell>> connectedCells;
   };
@@ -222,14 +227,16 @@ namespace SHA_Logger
         // Create Completely connected Maze using DFS
         // @todo use generic generator for RawArray, Matrix, Stack...
         std::stack<std::shared_ptr<Cell>> pathStack;
+        mazeMatrix[0][0]->SetRootDistance(0);
         pathStack.push(Cell::Visite(mazeMatrix[0][0]));
 
         /// LOG LOCALS
         writer.Key("locals");
         writer.StartArray();
           /// LOG STACK
-          writer.Key("pathStack");
           writer.StartObject();
+            writer.Key("name");
+            writer.String("pathStack");
             writer.Key("type");
             writer.String("Stack");
             writer.Key("dataType");
@@ -244,8 +251,9 @@ namespace SHA_Logger
           writer.EndObject();
 
           /// LOG CURRENT NODE
-          writer.Key("curNode");
           writer.StartObject();
+            writer.Key("name");
+            writer.String("curNode");
             writer.Key("indexes");
             writer.StartArray();
               writer.Int(mazeMatrix[0][0]->GetX());
@@ -257,11 +265,13 @@ namespace SHA_Logger
         // While there is node to be handled
         writer.Key("logs");
         writer.StartArray();
+        int maxDistance = 0;
         while (!pathStack.empty())
         {
           // Handle the cell at the top of the stack
           // @todo optimize using ref && indexes instead of writing whole object
           std::shared_ptr<Cell> curCell = pathStack.top();
+          maxDistance = std::max(maxDistance, curCell->GetRootDistance());
 
           /// LOG SET
           writer.StartObject();
@@ -276,8 +286,9 @@ namespace SHA_Logger
               writer.Int(curCell->GetX());
               writer.Int(curCell->GetY());
             writer.EndArray();
+            writer.Key("rootDistance");
+            writer.Int(curCell->GetRootDistance());
           writer.EndObject();
-
 
           pathStack.pop();
 
@@ -305,6 +316,7 @@ namespace SHA_Logger
             for (unsigned int i = 0; i < curNeighbours.size(); ++i)
             {
               curCell->AddCellConnection(Cell::Visite(curNeighbours[i]));
+              curNeighbours[i]->SetRootDistance(curCell->GetRootDistance() + 1);
 
               /// LOG CONNECT
               writer.StartObject();
@@ -345,7 +357,7 @@ namespace SHA_Logger
             // Add the choosen node as the next one to be processed
             pathStack.push(curNeighbours[randIdx]);
 
-            /// LOG PUSH
+            /// LOG CHOOSEN PUSH
             writer.StartObject();
               writer.Key("type");
               writer.String("operation");
@@ -365,6 +377,13 @@ namespace SHA_Logger
         Operation::Return<bool>(writer, true);
         writer.EndArray();
 
+        // Add Statistical informations
+        writer.Key("stats");
+        writer.StartObject();
+          writer.Key("maxDistance");
+          writer.Int(maxDistance);
+        writer.EndObject();
+
         return true;
       }
 
@@ -381,10 +400,10 @@ namespace SHA_Logger
         const auto curY = cell.GetY();
 
         // Push left if available
-        if (static_cast<int>(curX - 1) > 0 && !mazeMatrix[curX - 1][curY]->IsVisited())
+        if (static_cast<int>(curX - 1) >= 0 && !mazeMatrix[curX - 1][curY]->IsVisited())
           neighbour.push_back(mazeMatrix[curX - 1][curY]);
         // Push bottom if available
-        if (static_cast<int>(curY - 1) > 0 && !mazeMatrix[curX][curY - 1]->IsVisited())
+        if (static_cast<int>(curY - 1) >= 0 && !mazeMatrix[curX][curY - 1]->IsVisited())
           neighbour.push_back(mazeMatrix[curX][curY - 1]);
         // Push top if available
         if (curX + 1 < mazeMatrix.size() && !mazeMatrix[curX + 1][curY]->IsVisited())
