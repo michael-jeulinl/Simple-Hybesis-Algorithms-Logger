@@ -85,9 +85,9 @@ namespace SHA_Logger
     std::vector<std::shared_ptr<Cell>> connectedCells;
   };
 
-  /// @class MazeLog
+  /// @class MazeDFSLog
   ///
-  class MazeLog
+  class MazeDFSLog
   {
     public:
       /// eg https://cs.chromium.org/chromium/src/gpu/config/software_rendering_list_json.cc
@@ -106,16 +106,16 @@ namespace SHA_Logger
       static bool WriteSrc(Writer& writer) { return true; }
 
       // Assert correct JSON construction.
-      ~MazeLog() { assert(this->writer->IsComplete()); }
+      ~MazeDFSLog() { assert(this->writer->IsComplete()); }
 
       /// Instantiate a new json writer using the stream passed as
       /// argument, run and write algorithm computation information.
       ///
-      /// @return stream reference filled up with MazeLog object information,
+      /// @return stream reference filled up with MazeDFSLog object information,
       ///         error object information in case of failure.
       static Ostream& Build(Ostream& os, Options opts, const unsigned int width, const unsigned int height)
       {
-        std::unique_ptr<MazeLog> builder = std::unique_ptr<MazeLog>(new MazeLog(os));
+        std::unique_ptr<MazeDFSLog> builder = std::unique_ptr<MazeDFSLog>(new MazeDFSLog(os));
         builder->Write(opts, width, height);
 
         return os;
@@ -123,7 +123,7 @@ namespace SHA_Logger
 
       /// Use json writer passed as parameter to write iterator information.
       ///
-      /// @return stream reference filled up with MazeLog object information,
+      /// @return stream reference filled up with MazeDFSLog object information,
       ///         error information in case of failure.
       static Writer& Build(Writer& writer, Options opts, const unsigned int width, const unsigned int height)
       {
@@ -133,9 +133,9 @@ namespace SHA_Logger
       }
 
     private:
-      MazeLog(Ostream& os) : stream(std::unique_ptr<Stream>(new Stream(os))),
+      MazeDFSLog(Ostream& os) : stream(std::unique_ptr<Stream>(new Stream(os))),
                              writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
-      MazeLog operator=(MazeLog&) {} // Not Implemented
+      MazeDFSLog operator=(MazeDFSLog&) {} // Not Implemented
 
       bool Write(Options opts, const unsigned int width, const unsigned int height)
       { return Write(*this->writer, opts, width, height); }
@@ -153,7 +153,7 @@ namespace SHA_Logger
         writer.StartObject();
 
         // Write description
-        //Algo_Traits<MazeLog>::Build(writer, opts);
+        //Algo_Traits<MazeDFSLog>::Build(writer, opts);
         writer.Key("type");
         writer.String("DataStructure");
         writer.Key("name");

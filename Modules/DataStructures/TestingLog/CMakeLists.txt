@@ -21,7 +21,8 @@
 set(SHA ${PROJECT_NAME})
 
 # Source files
-set(MODULE_DS_LOG_SRCS TestMazeLog.cxx)
+set(MODULE_DS_LOG_SRCS TestMazeDFSLog.cxx
+                       TestMazeBinaryTreeLog.cxx)
 
 # --------------------------------------------------------------------------
 # Build Testing Log executables

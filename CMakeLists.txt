@@ -104,7 +104,7 @@ endif (DOXYGEN_FOUND)
 #-----------------------------------------------------------------------------
 # Documentation / Doxygen Options
 #
-option(BUILD_DOC_LOG "Build logger documentation" ON)
+option(BUILD_DOC_LOG "Build logger documentation" OFF)
 find_package(Doxygen)
 if (DOXYGEN_FOUND)
     # Set input and output files

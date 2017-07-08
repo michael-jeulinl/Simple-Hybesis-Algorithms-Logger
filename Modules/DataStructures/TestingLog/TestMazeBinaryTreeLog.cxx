@@ -18,7 +18,8 @@
  *
  *=========================================================================================================*/
 #include <gtest/gtest.h>
-#include <maze_log.hxx>
+
+#include <maze_binary_tree_log.hxx>
 
 // STD includes
 #include <fstream>
@@ -31,11 +32,11 @@ namespace {}
 #endif /* DOXYGEN_SKIP */
 
 // Test TestAlgo Construction
-TEST(TestMazeLog, build)
+TEST(TestMazeBinaryTreeLog, build)
 {
-  OFStream fileStream("maze_output.json");
+  OFStream fileStream("maze_binary_tree_output.json");
 
   // Build Maze
   // @todo check if should return the maze object
-  MazeLog::Build(fileStream, OpGetAll, 5, 5);
+  MazeBinaryTreeLog::Build(fileStream, OpGetAll, 30, 30);
 }
