@@ -17,8 +17,8 @@
  * substantial portions of the Software.
  *
  *=========================================================================================================*/
-#ifndef MODULE_SORT_MAZE_LOG_HXX
-#define MODULE_SORT_MAZE_LOG_HXX
+#ifndef MODULE_DS_MAZE_DFS_LOG_HXX
+#define MODULE_DS_MAZE_DFS_LOG_HXX
 
 #include <Logger/algorithm.hxx>
 #include <Logger/array.hxx>
@@ -420,4 +420,4 @@ namespace SHA_Logger
   };
 }
 
-#endif // MODULE_SORT_MAZE_LOG_HXX
+#endif // MODULE_DS_MAZE_DFS_LOG_HXX
