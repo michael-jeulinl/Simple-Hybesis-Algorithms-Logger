@@ -72,7 +72,7 @@ namespace SHA_Logger
     unsigned int y;
 
     int rootDistance;       // @todo cf. above
-    unsigned int bucketId;  // @todo cf. above
+    unsigned int bucketId;
   };
 
   /// @class MazeKruskalsLog
@@ -221,18 +221,25 @@ namespace SHA_Logger
         // Keep track of maximum path distance
         int maxDistance = 0;
 
-        // Fill the set with the self containing cells
-        std::set<std::shared_ptr<Cell>> mazeRemainingCells;
+        // Fill the set with all possible edges
+        std::set<std::pair<std::shared_ptr<Cell>, std::shared_ptr<Cell>>> edges;
         std::vector<std::vector<std::shared_ptr<Cell>>> bucketCells;
-        bucketCells.resize(height * width);
+        bucketCells.resize((height - 1) * width + (width - 1) * height ); // #edges
         {
           unsigned int nodeId = 0;
           for (auto itX = mazeMatrix.begin(); itX != mazeMatrix.end(); ++itX)
             for (auto itY = itX->begin(); itY != itX->end(); ++itY, ++nodeId)
             {
               (*itY)->SetBucketId(nodeId);
-              mazeRemainingCells.insert(*itY);
               bucketCells[nodeId].push_back(*itY);
+
+              // Insert Right edge if available
+              if ((*itY)->GetX() + 1 < mazeMatrix.size())
+                edges.insert(std::make_pair(*itY, mazeMatrix[(*itY)->GetX() + 1][(*itY)->GetY()]));
+
+              // Insert Bottom edge if available
+              if ((*itY)->GetY() + 1 < itX->size())
+                edges.insert(std::make_pair(*itY, mazeMatrix[(*itY)->GetX()][(*itY)->GetY() + 1]));
             }
         }
 
@@ -255,34 +262,48 @@ namespace SHA_Logger
         writer.Key("logs");
         writer.StartArray();
 
-        while (!mazeRemainingCells.empty())
+        // Compute each edge
+        while (!edges.empty())
         {
           // Select randomly a cell to extend
-          auto curCellIt = mazeRemainingCells.begin();
-          std::advance(curCellIt, mt() % mazeRemainingCells.size());
+          auto curCellIt = edges.begin();
+          std::advance(curCellIt, mt() % edges.size());
 
-          /// LOG SET
-          writer.StartObject();
-            writer.Key("type");
-            writer.String("operation");
-            writer.Key("name");
-            writer.String("Set");
-            writer.Key("ref");
-            writer.String("curNode");
-            writer.Key("indexes");
-            writer.StartArray();
-              writer.Int((*curCellIt)->GetX());
-              writer.Int((*curCellIt)->GetY());
-            writer.EndArray();
-            writer.Key("rootDistance");
-            writer.Int((*curCellIt)->GetRootDistance());
-          writer.EndObject();
-
-          // Randomly get an edge cell at random
-          auto neigbours = GetAvailableNeighbours(mazeMatrix, *(*curCellIt).get());
-          if (!neigbours.empty())
+          // Randomly get an edge cell at random and connect the cells if not already connected
+          if ((*curCellIt).first->GetBucketId() != (*curCellIt).second->GetBucketId())
           {
-            auto randIdx = mt() % neigbours.size();
+            /// LOG SET
+            writer.StartObject();
+              writer.Key("type");
+              writer.String("operation");
+              writer.Key("name");
+              writer.String("Set");
+              writer.Key("ref");
+              writer.String("curNode");
+              writer.Key("indexes");
+              writer.StartArray();
+                writer.Int((*curCellIt).second->GetX());
+                writer.Int((*curCellIt).second->GetY());
+              writer.EndArray();
+              writer.Key("rootDistance");
+              writer.Int((*curCellIt).second->GetRootDistance());
+            writer.EndObject();
+
+            writer.StartObject();
+              writer.Key("type");
+              writer.String("operation");
+              writer.Key("name");
+              writer.String("Set");
+              writer.Key("ref");
+              writer.String("curNode");
+              writer.Key("indexes");
+              writer.StartArray();
+                writer.Int((*curCellIt).first->GetX());
+                writer.Int((*curCellIt).first->GetY());
+              writer.EndArray();
+              writer.Key("rootDistance");
+              writer.Int((*curCellIt).first->GetRootDistance());
+            writer.EndObject();
 
             /// LOG CONNECT
             writer.StartObject();
@@ -294,17 +315,17 @@ namespace SHA_Logger
               writer.String("curNode");
               writer.Key("indexes");
               writer.StartArray();
-                writer.Int(neigbours[randIdx]->GetX());
-                writer.Int(neigbours[randIdx]->GetY());
+                writer.Int((*curCellIt).second->GetX());
+                writer.Int((*curCellIt).second->GetY());
               writer.EndArray();
             writer.EndObject();
 
             // Merge the sets
-            MergeBucket(bucketCells, (*curCellIt)->GetBucketId(), neigbours[randIdx]->GetBucketId());
+            MergeBucket(bucketCells, (*curCellIt).first->GetBucketId(), (*curCellIt).second->GetBucketId());
           }
 
           // Remove computed cell from the set
-          mazeRemainingCells.erase(curCellIt);
+          edges.erase(curCellIt);
         }
 
         Operation::Return<bool>(writer, true);
@@ -318,36 +339,6 @@ namespace SHA_Logger
         writer.EndObject();
 
         return true;
-      }
-
-
-      ///
-      /// @return available neighbours that is not already part of the same set.
-      static std::vector<std::shared_ptr<Cell>> GetAvailableNeighbours(
-            const std::vector<std::vector<std::shared_ptr<Cell>>>& mazeMatrix,
-            const Cell& cell)
-      {
-        std::vector<std::shared_ptr<Cell>> neighbour;
-
-        const auto curX = cell.GetX();
-        const auto curY = cell.GetY();
-
-        // Push left if available
-        if (curX > 0 && cell.GetBucketId() != mazeMatrix[curX - 1][curY]->GetBucketId())
-          neighbour.push_back(mazeMatrix[curX - 1][curY]);
-        // Push bottom if available
-        if (curY > 0 && cell.GetBucketId() != mazeMatrix[curX][curY - 1]->GetBucketId())
-          neighbour.push_back(mazeMatrix[curX][curY - 1]);
-        // Push top if available
-        if (curX + 1 < mazeMatrix.size() &&
-            cell.GetBucketId() != mazeMatrix[curX + 1][curY]->GetBucketId())
-          neighbour.push_back(mazeMatrix[curX + 1][curY]);
-        // Push right if available
-        if (curY + 1 < mazeMatrix[curX].size() &&
-            cell.GetBucketId() != mazeMatrix[curX][curY + 1]->GetBucketId())
-          neighbour.push_back(mazeMatrix[curX][curY + 1]);
-
-        return neighbour;
       }
 
       /// Merge two buckets of node together and update node bucket Id.
