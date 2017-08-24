@@ -220,7 +220,6 @@ namespace SHA_Logger
           writer.EndArray();
         writer.EndObject();
 
-
         // Initialize random generator based on Mersenne Twister algorithm
         // @todo use seed / random generator parameter (also usefull for testing purpose)
         std::mt19937 mt(std::chrono::high_resolution_clock::now().time_since_epoch().count());

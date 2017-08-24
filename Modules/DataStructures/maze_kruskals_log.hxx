@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <chrono>
 #include <memory>
+#include <queue>
 #include <random>
 #include <set>
 #include <vector>
@@ -54,8 +55,21 @@ namespace SHA_Logger
     unsigned int GetBucketId() const { return this->bucketId; }
 
     // @todo this information should not be part the cell info itself
+    static const std::shared_ptr<Cell>& Visite(const std::shared_ptr<Cell>& cell)
+    {
+      cell->isVisited = true;
+      return cell;
+    }
+    bool IsVisited() const { return this->isVisited; }
+
+    // @todo this information should not be part the cell info itself
     int GetRootDistance() const { return this->rootDistance; }
     void SetRootDistance(const int distance) { this->rootDistance = distance; }
+
+    void AddConnection(std::shared_ptr<Cell> cell)
+    { this->connectedCells.push_back(cell); }
+    std::vector<std::weak_ptr<Cell>>& GetConnections()
+    { return this->connectedCells; }
 
     void Write(Writer& writer)
     {
@@ -72,11 +86,18 @@ namespace SHA_Logger
     unsigned int y;
 
     int rootDistance;       // @todo cf. above
+    bool isVisited; // @todo cf. above
     unsigned int bucketId;
+    std::vector<std::weak_ptr<Cell>> connectedCells;
   };
+
+  typedef std::shared_ptr<Cell> CellShared;
+  typedef std::weak_ptr<Cell> CellWeak;
+  typedef std::vector<std::vector<CellShared>> MazeMatrixShared;
 
   /// @class MazeKruskalsLog
   ///
+  /// Static Distance Fill --> will be useful for Binary && sidewinder
   class MazeKruskalsLog
   {
     public:
@@ -218,9 +239,6 @@ namespace SHA_Logger
         // @todo use seed / random generator parameter (also usefull for testing purpose)
         std::mt19937 mt(std::chrono::high_resolution_clock::now().time_since_epoch().count());
 
-        // Keep track of maximum path distance
-        int maxDistance = 0;
-
         // Fill the set with all possible edges
         std::set<std::pair<std::shared_ptr<Cell>, std::shared_ptr<Cell>>> edges;
         std::vector<std::vector<std::shared_ptr<Cell>>> bucketCells;
@@ -320,6 +338,10 @@ namespace SHA_Logger
               writer.EndArray();
             writer.EndObject();
 
+            // Add bothway connection
+            (*curCellIt).first->AddConnection((*curCellIt).second);
+            (*curCellIt).second->AddConnection((*curCellIt).first);
+
             // Merge the sets
             MergeBucket(bucketCells, (*curCellIt).first->GetBucketId(), (*curCellIt).second->GetBucketId());
           }
@@ -327,6 +349,9 @@ namespace SHA_Logger
           // Remove computed cell from the set
           edges.erase(curCellIt);
         }
+
+        // Write distances information
+        int maxDistance = WriteDistances(writer, mazeMatrix, *(mazeMatrix[0][0].get()));
 
         Operation::Return<bool>(writer, true);
         writer.EndArray();
@@ -341,14 +366,94 @@ namespace SHA_Logger
         return true;
       }
 
+      ///
+      /// \brief BuildDistance
+      /// \param maze
+      /// \param startCell
+      ///
+      /// @todo generic method for all maze
+      /// @templatize with filling strategy (dfs/prims/...)
+      static unsigned int WriteDistances(Writer& writer, MazeMatrixShared& maze, Cell& startCell)
+      {
+        int maxDistance = 0;
+        startCell.SetRootDistance(maxDistance);
+        std::queue<std::shared_ptr<Cell>> pathQueue;
+        pathQueue.push(maze[startCell.GetX()][startCell.GetY()]);
+
+        // Go through each cell once
+        while (!pathQueue.empty())
+        {
+          // Next node to be computed
+          auto curCell = pathQueue.front();
+          pathQueue.pop();
+          Cell::Visite(curCell);
+          maxDistance = std::max(maxDistance, curCell->GetRootDistance());
+
+          /// LOG Distance
+          writer.StartObject();
+            writer.Key("type");
+            writer.String("operation");
+            writer.Key("name");
+            writer.String("SetDistance");
+            writer.Key("ref");
+            writer.String("pathSet");
+            writer.Key("indexes");
+            writer.StartArray();
+              writer.Int(curCell->GetX());
+              writer.Int(curCell->GetY());
+            writer.EndArray();
+            writer.Key("connections");
+            writer.StartArray();
+
+              // Set distance and add node to be computed to the list
+              for (auto it = curCell->GetConnections().begin() ; it != curCell->GetConnections().end(); ++it)
+              {
+                auto neighboor = it->lock();
+                if (neighboor->IsVisited())
+                  continue;
+
+                // Log connection
+                writer.StartArray();
+                  writer.Int(neighboor->GetX());
+                  writer.Int(neighboor->GetY());
+                writer.EndArray();
+
+                neighboor->SetRootDistance(curCell->GetRootDistance() + 1);
+                pathQueue.push(neighboor);
+
+                /// LOG Distance
+                /*writer.StartObject();
+                  writer.Key("type");
+                  writer.String("operation");
+                  writer.Key("name");
+                  writer.String("SetDistance");
+                  writer.Key("ref");
+                  writer.String("pathSet");
+                  writer.Key("indexes");
+                  writer.StartArray();
+                    writer.Int(neighboor->GetX());
+                    writer.Int(neighboor->GetY());
+                  writer.EndArray();
+                  writer.Key("value");
+                  writer.Int(neighboor->GetRootDistance());
+                writer.EndObject();*/
+              }
+            writer.EndArray();
+            writer.Key("value");
+            writer.Int(curCell->GetRootDistance());
+          writer.EndObject();
+        }
+
+        return maxDistance;
+      }
+
       /// Merge two buckets of node together and update node bucket Id.
       ///
       /// @brief MergeBucket
       /// @param buckets
       /// @param bucketIdA
       /// @param bucketIdB
-      static void MergeBucket(std::vector<std::vector<std::shared_ptr<Cell>>>& buckets,
-                              unsigned int bucketIdA, unsigned int bucketIdB)
+      static void MergeBucket(MazeMatrixShared& buckets, unsigned int bucketIdA, unsigned int bucketIdB)
       {
         assert(bucketIdA != bucketIdB);
 
