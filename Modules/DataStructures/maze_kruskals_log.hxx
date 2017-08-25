@@ -42,8 +42,8 @@ namespace SHA_Logger
   // CellInfo - Template parameter
   class Cell {
   public:
-    Cell() : x(0), y(0), rootDistance(-1) {}
-    Cell(unsigned int x, unsigned int y) : x(x), y(y) {}
+    Cell() : x(0), y(0), rootDistance(-1), isVisited(false) {}
+    Cell(unsigned int x, unsigned int y) : x(x), y(y), isVisited(false) {}
 
     unsigned int GetX() const { return this->x; }
     unsigned int GetY() const { return this->y; }
@@ -86,7 +86,7 @@ namespace SHA_Logger
     unsigned int y;
 
     int rootDistance;       // @todo cf. above
-    bool isVisited; // @todo cf. above
+    bool isVisited;         // @todo cf. above
     unsigned int bucketId;
     std::vector<std::weak_ptr<Cell>> connectedCells;
   };
@@ -408,35 +408,17 @@ namespace SHA_Logger
               // Set distance and add node to be computed to the list
               for (auto it = curCell->GetConnections().begin() ; it != curCell->GetConnections().end(); ++it)
               {
-                auto neighboor = it->lock();
-                if (neighboor->IsVisited())
-                  continue;
-
-                // Log connection
-                writer.StartArray();
-                  writer.Int(neighboor->GetX());
-                  writer.Int(neighboor->GetY());
-                writer.EndArray();
-
-                neighboor->SetRootDistance(curCell->GetRootDistance() + 1);
-                pathQueue.push(neighboor);
-
-                /// LOG Distance
-                /*writer.StartObject();
-                  writer.Key("type");
-                  writer.String("operation");
-                  writer.Key("name");
-                  writer.String("SetDistance");
-                  writer.Key("ref");
-                  writer.String("pathSet");
-                  writer.Key("indexes");
+                if (auto neighboor = it->lock() && !neighboor->IsVisited())
+                {
+                  // Log connection
                   writer.StartArray();
                     writer.Int(neighboor->GetX());
                     writer.Int(neighboor->GetY());
                   writer.EndArray();
-                  writer.Key("value");
-                  writer.Int(neighboor->GetRootDistance());
-                writer.EndObject();*/
+
+                  neighboor->SetRootDistance(curCell->GetRootDistance() + 1);
+                  pathQueue.push(neighboor);
+                }
               }
             writer.EndArray();
             writer.Key("value");

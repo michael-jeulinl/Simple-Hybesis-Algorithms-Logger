@@ -30,6 +30,7 @@
 // STD includes
 #include <chrono>
 #include <memory>
+#include <queue>
 #include <random>
 #include <stack>
 #include <vector>
@@ -38,29 +39,30 @@
 
 namespace SHA_Logger
 {
-  class CellBT {
+  class Cell {
   public:
-    CellBT() : x(0), y(0), isVisited(false) {}
-    CellBT(unsigned int x, unsigned int y, bool isVisited) :
-      x(x), y(y), isVisited(isVisited) {}
+    Cell() : x(0), y(0), rootDistance(0), isVisited(false) {}
+    Cell(unsigned int x, unsigned int y) : x(x), y(y), isVisited(false) {}
 
     unsigned int GetX() const { return this->x; }
     unsigned int GetY() const { return this->y; }
 
-    // @todo this information should not be part the CellBT info itself
-    static const std::shared_ptr<CellBT>& Visite(const std::shared_ptr<CellBT>& CellBT)
+    // Add a connection
+    //
+    void AddConnection(std::shared_ptr<Cell> cell)
+    { this->connectedCells.push_back(cell); }
+    std::vector<std::weak_ptr<Cell>>& GetConnections()
+    { return this->connectedCells; }
+
+    // @todo this information should not be part the cell info itself
+    static const std::shared_ptr<Cell>& Visite(const std::shared_ptr<Cell>& cell, bool visite = true)
     {
-      CellBT->isVisited = true;
-      return CellBT;
+      cell->isVisited = visite;
+      return cell;
     }
     bool IsVisited() const { return this->isVisited; }
 
-    // Add a connection
-    //
-    void AddCellConnection(std::shared_ptr<CellBT> CellBT)
-    { connectedCells.push_back(CellBT); }
-
-    // @todo this information should not be part the CellBT info itself
+    // @todo this information should not be part the Cell info itself
     int GetRootDistance() const { return this->rootDistance; }
     void SetRootDistance(const int distance) { this->rootDistance = distance; }
 
@@ -71,7 +73,7 @@ namespace SHA_Logger
         writer.Int(this->x);
         writer.Key("y");
         writer.Int(this->y);
-        writer.Key("connectedCellBTs");
+        writer.Key("connectedCells");
         writer.StartArray();
           //for (auto it = )
         writer.EndArray();
@@ -82,11 +84,14 @@ namespace SHA_Logger
     unsigned int x;
     unsigned int y;
 
-    bool isVisited; // @todo cf. above
     int rootDistance; // @todo cf. above
-
-    std::vector<std::shared_ptr<CellBT>> connectedCells;
+    bool isVisited;         // @todo cf. above
+    std::vector<std::weak_ptr<Cell>> connectedCells;
   };
+
+  typedef std::shared_ptr<Cell> CellShared;
+  typedef std::weak_ptr<Cell> CellWeak;
+  typedef std::vector<std::vector<CellShared>> MazeMatrixShared;
 
   /// @class MazeBinaryTreeLog
   ///
@@ -188,22 +193,25 @@ namespace SHA_Logger
       }
 
       ///
-      static bool WriteComputation(Writer& writer, const unsigned int width, const unsigned int height)
+      static bool WriteComputation(
+          Writer& writer, const unsigned int width, const unsigned int height,
+          const Cell& startCell = Cell(0,0),
+          unsigned int seed = std::chrono::high_resolution_clock::now().time_since_epoch().count())
       {
         // Init Matrix
-        std::vector<std::vector<std::shared_ptr<CellBT>>> mazeMatrix;
+        std::vector<std::vector<std::shared_ptr<Cell>>> mazeMatrix;
         mazeMatrix.resize(width);
         for (unsigned int x = 0; x < width; ++x)
         {
           mazeMatrix[x].reserve(height);
           for (unsigned int y = 0; y < height; ++y)
-            mazeMatrix[x].push_back(std::shared_ptr<CellBT>(new CellBT(x, y, false)));
+            mazeMatrix[x].push_back(std::shared_ptr<Cell>(new Cell(x, y)));
         }
 
         /// LOG MATRIX
         // @todo build matrix in Log (check to generalize array etc - no name / no iterator needed for raw)
         // @ build during initialization
-        // the cell should be able to log itself to --> CellBT::Build
+        // the cell should be able to log itself to --> Cell::Build
         writer.Key("structure");
         writer.StartObject();
           writer.Key("type");
@@ -252,7 +260,6 @@ namespace SHA_Logger
         // While there is node to be handled
         writer.Key("logs");
         writer.StartArray();
-        int maxDistance = 0;
 
         /// LOG COMPUTATION
         for (unsigned int y = 0; y < height; ++y)
@@ -260,7 +267,7 @@ namespace SHA_Logger
           for (unsigned int x = 0; x < width; ++x)
           {
             // Get available neighbours
-            auto curCell = CellBT::Visite(mazeMatrix[x][y]);
+            auto curCell = Cell::Visite(mazeMatrix[x][y]);
             auto curNeighbours = GetAvailableNeighbours(mazeMatrix, *curCell.get());
 
             if (curNeighbours.empty()) {
@@ -282,14 +289,14 @@ namespace SHA_Logger
               writer.EndObject();
 
               continue;
-
             }
 
             // Randomly select a node to be processed
             auto randIdx = mt() % curNeighbours.size();
-            curCell->AddCellConnection(curNeighbours[randIdx]);
-            curCell->SetRootDistance(curNeighbours[randIdx]->GetRootDistance() + 1);
-            maxDistance = std::max(maxDistance, curCell->GetRootDistance());
+            curCell->AddConnection(curNeighbours[randIdx]);
+            curNeighbours[randIdx]->AddConnection(curCell);
+            //curCell->SetRootDistance(curNeighbours[randIdx]->GetRootDistance() + 1);
+            //maxDistance = std::max(maxDistance, curCell->GetRootDistance());
 
             /// LOG SET
             writer.StartObject();
@@ -325,6 +332,13 @@ namespace SHA_Logger
           }
         }
 
+        // Write distances information
+        // @todo should not be done here cf. previous todo facto
+        for (auto itX = mazeMatrix.begin(); itX != mazeMatrix.end(); ++itX)
+          for (auto itCell = itX->begin(); itCell != itX->end(); ++itCell)
+            Cell::Visite(*itCell, false);
+        int maxDistance = WriteDistances(writer, mazeMatrix, *(mazeMatrix[0][0].get()));
+
         /// LOG CLOSING
         Operation::Return<bool>(writer, true);
         writer.EndArray();
@@ -342,11 +356,11 @@ namespace SHA_Logger
 
       ///
       /// @return neighbours that has not been visited yet.
-      static std::vector<std::shared_ptr<CellBT>> GetAvailableNeighbours(
-            const std::vector<std::vector<std::shared_ptr<CellBT>>>& mazeMatrix,
-            const CellBT& cell)
+      static std::vector<std::shared_ptr<Cell>> GetAvailableNeighbours(
+            const std::vector<std::vector<std::shared_ptr<Cell>>>& mazeMatrix,
+            const Cell& cell)
       {
-        std::vector<std::shared_ptr<CellBT>> neighbours;
+        std::vector<std::shared_ptr<Cell>> neighbours;
 
         const auto curX = cell.GetX();
         const auto curY = cell.GetY();
@@ -362,6 +376,70 @@ namespace SHA_Logger
           neighbours.push_back(mazeMatrix[curX][curY - 1]);
 
         return neighbours;
+      }
+
+      ///
+      /// \brief BuildDistance
+      /// \param maze
+      /// \param startCell
+      ///
+      /// @todo generic method for all maze
+      /// @templatize with filling strategy (dfs/prims/...)
+      static unsigned int WriteDistances(Writer& writer, MazeMatrixShared& maze, Cell& startCell)
+      {
+        int maxDistance = 0;
+        startCell.SetRootDistance(maxDistance);
+        std::queue<std::shared_ptr<Cell>> pathQueue;
+        pathQueue.push(maze[startCell.GetX()][startCell.GetY()]);
+
+        // Go through each cell once
+        while (!pathQueue.empty())
+        {
+          // Next node to be computed
+          auto curCell = pathQueue.front();
+          pathQueue.pop();
+          Cell::Visite(curCell);
+          maxDistance = std::max(maxDistance, curCell->GetRootDistance());
+
+          /// LOG Distance
+          writer.StartObject();
+            writer.Key("type");
+            writer.String("operation");
+            writer.Key("name");
+            writer.String("SetDistance");
+            writer.Key("ref");
+            writer.String("pathSet");
+            writer.Key("indexes");
+            writer.StartArray();
+              writer.Int(curCell->GetX());
+              writer.Int(curCell->GetY());
+            writer.EndArray();
+            writer.Key("connections");
+            writer.StartArray();
+
+              // Set distance and add node to be computed to the list
+              for (auto it = curCell->GetConnections().begin() ; it != curCell->GetConnections().end(); ++it)
+              {
+                auto neighboor = it->lock();
+                if (neighboor && !neighboor->IsVisited())
+                {
+                  // Log connection
+                  writer.StartArray();
+                    writer.Int(neighboor->GetX());
+                    writer.Int(neighboor->GetY());
+                  writer.EndArray();
+
+                  neighboor->SetRootDistance(curCell->GetRootDistance() + 1);
+                  pathQueue.push(neighboor);
+                }
+              }
+            writer.EndArray();
+            writer.Key("value");
+            writer.Int(curCell->GetRootDistance());
+          writer.EndObject();
+        }
+
+        return maxDistance;
       }
 
       std::unique_ptr<Stream> stream; // Stream wrapper
