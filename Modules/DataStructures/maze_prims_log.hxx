@@ -370,6 +370,9 @@ namespace SHA_Logger
           pathSet.erase(curCellIt);
         }
 
+        // Write distances information
+        int maxDistance = WriteDistances(writer, mazeMatrix, *(mazeMatrix[0][0].get()));
+
         Operation::Return<bool>(writer, true);
         writer.EndArray();
 
