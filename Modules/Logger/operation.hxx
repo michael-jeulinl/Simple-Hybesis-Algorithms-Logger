@@ -124,7 +124,7 @@ namespace SHA_Logger
 
     private:
       Operation(Ostream& os) : stream(std::unique_ptr<Stream>(new Stream(os))),
-                                    writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
+                               writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
       Operation operator=(Operation&) {} // Not Implemented
 
       template <typename T>
