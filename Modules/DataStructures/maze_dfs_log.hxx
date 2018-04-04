@@ -28,7 +28,6 @@
 #include <Logger/value.hxx>
 
 // STD includes
-#include <chrono>
 #include <memory>
 #include <random>
 #include <stack>
@@ -39,10 +38,10 @@ namespace SHA_Logger
   class Cell {
   public:
     Cell() : x(0), y(0), isVisited(false) {}
-    Cell(unsigned int x, unsigned int y, bool isVisited) : x(x), y(y), isVisited(isVisited) {}
+    Cell(uint8_t x, uint8_t y, bool isVisited) : x(x), y(y), isVisited(isVisited) {}
 
-    unsigned int GetX() const { return this->x; }
-    unsigned int GetY() const { return this->y; }
+    uint8_t GetX() const { return this->x; }
+    uint8_t GetY() const { return this->y; }
 
     // @todo this information should not be part the cell info itself
     static const std::shared_ptr<Cell>& Visite(const std::shared_ptr<Cell>& cell)
@@ -54,35 +53,21 @@ namespace SHA_Logger
 
     // Add a connection
     //
-    void AddCellConnection(std::shared_ptr<Cell> cell)
+    void AddCellConnection(std::weak_ptr<Cell> cell)
     { connectedCells.push_back(cell); }
 
     // @todo this information should not be part the cell info itself
     int GetRootDistance() const { return this->rootDistance; }
     void SetRootDistance(const int distance) { this->rootDistance = distance; }
 
-    void Write(Writer& writer)
-    {
-      writer.StartObject();
-        writer.Key("x");
-        writer.Int(this->x);
-        writer.Key("y");
-        writer.Int(this->y);
-        writer.Key("connectedCells");
-        writer.StartArray();
-          //for (auto it = )
-        writer.EndArray();
-      writer.EndObject();
-    }
-
   private:
-    unsigned int x;
-    unsigned int y;
+    uint8_t x;
+    uint8_t y;
 
-    bool isVisited; // @todo cf. above
+    bool isVisited;   // @todo cf. above
     int rootDistance; // @todo cf. above
 
-    std::vector<std::shared_ptr<Cell>> connectedCells;
+    std::vector<std::weak_ptr<Cell>> connectedCells;
   };
 
   /// @class MazeDFSLog
@@ -90,20 +75,7 @@ namespace SHA_Logger
   class MazeDFSLog
   {
     public:
-      /// eg https://cs.chromium.org/chromium/src/gpu/config/software_rendering_list_json.cc
-      static const String GetName() { return "Maze_Sort"; }
-
-      /// Write datastructure information
-      /// @todo Use string litteral for JSON description within c++ code
-      static bool WriteInfo(Writer& writer) { return true; }
-
-      /// Write datastructure decription
-      /// @todo Use string litteral for JSON description within c++ code
-      static bool WriteDoc(Writer& writer) { return true; }
-
-      /// Write datastructure sources
-      /// @todo Use string litteral for JSON description within c++ code
-      static bool WriteSrc(Writer& writer) { return true; }
+      static const String GetName() { return "DFS Maze Generator"; }
 
       // Assert correct JSON construction.
       ~MazeDFSLog() { assert(this->writer->IsComplete()); }
@@ -113,10 +85,12 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with MazeDFSLog object information,
       ///         error object information in case of failure.
-      static Ostream& Build(Ostream& os, Options opts, const unsigned int width, const unsigned int height)
+      static Ostream& Build(Ostream& os, const uint8_t width, const uint8_t height,
+                            const std::pair<uint8_t, uint8_t>& startCell = std::make_pair(0,0),
+                            const uint8_t seed = 0)
       {
         std::unique_ptr<MazeDFSLog> builder = std::unique_ptr<MazeDFSLog>(new MazeDFSLog(os));
-        builder->Write(opts, width, height);
+        builder->Write(width, height, startCell, seed);
 
         return os;
       }
@@ -125,27 +99,39 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with MazeDFSLog object information,
       ///         error information in case of failure.
-      static Writer& Build(Writer& writer, Options opts, const unsigned int width, const unsigned int height)
+      static Writer& Build(Writer& writer, const uint8_t width, const uint8_t height,
+                           const std::pair<uint8_t, uint8_t>& startCell = std::make_pair(0,0),
+                           const uint8_t seed = 0)
       {
-        Write(writer, opts, width, height);
+        Write(writer, width, height, startCell, seed);
 
         return writer;
       }
 
     private:
       MazeDFSLog(Ostream& os) : stream(std::unique_ptr<Stream>(new Stream(os))),
-                             writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
+                                writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
       MazeDFSLog operator=(MazeDFSLog&) {} // Not Implemented
 
-      bool Write(Options opts, const unsigned int width, const unsigned int height)
-      { return Write(*this->writer, opts, width, height); }
+      bool Write(const uint8_t width, const uint8_t height,
+                 const std::pair<uint8_t, uint8_t>& startCell, const uint8_t seed)
+      { return Write(*this->writer, width, height, startCell, seed); }
 
-      static bool Write(Writer& writer, Options opts, const unsigned int width, const unsigned int height)
+      static bool Write(Writer& writer, const uint8_t width, const uint8_t height,
+                        const std::pair<uint8_t, uint8_t>& startCell, const uint8_t seed)
       {
-        // Do not compute if data incorrect
+        // Do not compute if incorrect size
         if (width < 1 || height < 1)
         {
-          Comment::Build(writer, "Sequence size too small to be processed.", 0);
+          Comment::Build(writer, "Sequence size too small to be processed: abort.", 0);
+          Operation::Return<bool>(writer, true);
+          return true;
+        }
+
+        // Do not compute if incorrect starting cell
+        if (startCell.first >= width || startCell.second >= height)
+        {
+          Comment::Build(writer, "Starting cell out of the maze: abort.", 0);
           Operation::Return<bool>(writer, true);
           return true;
         }
@@ -153,17 +139,21 @@ namespace SHA_Logger
         writer.StartObject();
 
         // Write description
-        //Algo_Traits<MazeDFSLog>::Build(writer, opts);
         writer.Key("type");
         writer.String("DataStructure");
+        writer.Key("structure");
+        writer.StartObject();
+          writer.Key("type");
+          writer.String("2DGrid");
+          writer.Key("width");
+          writer.Int(width);
+          writer.Key("height");
+          writer.Int(height);
+        writer.EndObject();
         writer.Key("name");
         writer.String(GetName());
-
-        // Write parameters
-        WriteParameters(writer, opts, width, height);
-
-        // Write computation
-        WriteComputation(writer, width, height);
+        WriteParameters(writer, width, height, startCell, seed);   // Write parameters
+        WriteComputation(writer, width, height, startCell, seed);  // Write computation
 
         writer.EndObject();
 
@@ -171,64 +161,52 @@ namespace SHA_Logger
       }
 
       ///
-      static bool WriteParameters(Writer& writer, Options opts,
-                                  const unsigned int width, const unsigned int height)
+      static bool WriteParameters(Writer& writer, const uint8_t width, const uint8_t height,
+                                  const std::pair<uint8_t, uint8_t>& startCell, const uint8_t seed)
       {
         writer.Key("parameters");
         writer.StartArray();
-          Value<unsigned int>::Build(writer, "width", width);
-          Value<unsigned int>::Build(writer, "height", height);
+          Value<uint8_t>::Build(writer, "width", width);
+          Value<uint8_t>::Build(writer, "height", height);
+          Value<uint8_t>::Build(writer, "seed", seed);
+          writer.StartObject();
+          writer.Key("type");
+          writer.String("GridPosition");
+          writer.Key("name");
+          writer.String("startCell");
+          writer.Key("data");
+            writer.StartArray();
+              writer.Int(startCell.first);
+              writer.Int(startCell.second);
+            writer.EndArray();
+         writer.EndObject();
         writer.EndArray();
 
         return true;
       }
 
       ///
-      static bool WriteComputation(Writer& writer, const unsigned int width, const unsigned int height)
+      static bool WriteComputation(Writer& writer, const uint8_t width, const uint8_t height,
+                                   const std::pair<uint8_t, uint8_t>& startCell, const uint8_t seed)
       {
         // Init Matrix
         std::vector<std::vector<std::shared_ptr<Cell>>> mazeMatrix;
         mazeMatrix.resize(width);
-        for (unsigned int x = 0; x < width; ++x)
+        for (uint8_t x = 0; x < width; ++x)
         {
           mazeMatrix[x].reserve(height);
-          for (unsigned int y = 0; y < height; ++y)
+          for (uint8_t y = 0; y < height; ++y)
             mazeMatrix[x].push_back(std::shared_ptr<Cell>(new Cell(x, y, false)));
         }
 
-        /// LOG MATRIX
-        // @todo build matrix in Log (check to generalize array etc - no name / no iterator needed for raw)
-        // @ build during initialization
-        // the cell should be able to log itself to --> Cell::Build
-        writer.Key("structure");
-        writer.StartObject();
-          writer.Key("type");
-          writer.String("Matrix");
-          writer.Key("dataType");
-          writer.String("Cell");
-
-          writer.Key("data");
-          writer.StartArray();
-            for (auto itX = mazeMatrix.begin(); itX != mazeMatrix.end(); ++itX)
-            {
-              writer.StartArray();
-              for (auto itY = itX->begin(); itY != itX->end(); ++itY)
-                (*itY)->Write(writer);
-              writer.EndArray();
-            }
-          writer.EndArray();
-        writer.EndObject();
-
-
         // Initialize random generator based on Mersenne Twister algorithm
-        // @todo use seed / random generator parameter (also usefull for testing purpose)
-        std::mt19937 mt(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+        std::mt19937 mt(seed);
 
         // Create Completely connected Maze using DFS
         // @todo use generic generator for RawArray, Matrix, Stack...
         std::stack<std::shared_ptr<Cell>> pathStack;
-        mazeMatrix[0][0]->SetRootDistance(0);
-        pathStack.push(Cell::Visite(mazeMatrix[0][0]));
+        mazeMatrix[startCell.first][startCell.second]->SetRootDistance(0);
+        pathStack.push(Cell::Visite(mazeMatrix[startCell.first][startCell.second]));
 
         /// LOG LOCALS
         writer.Key("locals");
@@ -241,23 +219,12 @@ namespace SHA_Logger
             writer.String("Stack");
             writer.Key("dataType");
             writer.String("Cell");
-            writer.Key("dataIndexes");
+            writer.Key("cells");
             writer.StartArray();
               writer.StartArray();
-                writer.Int(mazeMatrix[0][0]->GetX());
-                writer.Int(mazeMatrix[0][0]->GetY());
+                writer.Int(startCell.first);
+                writer.Int(startCell.second);
               writer.EndArray();
-            writer.EndArray();
-          writer.EndObject();
-
-          /// LOG CURRENT NODE
-          writer.StartObject();
-            writer.Key("name");
-            writer.String("curNode");
-            writer.Key("indexes");
-            writer.StartArray();
-              writer.Int(mazeMatrix[0][0]->GetX());
-              writer.Int(mazeMatrix[0][0]->GetY());
             writer.EndArray();
           writer.EndObject();
         writer.EndArray();
@@ -266,40 +233,36 @@ namespace SHA_Logger
         writer.Key("logs");
         writer.StartArray();
         int maxDistance = 0;
+        int maxStackSize = 0;
+
+        Comment::Build(writer, "While there is node within the stack:", 0);
+        Comment::Build(writer, "Take node at the top and retrieve all its unvisited neighboors.", 1);
+        Comment::Build(writer, "Randomly select a node to be processed", 1);
+        Comment::Build(writer, std::string("For each available node: connect and ") +
+                               "push it into the stack with the selected one to the top.", 1);
         while (!pathStack.empty())
         {
           // Handle the cell at the top of the stack
-          // @todo optimize using ref && indexes instead of writing whole object
+          maxStackSize = std::max(maxStackSize, static_cast<int>(pathStack.size()));
           std::shared_ptr<Cell> curCell = pathStack.top();
+          pathStack.pop();
           maxDistance = std::max(maxDistance, curCell->GetRootDistance());
 
-          /// LOG SET
+          /// LOG Select Pop
           writer.StartObject();
             writer.Key("type");
             writer.String("operation");
             writer.Key("name");
-            writer.String("Set");
+            writer.String("SelectPop");
             writer.Key("ref");
-            writer.String("curNode");
-            writer.Key("indexes");
+            writer.String("pathStack");
+            writer.Key("cell");
             writer.StartArray();
               writer.Int(curCell->GetX());
               writer.Int(curCell->GetY());
             writer.EndArray();
             writer.Key("rootDistance");
             writer.Int(curCell->GetRootDistance());
-          writer.EndObject();
-
-          pathStack.pop();
-
-          /// LOG POP
-          writer.StartObject();
-            writer.Key("type");
-            writer.String("operation");
-            writer.Key("name");
-            writer.String("Pop");
-            writer.Key("ref");
-            writer.String("pathStack");
           writer.EndObject();
 
           // Get available neighbours
@@ -313,7 +276,7 @@ namespace SHA_Logger
 
             // For each available node we make a connection and push it into the stack of being processed
             // Only the choosen item should be add to the top following a DFS strategy
-            for (unsigned int i = 0; i < curNeighbours.size(); ++i)
+            for (uint8_t i = 0; i < curNeighbours.size(); ++i)
             {
               curCell->AddCellConnection(Cell::Visite(curNeighbours[i]));
               curNeighbours[i]->SetRootDistance(curCell->GetRootDistance() + 1);
@@ -323,13 +286,17 @@ namespace SHA_Logger
                 writer.Key("type");
                 writer.String("operation");
                 writer.Key("name");
-                writer.String("Connect");
-                writer.Key("ref");
-                writer.String("curNode");
-                writer.Key("indexes");
+                writer.String("ConnectCells");
+                writer.Key("cells");
                 writer.StartArray();
-                  writer.Int(curNeighbours[i]->GetX());
-                  writer.Int(curNeighbours[i]->GetY());
+                  writer.StartArray();
+                    writer.Int(curCell->GetX());
+                    writer.Int(curCell->GetY());
+                  writer.EndArray();
+                  writer.StartArray();
+                    writer.Int(curNeighbours[i]->GetX());
+                    writer.Int(curNeighbours[i]->GetY());
+                  writer.EndArray();
                 writer.EndArray();
               writer.EndObject();
 
@@ -345,7 +312,7 @@ namespace SHA_Logger
                   writer.String("Push");
                   writer.Key("ref");
                   writer.String("pathStack");
-                  writer.Key("indexes");
+                  writer.Key("cell");
                   writer.StartArray();
                     writer.Int(curNeighbours[i]->GetX());
                     writer.Int(curNeighbours[i]->GetY());
@@ -365,7 +332,7 @@ namespace SHA_Logger
               writer.String("Push");
               writer.Key("ref");
               writer.String("pathStack");
-              writer.Key("indexes");
+              writer.Key("cell");
               writer.StartArray();
                 writer.Int(curNeighbours[randIdx]->GetX());
                 writer.Int(curNeighbours[randIdx]->GetY());
@@ -380,8 +347,22 @@ namespace SHA_Logger
         // Add Statistical informations
         writer.Key("stats");
         writer.StartObject();
+          // Max Distance
           writer.Key("maxDistance");
           writer.Int(maxDistance);
+
+          // Memory
+          writer.Key("memory");
+          writer.StartObject();
+            writer.Key("type");
+            writer.String("stack");
+            writer.Key("object");
+            writer.String("cell");
+            writer.Key("maxSize");
+            writer.Int(maxStackSize);
+            writer.Key("initialSize");
+            writer.Int(1);
+          writer.EndObject();
         writer.EndObject();
 
         return true;

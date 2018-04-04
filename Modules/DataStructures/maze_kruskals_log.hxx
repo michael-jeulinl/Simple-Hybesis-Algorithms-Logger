@@ -29,7 +29,6 @@
 
 // STD includes
 #include <algorithm>
-#include <chrono>
 #include <memory>
 #include <queue>
 #include <random>
@@ -43,13 +42,13 @@ namespace SHA_Logger
   class Cell {
   public:
     Cell() : x(0), y(0), isVisited(false) {}
-    Cell(unsigned int x, unsigned int y) : x(x), y(y), isVisited(false) {}
+    Cell(uint8_t x, uint8_t y) : x(x), y(y), isVisited(false) {}
 
-    unsigned int GetX() const { return this->x; }
-    unsigned int GetY() const { return this->y; }
+    uint8_t GetX() const { return this->x; }
+    uint8_t GetY() const { return this->y; }
 
-    void SetBucketId(unsigned int id) { this->bucketId = id; }  // Set Bucket connection cell
-    unsigned int GetBucketId() const { return this->bucketId; } // Get bucket cell owner
+    void SetBucketId(uint32_t id) { this->bucketId = id; }  // Set Bucket connection cell
+    uint32_t GetBucketId() const { return this->bucketId; } // Get bucket cell owner
 
     // @todo this information should not be part the cell info itself
     static const std::shared_ptr<Cell>& Visite(const std::shared_ptr<Cell>& cell)
@@ -65,11 +64,11 @@ namespace SHA_Logger
     { return this->connectedCells; }
 
   private:
-    unsigned int x;
-    unsigned int y;
+    uint8_t x;
+    uint8_t y;
 
     bool isVisited;         // @todo cf. above
-    unsigned int bucketId;
+    uint32_t bucketId;      // Precision should be above than 2 * (uint8_t * uint8_t)
     std::vector<std::weak_ptr<Cell>> connectedCells;
   };
 
@@ -93,10 +92,10 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with MazeKruskalsLog object information,
       ///         error object information in case of failure.
-      static Ostream& Build(Ostream& os, Options opts, const unsigned int width, const unsigned int height)
+      static Ostream& Build(Ostream& os, const uint8_t width, const uint8_t height, const uint8_t seed = 0)
       {
         std::unique_ptr<MazeKruskalsLog> builder = std::unique_ptr<MazeKruskalsLog>(new MazeKruskalsLog(os));
-        builder->Write(opts, width, height);
+        builder->Write(width, height, seed);
 
         return os;
       }
@@ -105,9 +104,9 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with MazeKruskalsLog object information,
       ///         error information in case of failure.
-      static Writer& Build(Writer& writer, Options opts, const unsigned int width, const unsigned int height)
+      static Writer& Build(Writer& writer, const uint8_t width, const uint8_t height, const uint8_t seed = 0)
       {
-        Write(writer, opts, width, height);
+        Write(writer, width, height, seed);
 
         return writer;
       }
@@ -117,10 +116,10 @@ namespace SHA_Logger
                                      writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
       MazeKruskalsLog operator=(MazeKruskalsLog&) {} // Not Implemented
 
-      bool Write(Options opts, const unsigned int width, const unsigned int height)
-      { return Write(*this->writer, opts, width, height); }
+      bool Write(const uint8_t width, const uint8_t height, const uint8_t seed)
+      { return Write(*this->writer, width, height, seed); }
 
-      static bool Write(Writer& writer, Options opts, const unsigned int width, const unsigned int height)
+      static bool Write(Writer& writer, const uint8_t width, const uint8_t height, const uint8_t seed)
       {
         // Do not compute if data incorrect
         if (width < 1 || height < 1)
@@ -146,8 +145,8 @@ namespace SHA_Logger
         writer.EndObject();
         writer.Key("name");
         writer.String(GetName());
-        WriteParameters(writer, width, height);   // Write parameters
-        WriteComputation(writer, width, height);  // Write computation
+        WriteParameters(writer, width, height, seed);   // Write parameters
+        WriteComputation(writer, width, height, seed);  // Write computation
 
         writer.EndObject();
 
@@ -155,28 +154,31 @@ namespace SHA_Logger
       }
 
       ///
-      static bool WriteParameters(Writer& writer, const unsigned int width, const unsigned int height)
+      static bool WriteParameters(Writer& writer,
+                                  const uint8_t width, const uint8_t height, const uint8_t seed)
       {
         writer.Key("parameters");
         writer.StartArray();
-          Value<unsigned int>::Build(writer, "width", width);
-          Value<unsigned int>::Build(writer, "height", height);
+          Value<uint8_t>::Build(writer, "width", width);
+          Value<uint8_t>::Build(writer, "height", height);
+          Value<uint8_t>::Build(writer, "seed", seed);
         writer.EndArray();
 
         return true;
       }
 
       ///
-      static bool WriteComputation(Writer& writer, const unsigned int width, const unsigned int height)
+      static bool WriteComputation(Writer& writer,
+                                   const uint8_t width, const uint8_t height, const uint8_t seed)
       {
         // Init Matrix
         std::vector<std::vector<std::shared_ptr<Cell>>> mazeMatrix;
         mazeMatrix.resize(width);
 
-        for (unsigned int x = 0; x < width; ++x)
+        for (uint8_t x = 0; x < width; ++x)
         {
           mazeMatrix[x].reserve(height);
-          for (unsigned int y = 0; y < height; ++y)
+          for (uint8_t y = 0; y < height; ++y)
             mazeMatrix[x].push_back(std::shared_ptr<Cell>(new Cell(x, y)));
         }
 
@@ -198,16 +200,15 @@ namespace SHA_Logger
         writer.Key("logs");
         writer.StartArray();
 
-        // @todo use seed / random generator parameter (also usefull for testing purpose)
         Comment::Build(writer, "Initialize random generator based on Mersenne Twister algorithm.");
-        std::mt19937 mt(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+        std::mt19937 mt(seed);
 
         Comment::Build(writer, "Create buckets for each cell and a set with all possible connecting edges.");
         std::set<std::pair<std::shared_ptr<Cell>, std::shared_ptr<Cell>>> edges;
         std::vector<std::vector<std::shared_ptr<Cell>>> bucketCells;
-        bucketCells.resize((height - 1) * width + (width - 1) * height); // #edges
+        bucketCells.resize(height * width);//(height - 1) * width + (width - 1) * height); // #edges @TODO NOP #cells!
         {
-          unsigned int nodeId = 0;
+          uint32_t nodeId = 0;
           for (auto itX = mazeMatrix.begin(); itX != mazeMatrix.end(); ++itX)
             for (auto itY = itX->begin(); itY != itX->end(); ++itY, ++nodeId)
             {
@@ -232,7 +233,7 @@ namespace SHA_Logger
           auto edgeIt = edges.begin();
           std::advance(edgeIt, mt() % edges.size());
 
-          // Convenient variables for logging
+          // Convenient variables
           const auto cellAPosX = (*edgeIt).first->GetX();
           const auto cellAPosY = (*edgeIt).first->GetY();
           const auto cellABucketId = (*edgeIt).first->GetBucketId();
@@ -245,7 +246,7 @@ namespace SHA_Logger
             writer.Key("type");
             writer.String("operation");
             writer.Key("name");
-            writer.String("SelectEdge");
+            writer.String("SelectEdgePop");
             writer.Key("cells");
             writer.StartArray();
               writer.StartArray();
@@ -278,24 +279,18 @@ namespace SHA_Logger
                   writer.Int(cellBPosY);
                 writer.EndArray();
              writer.EndArray();
+             writer.Key("sub");
+             writer.String("MergeBuckets");
+             writer.Key("buckets");
+             writer.StartArray();
+               writer.Int(cellABucketId);
+               writer.Int(cellBBucketId);
+            writer.EndArray();
             writer.EndObject();
 
-            // Add bothway connection
+            // Add bothway connection and merge buckets
             (*edgeIt).first->AddConnection((*edgeIt).second);
             (*edgeIt).second->AddConnection((*edgeIt).first);
-
-            // Log edge selection
-            writer.StartObject();
-              writer.Key("type");
-              writer.String("operation");
-              writer.Key("name");
-              writer.String("MergeBuckets");
-              writer.Key("buckets");
-              writer.StartArray();
-                writer.Int(cellABucketId);
-                writer.Int(cellBBucketId);
-             writer.EndArray();
-            writer.EndObject();
             MergeBucket(bucketCells, cellABucketId, cellBBucketId);
           }
 
@@ -309,10 +304,20 @@ namespace SHA_Logger
         // Add Statistical informations
         writer.Key("stats");
         writer.StartObject();
-          writer.Key("stackSize");
-          writer.Int((height - 1) * width + (width - 1) * height);
-          writer.Key("nbPushes");
-          writer.Int((height - 1) * width + (width - 1) * height);
+          // Memory
+          writer.Key("memory");
+          writer.StartObject();
+            writer.Key("type");
+            writer.String("set");
+            writer.Key("object");
+            writer.String("edge");
+            writer.Key("maxSize");
+            writer.Int((height - 1) * width + (width - 1) * height);
+            writer.Key("initialSize");
+            writer.Int((height - 1) * width + (width - 1) * height);
+            //writer.Key("nbOperations");
+            //writer.Int((height - 1) * width + (width - 1) * height);
+          writer.EndObject();
         writer.EndObject();
 
         return true;
@@ -325,7 +330,7 @@ namespace SHA_Logger
       /// @param buckets
       /// @param bucketIdA
       /// @param bucketIdB
-      static void MergeBucket(MazeMatrixShared& buckets, unsigned int bucketIdA, unsigned int bucketIdB)
+      static void MergeBucket(MazeMatrixShared& buckets, uint32_t bucketIdA, uint32_t bucketIdB)
       {
         assert(bucketIdA != bucketIdB);
 

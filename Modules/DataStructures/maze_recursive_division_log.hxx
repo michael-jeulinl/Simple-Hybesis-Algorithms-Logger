@@ -42,10 +42,10 @@ namespace SHA_Logger
   class Cell {
   public:
     Cell() : x(0), y(0), rootDistance(0), isVisited(false) {}
-    Cell(unsigned int x, unsigned int y) : x(x), y(y), isVisited(false) {}
+    Cell(uint8_t x, uint8_t y) : x(x), y(y), isVisited(false) {}
 
-    unsigned int GetX() const { return this->x; }
-    unsigned int GetY() const { return this->y; }
+    uint8_t GetX() const { return this->x; }
+    uint8_t GetY() const { return this->y; }
 
     // Add a connection
     //
@@ -68,25 +68,11 @@ namespace SHA_Logger
     int GetRootDistance() const { return this->rootDistance; }
     void SetRootDistance(const int distance) { this->rootDistance = distance; }
 
-    void Write(Writer& writer)
-    {
-      writer.StartObject();
-        writer.Key("x");
-        writer.Int(this->x);
-        writer.Key("y");
-        writer.Int(this->y);
-        writer.Key("connectedCells");
-        writer.StartArray();
-          //for (auto it = )
-        writer.EndArray();
-      writer.EndObject();
-    }
-
   private:
-    unsigned int x;
-    unsigned int y;
+    uint8_t x;
+    uint8_t y;
 
-    int rootDistance; // @todo cf. above
+    int rootDistance;       // @todo cf. above
     bool isVisited;         // @todo cf. above
     std::set<std::weak_ptr<Cell>> connectedCells;
   };
@@ -104,20 +90,7 @@ namespace SHA_Logger
   class MazeRecursiveDivisionLog
   {
     public:
-      /// eg https://cs.chromium.org/chromium/src/gpu/config/software_rendering_list_json.cc
-      static const String GetName() { return "RecursiveDivision_Maze"; }
-
-      /// Write datastructure information
-      /// @todo Use string litteral for JSON description within c++ code
-      static bool WriteInfo(Writer& writer) { return true; }
-
-      /// Write datastructure decription
-      /// @todo Use string litteral for JSON description within c++ code
-      static bool WriteDoc(Writer& writer) { return true; }
-
-      /// Write datastructure sources
-      /// @todo Use string litteral for JSON description within c++ code
-      static bool WriteSrc(Writer& writer) { return true; }
+      static const String GetName() { return "Recursive Division Maze Generator"; }
 
       // Assert correct JSON construction.
       ~MazeRecursiveDivisionLog() { assert(this->writer->IsComplete()); }
@@ -127,10 +100,10 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with MazeRecursiveDivisionLog object information,
       ///         error object information in case of failure.
-      static Ostream& Build(Ostream& os, Options opts, const unsigned int width, const unsigned int height)
+      static Ostream& Build(Ostream& os, const uint8_t width, const uint8_t height, const uint8_t seed = 0)
       {
         auto builder = std::unique_ptr<MazeRecursiveDivisionLog>(new MazeRecursiveDivisionLog(os));
-        builder->Write(opts, width, height);
+        builder->Write(width, height, seed);
 
         return os;
       }
@@ -139,9 +112,9 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with MazeRecursiveDivisionLog object information,
       ///         error information in case of failure.
-      static Writer& Build(Writer& writer, Options opts, const unsigned int width, const unsigned int height)
+      static Writer& Build(Writer& writer, const uint8_t width, const uint8_t height, const uint8_t seed = 0)
       {
-        Write(writer, opts, width, height);
+        Write(writer, width, height, seed);
 
         return writer;
       }
@@ -151,10 +124,10 @@ namespace SHA_Logger
                                               writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
       MazeRecursiveDivisionLog operator=(MazeRecursiveDivisionLog&) = delete; // Not Implemented
 
-      bool Write(Options opts, const unsigned int width, const unsigned int height)
-      { return Write(*this->writer, opts, width, height); }
+      bool Write(const uint8_t width, const uint8_t height, const uint8_t seed)
+      { return Write(*this->writer, width, height, seed); }
 
-      static bool Write(Writer& writer, Options opts, const unsigned int width, const unsigned int height)
+      static bool Write(Writer& writer, const uint8_t width, const uint8_t height, const uint8_t seed)
       {
         // Do not compute if data incorrect
         if (width < 1 || height < 1)
@@ -169,14 +142,21 @@ namespace SHA_Logger
         // Write description
         writer.Key("type");
         writer.String("DataStructure");
+        writer.Key("structure");
+        writer.StartObject();
+          writer.Key("type");
+          writer.String("2DGrid");
+          writer.Key("width");
+          writer.Int(width);
+          writer.Key("height");
+          writer.Int(height);
+          writer.Key("isWallBuilding");
+          writer.Bool(true);
+        writer.EndObject();
         writer.Key("name");
         writer.String(GetName());
-
-        // Write parameters
-        WriteParameters(writer, opts, width, height);
-
-        // Write computation
-        WriteComputation(writer, width, height);
+        WriteParameters(writer, width, height, seed);   // Write parameters
+        WriteComputation(writer, width, height, seed);  // Write computation
 
         writer.EndObject();
 
@@ -184,15 +164,14 @@ namespace SHA_Logger
       }
 
       ///
-      static bool WriteParameters(Writer& writer, Options opts,
-                                  const unsigned int width, const unsigned int height)
+      static bool WriteParameters(Writer& writer,
+                                  const uint8_t width, const uint8_t height, const uint8_t seed)
       {
         writer.Key("parameters");
         writer.StartArray();
-          Value<unsigned int>::Build(writer, "width", width);
-          Value<unsigned int>::Build(writer, "height", height);
-          // Seed
-          // Direction
+          Value<uint8_t>::Build(writer, "width", width);
+          Value<uint8_t>::Build(writer, "height", height);
+          Value<uint8_t>::Build(writer, "seed", seed);
         writer.EndArray();
 
         return true;
@@ -200,7 +179,7 @@ namespace SHA_Logger
 
       static bool WriteSubComputation(
           Writer& writer, std::mt19937& mt,
-          MazeMatrixShared& mazeMatrix, const Cell& offSetCell, const unsigned int width, unsigned int height)
+          MazeMatrixShared& mazeMatrix, const Cell& offSetCell, const uint8_t width, uint8_t height)
       {
         if (width < 2 || height < 2)
           return true;
@@ -208,8 +187,8 @@ namespace SHA_Logger
         // Cut on the biggest side at random position
         // todo rand 2 for which way
         bool isHorizontalCut = (width <= height);
-        unsigned int wallIdx = (isHorizontalCut) ? (mt() % (height - 1)) + 1 : (mt() % (width - 1)) + 1;
-        unsigned int pathIdx = (isHorizontalCut) ? (mt() % (width - 1)) + 1 : (mt() % (height - 1)) + 1;
+        uint8_t wallIdx = (isHorizontalCut) ? (mt() % (height - 1)) + 1 : (mt() % (width - 1)) + 1;
+        uint8_t pathIdx = (isHorizontalCut) ? (mt() % (width - 1)) + 1 : (mt() % (height - 1)) + 1;
 
         /// LOG WALL BUILDING
         writer.StartObject();
@@ -260,7 +239,7 @@ namespace SHA_Logger
         } else
         {
           // Disconnect all cells separated by the wall
-          for (unsigned int y = 0; y < height; ++y)
+          for (uint8_t y = 0; y < height; ++y)
           {
             if (y == pathIdx)
               continue;
@@ -291,17 +270,15 @@ namespace SHA_Logger
       /// @param seed
       /// @return
       ///
-      static bool WriteComputation(
-          Writer& writer, const unsigned int width, const unsigned int height,
-          unsigned int seed = std::chrono::high_resolution_clock::now().time_since_epoch().count())
+      static bool WriteComputation(Writer& writer, const uint8_t width, const uint8_t height, uint8_t seed)
       {
         // Init Matrix - Each cell are connected at the beginning of the algorithm
         MazeMatrixShared mazeMatrix;
         mazeMatrix.resize(width);
-        for (unsigned int x = 0; x < width; ++x)
+        for (uint8_t x = 0; x < width; ++x)
         {
           mazeMatrix[x].reserve(height);
-          for (unsigned int y = 0; y < height; ++y)
+          for (uint8_t y = 0; y < height; ++y)
           {
             mazeMatrix[x].push_back(std::shared_ptr<Cell>(new Cell(x, y)));
 
@@ -318,30 +295,6 @@ namespace SHA_Logger
           }
         }
 
-        /// LOG MATRIX
-        // @todo build matrix in Log (check to generalize array etc - no name / no iterator needed for raw)
-        // @ build during initialization
-        // the cell should be able to log itself to --> Cell::Build
-        writer.Key("structure");
-        writer.StartObject();
-          writer.Key("type");
-          writer.String("Matrix");
-          writer.Key("dataType");
-          writer.String("Cell");
-
-          writer.Key("data");
-          writer.StartArray();
-            for (auto itX = mazeMatrix.begin(); itX != mazeMatrix.end(); ++itX)
-            {
-              writer.StartArray();
-              for (auto itY = itX->begin(); itY != itX->end(); ++itY)
-                (*itY)->Write(writer);
-              writer.EndArray();
-            }
-          writer.EndArray();
-        writer.EndObject();
-
-
         // Initialize random generator based on Mersenne Twister algorithm
         // @todo use seed / random generator parameter (also usefull for testing purpose)
         std::mt19937 mt(seed);
@@ -353,85 +306,10 @@ namespace SHA_Logger
         /// LOG COMPUTATION
         WriteSubComputation(writer, mt, mazeMatrix, *(mazeMatrix[0][0].get()), width, height);
 
-        // Write distances information
-        int maxDistance = WriteDistances(writer, mazeMatrix, *(mazeMatrix[0][0].get()));
-
-        /// LOG CLOSING
         Operation::Return<bool>(writer, true);
         writer.EndArray();
 
-        // Add Statistical informations
-        writer.Key("stats");
-        writer.StartObject();
-          writer.Key("maxDistance");
-          writer.Int(maxDistance  );
-        writer.EndObject();
-
         return true;
-      }
-
-      ///
-      /// \brief BuildDistance
-      /// \param maze
-      /// \param startCell
-      ///
-      /// @todo generic method for all maze
-      /// @templatize with filling strategy (dfs/prims/...)
-      static unsigned int WriteDistances(Writer& writer, MazeMatrixShared& maze, Cell& startCell)
-      {
-        int maxDistance = 0;
-        startCell.SetRootDistance(maxDistance);
-        std::queue<std::shared_ptr<Cell>> pathQueue;
-        pathQueue.push(maze[startCell.GetX()][startCell.GetY()]);
-
-        // Go through each cell once
-        while (!pathQueue.empty())
-        {
-          // Next node to be computed
-          auto curCell = pathQueue.front();
-          pathQueue.pop();
-          Cell::Visite(curCell);
-          maxDistance = std::max(maxDistance, curCell->GetRootDistance());
-
-          /// LOG Distance
-          writer.StartObject();
-            writer.Key("type");
-            writer.String("operation");
-            writer.Key("name");
-            writer.String("SetDistance");
-            writer.Key("ref");
-            writer.String("pathSet");
-            writer.Key("indexes");
-            writer.StartArray();
-              writer.Int(curCell->GetX());
-              writer.Int(curCell->GetY());
-            writer.EndArray();
-            writer.Key("connections");
-            writer.StartArray();
-
-              // Set distance and add node to be computed to the list
-              for (auto it = curCell->GetConnections().begin() ; it != curCell->GetConnections().end(); ++it)
-              {
-                auto neighboor = it->lock();
-                if (neighboor && !neighboor->IsVisited())
-                {
-                  // Log connection
-                  writer.StartArray();
-                    writer.Int(neighboor->GetX());
-                    writer.Int(neighboor->GetY());
-                  writer.EndArray();
-
-                  neighboor->SetRootDistance(curCell->GetRootDistance() + 1);
-                  pathQueue.push(neighboor);
-                }
-              }
-            writer.EndArray();
-            writer.Key("value");
-            writer.Int(curCell->GetRootDistance());
-          writer.EndObject();
-        }
-
-        return maxDistance;
       }
 
       std::unique_ptr<Stream> stream; // Stream wrapper
