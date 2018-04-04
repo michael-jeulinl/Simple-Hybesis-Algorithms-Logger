@@ -27,15 +27,24 @@
 using namespace SHA_Logger;
 
 #ifndef DOXYGEN_SKIP
-namespace {}
+namespace {
+  std::vector<uint8_t> Widths = {5, 10, 20, 30, 50, 75};
+  std::vector<uint8_t> Seeds = {1, 2, 3, 4};
+}
 #endif /* DOXYGEN_SKIP */
 
 // Test TestAlgo Construction
-TEST(TestMazeKruskalsLog, build)
+TEST(TestMazeKruskalsTreeLog, build)
 {
-  OFStream fileStream("maze_kruskals_output.json");
+  // Generate log for all Random integers
+  for (auto seed = Seeds.begin(); seed != Seeds.end(); ++seed)
+    for (auto width = Widths.rbegin(); width != Widths.rend(); ++width)
+      for (auto height = width; std::distance(width, height) != 3 && height != Widths.rend(); ++height)
+      {
+        OFStream fileStream(std::string(
+                              ToString(*width) + "_" + ToString(*height) + "_" + ToString(*seed) + ".json"));
 
-  // Build Maze
-  // @todo check if should return the maze object
-  MazeKruskalsLog::Build(fileStream, OpGetAll, 30, 30);
+        // Build Maze
+        MazeKruskalsLog::Build(fileStream, *width, *height, *seed);
+      }
 }

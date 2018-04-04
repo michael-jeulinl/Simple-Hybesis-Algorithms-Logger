@@ -27,15 +27,46 @@
 using namespace SHA_Logger;
 
 #ifndef DOXYGEN_SKIP
-namespace {}
+namespace {
+  std::vector<uint8_t> Widths = {5, 10, 20, 30, 50, 75};
+}
 #endif /* DOXYGEN_SKIP */
 
 // Test TestAlgo Construction
 TEST(TestMazePrimsLog, build)
 {
-  OFStream fileStream("maze_prims_output.json");
+  // Generate mazes with startCell = {TopLeft, Middle, BottomRight}
+  for (u_int8_t cellId = 0; cellId != 3; ++cellId)
+    for (auto width = Widths.rbegin(); width != Widths.rend(); ++width)
+      for (auto height = width; std::distance(width, height) != 3 && height != Widths.rend(); ++height)
+      {
+        std::pair<uint8_t, uint8_t> startCell;
+        std::string cellIdStr;
 
-  // Build Maze
-  // @todo check if should return the maze object
-  MazePrimsLog::Build(fileStream, OpGetAll, 30, 30);
+        switch (cellId) {
+          case 0:
+            startCell.first = 0;
+            startCell.second = 0;
+            cellIdStr = "TL";
+            break;
+          case 1:
+            startCell.first = (*width / 2) - 1;
+            startCell.second = (*height / 2) - 1;
+            cellIdStr = "M";
+            break;
+          case 2:
+            startCell.first = *width - 1;
+            startCell.second = *height - 1;
+            cellIdStr = "BR";
+            break;
+          default:
+            break;
+        }
+
+        OFStream fileStream(std::string(
+                              ToString(*width) + "_" + ToString(*height) + "_" + cellIdStr + ".json"));
+
+        // Build Maze
+        MazePrimsLog::Build(fileStream, *width, *height, startCell);
+      }
 }
