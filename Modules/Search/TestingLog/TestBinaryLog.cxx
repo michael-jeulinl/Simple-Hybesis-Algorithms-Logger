@@ -20,37 +20,95 @@
 #include <gtest/gtest.h>
 #include <binary_log.hxx>
 
+// STD includes
+#include <fstream>
+
 // Testing namespace
 using namespace SHA_Logger;
 
 #ifndef DOXYGEN_SKIP
 namespace {
-  // Simple sorted array of integers with negative values
-  const int SortedArrayInt[] = {-3, -2, 0, 2, 8, 15, 36, 212, 366};
-
   template <typename T>
   struct EQUAL
-  {
-    bool operator()(const T& a, const T& b) const { return a == b; }
-  };
+  { bool operator()(const T& a, const T& b) const { return a == b; } };
 
   typedef std::vector<int> Container;
   typedef Container::const_iterator IT;
   typedef BinaryLog<IT, int, EQUAL<int>> BinaryLogT;
+
+  std::map<std::string, std::vector<int>> Integers
+  {
+    // Random ranged
+    { "Int_5", { 806, 1120, -737, -975, 675 } },
+    { "Int_10", { 1424, 982, 109, 1409, 383, 1363, 384, 1493, 161, 1296 } },
+    { "Int_20", { 1048, 74, 1467, 394, -417, 959, 533, -713, -159, 1411, 88, 996, 629, -1495, 1128, -637,
+        784, -25, 895, -1333 } },
+    { "Int_50", { 530, -568, -468, -1449, -624, -188, 643, -651, -409, -725, 275, -1016, -364, -825,
+        277, 937, -1108, 1348, -951, -271, 485, 1287, -494, 1127, 178, -973, 1244, 197, 234, -659, -770, 1190,
+        1010, 1161, -680, 1294, -1484, 987, 696, 63, -127, 1450, -779, -1466, 1374, 346, 1131, 918, 490, 460 }
+    },
+    { "Int_100", { 258, 23, 373, 87, 439, 381, 116, 412, 491, 242, 200, -46, -386, 271, 148, 495, 382,
+        -106, 365, 166, -130, 219, 335, 98, 424, 73, 312, 69, 406, 11, 204, -86, 468, 129, 283, 160, 236, 402,
+        -291, 109, 297, -65, 140, -195, -154, 296, 493, 187, 372, 127, -198, 435, -356, 33, 99, 292,
+        -206, 426, 421, -430, 246, -183, -77, -16, -168, -257, 362, 443, -285, -448, -230, -275, -364,
+        -225, 248, 437, -300, 186, -395, -132, 124, 169, -62, 205, -380, -67, 35, -281,
+        -44, 57, 313, -390, 331, -50, 150, -272, -102, -21, -384, -72 }
+    },
+
+    // Few Uniques
+    { "Int_Few_5", { 1319, 169, -118, 169, 319 } },
+    { "Int_Few_10", { 1240, 374, 162, -1133, 681, -183, 1229, 374, 192, -1133 } },
+    { "Int_Few_20", { 1048, 74, 1467, 74, -417, 959, 533, -713, -159, 88, 88, 996, 629, -1495, 629, -637,
+        784, -25, 895, -1333 } },
+    { "Int_Few_50", { 530, -568, -468, 277, 624, -188, -490, 651, 409, 696, -275, -1016, 364, 825, 277,
+        937, 1108, 1348, -951, 271, -485, 1287, -494, -1127, -178, 973, 1244, -197, -234, 659, -770, 1190,
+        1010, 1161, -191, -1294, -1484, 696, 696, -63, -127, 1450, 779, -1466, 1374, -346, 696, 918, -490,
+        460 }
+    },
+    { "Int_Few_100", { 58, 123, 7, 152, 60, 75, 75, 70, 23, 190, 111, 44, -133, 18,
+        18, 61, 191, 179, 166, -157, -173, 73, 1, -21, 101, 37, 111, -195, -14, 83, 39, 10,
+        20, 39, -144, 161, 161, -114, 166, 175, 196, 128, 114, 22, 117, -195, 109, 154, 88,
+        193, 130, 5, 76, 183, -197, -99, 138, 73, 140, 102, 22, -99, 84, 176, 179, 183, -99,
+        188, 132, 125, -3, -3, 101, 135, 9, 59, 94, 103, 58, 54, 51, 139, 72, -20,
+        172, 7, 151, 86, 107, 65, -3, -61, 39, 145, 110, 105, -20, 120, 5, 18 }
+    },
+  };
+
+  std::map<int, std::vector<int>> KeySearch
+  {
+    // Random ranged
+    { 5, { 2, 4 } },
+    { 10, { 3, 5, 9 } },
+    { 20, { 4, 10, 12 } },
+    { 50, { 3, 25, 40 } },
+    { 100, { 3, 25, 50, 75 } }
+  };
 }
 #endif /* DOXYGEN_SKIP */
 
-// Test TestAlgo Construction
+// Test Binary with different integer sequences
 TEST(TestBinaryLog, build)
 {
-  const Container sortedArray(SortedArrayInt, SortedArrayInt + sizeof(SortedArrayInt) / sizeof(int));
+  OFStream valueStream("values.txt");
 
-  // Empty array
+  // Generate log for all Random integers
+  for (auto it = Integers.begin(); it != Integers.end(); ++it)
   {
-    Container emptyArray = Container();
-    BinaryLogT::Build(std::cout, OpGetAll, emptyArray.begin(), emptyArray.end(), 0);
+    auto rangeIt = KeySearch.find(it->second.size());
+    if (rangeIt == KeySearch.end())
+      continue;
+
+    for (auto keyIt = rangeIt->second.begin(); keyIt != rangeIt->second.end(); ++keyIt)
+    {
+      Container data(it->second);
+      auto key = data[*keyIt];
+      std::sort(data.begin(), data.end());
+
+      OFStream fileStream(std::string(it->first + "_" + std::to_string(*keyIt) + ".json"));
+      valueStream << std::string(it->first + "_" + std::to_string(*keyIt)) << " : " << key << std::endl;
+      BinaryLogT::Build(fileStream, OpGetAll, data.begin(), data.end(), key);
+    }
   }
 
-  BinaryLogT::Build(std::cout, OpGetMin, sortedArray.begin(), sortedArray.end(), -3);// First element
-  BinaryLogT::Build(std::cout, OpGetMin, sortedArray.begin(), sortedArray.end(), 8); // Existing random value
+  valueStream.close();
 }

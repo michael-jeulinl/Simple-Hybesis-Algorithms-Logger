@@ -26,7 +26,7 @@
 #include <Logger/operation.hxx>
 #include <Logger/typedef.hxx>
 #include <Logger/value.hxx>
-#include <partition_log.hxx>
+#include <Logger/vector.hxx>
 
 // STD includes
 #include <iterator>
@@ -39,20 +39,7 @@ namespace SHA_Logger
   class CombLog
   {
     public:
-      /// eg https://cs.chromium.org/chromium/src/gpu/config/software_rendering_list_json.cc
-      static const String GetName() { return "Comb_Sort"; }
-
-      /// Write algorithm information
-      /// @todo Use string litteral for JSON description within c++ code
-      static bool WriteInfo(Writer& writer) { return true; }
-
-      /// Write algorithm decription
-      /// @todo Use string litteral for JSON description within c++ code
-      static bool WriteDoc(Writer& writer) { return true; }
-
-      /// Write algorithm sources
-      /// @todo Use string litteral for JSON description within c++ code
-      static bool WriteSrc(Writer& writer) { return true; }
+      static const String GetName() { return "Comb Sort"; }
 
       // Assert correct JSON construction.
       ~CombLog() { assert(this->writer->IsComplete()); }
@@ -62,10 +49,10 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with CombLog object information,
       ///         error object information in case of failure.
-      static Ostream& Build(Ostream& os, Options opts, const IT& begin, const IT& end)
+      static Ostream& Build(Ostream& os, Options opts, const IT& begin, const IT& end, VecStats& stats)
       {
         std::unique_ptr<CombLog> builder = std::unique_ptr<CombLog>(new CombLog(os));
-        builder->Write(opts, begin, end);
+        builder->Write(opts, begin, end, stats);
 
         return os;
       }
@@ -74,9 +61,9 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with CombLog object information,
       ///         error information in case of failure.
-      static Writer& Build(Writer& writer, Options opts, const IT& begin, const IT& end)
+      static Writer& Build(Writer& writer, Options opts, const IT& begin, const IT& end, VecStats& stats)
       {
-        Write(writer, opts, begin, end);
+        Write(writer, opts, begin, end, stats);
 
         return writer;
       }
@@ -86,10 +73,10 @@ namespace SHA_Logger
                              writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
       CombLog operator=(CombLog&) {} // Not Implemented
 
-      bool Write(Options opts, const IT& begin, const IT& end)
-      { return Write(*this->writer, opts, begin, end); }
+      bool Write(Options opts, const IT& begin, const IT& end, VecStats& stats)
+      { return Write(*this->writer, opts, begin, end, stats); }
 
-      static bool Write(Writer& writer, Options opts, const IT& begin, const IT& end)
+      static bool Write(Writer& writer, Options opts, const IT& begin, const IT& end, VecStats& stats)
       {
         // Do not write sequence if no data to be processed
         const int _seqSize = static_cast<int>(std::distance(begin, end));
@@ -102,14 +89,9 @@ namespace SHA_Logger
 
         writer.StartObject();
 
-        // Write description
-        Algo_Traits<CombLog>::Build(writer, opts);
-
-        // Write parameters
-        WriteParameters(writer, opts, begin, end);
-
-        // Write computation
-        WriteComputation(writer, begin, end);
+        Algo_Traits<CombLog>::Build(writer, opts);    // Write description
+        WriteParameters(writer, opts, begin, end);    // Write parameters
+        WriteComputation(writer, begin, end, stats);  // Write computation
 
         writer.EndObject();
 
@@ -137,7 +119,7 @@ namespace SHA_Logger
       }
 
       ///
-      static bool WriteComputation(Writer& writer, const IT& begin, const IT& end)
+      static bool WriteComputation(Writer& writer, const IT& begin, const IT& end, VecStats& stats)
       {
         const int ksize = static_cast<int>(std::distance(begin, end));
 
@@ -145,7 +127,7 @@ namespace SHA_Logger
         writer.Key("locals");
         writer.StartArray();
         auto it = Iterator::BuildIt<IT>(writer, kSeqName, "it", 0, begin);
-        auto pivot = Iterator::BuildIt<IT>(writer, kSeqName, "pivot", ksize - 1, end - 1);
+        Iterator::BuildIt<IT>(writer, kSeqName, "pivot", ksize - 1, end - 1);
         writer.EndArray();
 
         // Proceed sort
@@ -153,6 +135,7 @@ namespace SHA_Logger
         writer.StartArray();
         int gap = ksize;
         bool hasSwapped = true;
+        Comment::Build(writer, "Swap smallest element between decreasing gap until sorted.");
         while (hasSwapped)
         {
           hasSwapped = false;
@@ -163,19 +146,29 @@ namespace SHA_Logger
             hasSwapped = true;
           else
             gap = 1;
+          Comment::Build(writer, "gap = " + ToString(gap) + ".", 1);
 
           int _itIdx = 0;
           Operation::Set<int>(writer, "it", _itIdx);
           Operation::Set<int>(writer, "pivot", _itIdx + gap);
-          for (it = begin; it + gap < end; ++it)
+          for (it = begin; it + gap < end; ++it, ++stats.nbIterations)
           {
+            ++stats.nbComparisons;
+            ++stats.nbOtherAccess;
             if (Compare()(*(it + gap), *it))
             {
+              Comment::Build(writer, "it[" + ToString(_itIdx) + "]{" + ToString(*it) +
+                             "} > next[" + ToString(_itIdx + gap) + "]{" + ToString(*(it + gap)) +
+                             "} : Swap them.", 2);
+              ++stats.nbSwaps;
               Operation::Swap(writer, "it", "pivot");
               std::swap(*it, *(it + gap));
               hasSwapped = true;
             }
 
+            Comment::Build(writer, "it[" + ToString(_itIdx) + "]{" + ToString(*it) +
+                           "} <= next[" + ToString(_itIdx + gap) + "]{" + ToString(*(it + gap)) +
+                           "} : Ignore element.", 2);
             Operation::Set<int>(writer, "it", ++_itIdx);
             Operation::Set<int>(writer, "pivot", _itIdx + gap);
           }
@@ -183,6 +176,19 @@ namespace SHA_Logger
 
         Operation::Return<bool>(writer, true);
         writer.EndArray();
+
+        // Add Statistical informations
+        writer.Key("stats");
+        writer.StartObject();
+          writer.Key("nbComparisons");
+          writer.Int(stats.nbComparisons);
+          writer.Key("nbIterations");
+          writer.Int(stats.nbIterations);
+          writer.Key("nbOtherAccess");
+          writer.Int(stats.nbOtherAccess);
+          writer.Key("nbSwaps");
+          writer.Int(stats.nbSwaps);
+        writer.EndObject();
 
         return true;
       }

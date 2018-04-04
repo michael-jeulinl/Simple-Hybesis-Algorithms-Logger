@@ -18,6 +18,7 @@
  *
  *=========================================================================================================*/
 #include <gtest/gtest.h>
+#include "data.hxx"
 #include <partition_log.hxx>
 
 // Testing namespace
@@ -31,23 +32,121 @@ using namespace SHA_Logger;
 
 #ifndef DOXYGEN_SKIP
 namespace {
-  // Simple random array of integers with negative values
-//  const int RandomArrayInt[] = {40, 80, -10, 50, 1, 65, -80, 26, -20, -35, 35, 35, -70, 100, -50};
-  const int RandomArrayInt[] = {-1, 6, -4, 5, 8, 4, -5, -6, 7, 0, 2, -2, -3, 3, 3, -7, -8, 1};
-
   typedef std::vector<int> Container;
   typedef Container::iterator IT;
 }
 #endif /* DOXYGEN_SKIP */
 
-// Test TestAlgo Construction
-TEST(TestPartitionLog, build)
+// Test Partition with different integer sequences
+TEST(TestPartitionLog, RandomIntegers)
 {
-  Container randomdArray(RandomArrayInt, RandomArrayInt + sizeof(RandomArrayInt) / sizeof(int));
-  IT pivot = randomdArray.begin() + std::distance(randomdArray.begin(), randomdArray.end()) / 2;
+  // Generate log for all Random integers
+  for (auto it = SHA_DATA::Integers.begin(); it != SHA_DATA::Integers.end(); ++it)
+  {
+    Container data(it->second);
+    OFStream fileStream(std::string(it->first + ".json"));
 
-  OFStream fileStream("partition_output.json");
+    VecStats tmpVar;
+    IT pivot = std::find(data.begin(), data.end(), 0);
+    pivot = PartitionLog<IT>::Build(fileStream, OpGetAll, data.begin(), pivot, data.end(), tmpVar);
 
-  // Run partition - Should result in: max[begin, pivot[ <= pivot <= min]pivot, end]
-  PartitionLog<IT>::Build(fileStream, OpGetAll, randomdArray.begin(), pivot, randomdArray.end());
+
+    // Element on the left side are smaller
+    for (auto it = data.begin(); it < pivot; ++it)
+      EXPECT_LE(*it, *pivot);
+
+    // Element on the right side are bigger
+    for (auto it = pivot; it < data.end(); ++it)
+      EXPECT_GE(*it, *pivot);
+  }
+}
+
+// Test Partition with reversed integer sequences
+TEST(TestPartitionLog, ReversedIntegers)
+{
+  Container sizes({10, 20, 50, 100});
+
+  for (auto size = sizes.begin(); size != sizes.end(); ++size)
+  {
+    Container data;
+    data.reserve(*size);
+    for (auto i = 0; i < *size; ++i)
+      data.push_back((*size / 2) - i);
+
+    OFStream fileStream(std::string("Int_Rev_" + std::to_string(*size) + ".json"));
+    VecStats tmpVar;
+    IT pivot = std::find(data.begin(), data.end(), 0);
+    pivot = PartitionLog<IT>::Build(fileStream, OpGetAll, data.begin(), pivot, data.end(), tmpVar);
+
+    // Element on the left side are smaller
+    for (auto it = data.begin(); it < pivot - 1; ++it)
+      EXPECT_LE(*it, *pivot);
+
+    // Element on the right side are bigger
+    for (auto it = pivot; it < data.end() - 1; ++it)
+      EXPECT_GE(*it, *pivot);
+  }
+}
+
+// Test with reversed char sequences
+TEST(TestPartitionLog, ReversedChars)
+{
+  Container sizes({10, 20, 50});
+
+  for (auto size = sizes.begin(); size != sizes.end(); ++size)
+  {
+    std::vector<char> data;
+    data.reserve(*size);
+    for (auto i = 0; i < *size; ++i)
+      data.push_back(static_cast<char>(*size - i + 65));
+
+    OFStream fileStream(std::string("Char_Rev_" + std::to_string(*size) + ".json"));
+    VecStats tmpVar;
+    std::vector<char>::iterator pivot =
+      std::find(data.begin(), data.end(), static_cast<char>((*size / 2) + 65));
+    pivot = PartitionLog<std::vector<char>::iterator>::
+      Build(fileStream, OpGetAll, data.begin(), pivot, data.end(), tmpVar);
+
+    // Element on the left side are smaller
+    for (auto it = data.begin(); it < pivot - 1; ++it)
+      EXPECT_LE(*it, *pivot);
+
+    // Element on the right side are bigger
+    for (auto it = pivot; it < data.end() - 1; ++it)
+      EXPECT_GE(*it, *pivot);
+  }
+}
+
+// Test with random char sequences
+TEST(TestPartitionLog, RandomChars)
+{
+  // Generate log for all Random integers
+  for (auto it = SHA_DATA::Integers.begin(); it != SHA_DATA::Integers.end(); ++it)
+  {
+    auto size = it->second.size();
+
+    if (size > 50)
+      continue;
+
+    std::vector<char> data;
+    data.reserve(size);
+    for (auto i = 0; i < size; ++i)
+      data.push_back(static_cast<char>(it->second[i] + (size / 2) + 65));
+
+    OFStream fileStream(std::string("Char" + it->first.substr(3) + ".json"));
+
+    VecStats tmpVar;
+    std::vector<char>::iterator pivot =
+      std::find(data.begin(), data.end(), static_cast<char>((size / 2) + 65));
+    pivot = PartitionLog<std::vector<char>::iterator>::Build
+      (fileStream, OpGetAll, data.begin(), pivot, data.end(), tmpVar);
+
+    // Element on the left side are smaller
+    for (auto it = data.begin(); it < pivot - 1; ++it)
+      EXPECT_LE(*it, *pivot);
+
+    // Element on the right side are bigger
+    for (auto it = pivot; it < data.end() - 1; ++it)
+      EXPECT_GE(*it, *pivot);
+  }
 }

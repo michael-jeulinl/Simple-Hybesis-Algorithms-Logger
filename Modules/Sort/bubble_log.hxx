@@ -26,7 +26,7 @@
 #include <Logger/operation.hxx>
 #include <Logger/typedef.hxx>
 #include <Logger/value.hxx>
-#include <partition_log.hxx>
+#include <Logger/vector.hxx>
 
 // STD includes
 #include <iterator>
@@ -39,20 +39,7 @@ namespace SHA_Logger
   class BubbleLog
   {
     public:
-      /// eg https://cs.chromium.org/chromium/src/gpu/config/software_rendering_list_json.cc
-      static const String GetName() { return "Bubble_Sort"; }
-
-      /// Write algorithm information
-      /// @todo Use string litteral for JSON description within c++ code
-      static bool WriteInfo(Writer& writer) { return true; }
-
-      /// Write algorithm decription
-      /// @todo Use string litteral for JSON description within c++ code
-      static bool WriteDoc(Writer& writer) { return true; }
-
-      /// Write algorithm sources
-      /// @todo Use string litteral for JSON description within c++ code
-      static bool WriteSrc(Writer& writer) { return true; }
+      static const String GetName() { return "Bubble Sort"; }
 
       // Assert correct JSON construction.
       ~BubbleLog() { assert(this->writer->IsComplete()); }
@@ -62,10 +49,10 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with BubbleLog object information,
       ///         error object information in case of failure.
-      static Ostream& Build(Ostream& os, Options opts, const IT& begin, const IT& end)
+      static Ostream& Build(Ostream& os, Options opts, const IT& begin, const IT& end, VecStats& stats)
       {
         std::unique_ptr<BubbleLog> builder = std::unique_ptr<BubbleLog>(new BubbleLog(os));
-        builder->Write(opts, begin, end);
+        builder->Write(opts, begin, end, stats);
 
         return os;
       }
@@ -74,9 +61,9 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with BubbleLog object information,
       ///         error information in case of failure.
-      static Writer& Build(Writer& writer, Options opts, const IT& begin, const IT& end)
+      static Writer& Build(Writer& writer, Options opts, const IT& begin, const IT& end, VecStats& stats)
       {
-        Write(writer, opts, begin, end);
+        Write(writer, opts, begin, end, stats);
 
         return writer;
       }
@@ -86,10 +73,10 @@ namespace SHA_Logger
                                writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
       BubbleLog operator=(BubbleLog&) {} // Not Implemented
 
-      bool Write(Options opts, const IT& begin, const IT& end)
-      { return Write(*this->writer, opts, begin, end); }
+      bool Write(Options opts, const IT& begin, const IT& end, VecStats& stats)
+      { return Write(*this->writer, opts, begin, end, stats); }
 
-      static bool Write(Writer& writer, Options opts, const IT& begin, const IT& end)
+      static bool Write(Writer& writer, Options opts, const IT& begin, const IT& end, VecStats& stats)
       {
         // Do not write sequence if no data to be processed
         const int _seqSize = static_cast<int>(std::distance(begin, end));
@@ -102,14 +89,9 @@ namespace SHA_Logger
 
         writer.StartObject();
 
-        // Write description
-        Algo_Traits<BubbleLog>::Build(writer, opts);
-
-        // Write parameters
-        WriteParameters(writer, opts, begin, end);
-
-        // Write computation
-        WriteComputation(writer, begin, end);
+        Algo_Traits<BubbleLog>::Build(writer, opts); // Write description
+        WriteParameters(writer, opts, begin, end);   // Write parameters
+        WriteComputation(writer, begin, end, stats); // Write computation
 
         writer.EndObject();
 
@@ -137,43 +119,75 @@ namespace SHA_Logger
       }
 
       ///
-      static bool WriteComputation(Writer& writer, const IT& begin, const IT& end)
+      static bool WriteComputation(Writer& writer, const IT& begin, const IT& end, VecStats& stats)
       {
         int _itIdx = 0;
+        const auto _seqSize = static_cast<const int>(std::distance(begin, end));
         int endIdx = -1;
         bool hasSwapped;
 
-        // Local logged variables
+        // Log locals
         writer.Key("locals");
         writer.StartArray();
         auto curIt = Iterator::BuildIt<IT>(writer, kSeqName, "it", 0, begin);
-        auto pivot = Iterator::BuildIt<IT>(writer, kSeqName, "pivot", 1, begin + 1);
+        ++stats.nbOtherAccess;
+        Iterator::BuildIt<IT>(writer, kSeqName, "pivot", 1, begin + 1);
         writer.EndArray();
 
         // Proceed sort
         writer.Key("logs");
         writer.StartArray();
-        // for each element - bubble it up until the end.
-        for (auto it = begin; it < end - 1; ++it, --endIdx)
+        Comment::Build(writer, "Bubble biggest element at the end and restart to [end-1] until sorted:");
+        for (auto it = begin; it < end - 1; ++it, --endIdx, ++stats.nbIterations)
         {
+          /// LOG RANGE CHANGED
+          /// @todo check new type of operation
+          writer.StartObject();
+            writer.Key("type");
+            writer.String("operation");
+            writer.Key("name");
+            writer.String("setRange");
+            writer.Key("range");
+            writer.StartArray();
+              writer.Int(0);
+              writer.Int(_seqSize + endIdx);
+            writer.EndArray();
+          writer.EndObject();
+
           hasSwapped = false;
           _itIdx = 0;
-          for (; curIt < end + endIdx; ++curIt)
+          Comment::Build(writer, "Bubble up biggest value within [0, " +
+                         ToString(_seqSize + endIdx) + "]:", 1);
+          for (; curIt < end + endIdx; ++curIt, ++stats.nbIterations)
           {
+            ++stats.nbComparisons;
+            ++stats.nbOtherAccess;
             if (Compare()(*(curIt + 1), *curIt))
             {
+              Comment::Build(writer, "it[" + ToString(_itIdx) + "]{" + ToString(*curIt) +
+                             "} > next[" + ToString(_itIdx + 1) + "]{" + ToString(*(curIt + 1)) +
+                             "} : Bubble up.", 2);
+              ++stats.nbSwaps;
               Operation::Swap(writer, "it", "pivot");
               std::swap(*curIt, *(curIt + 1));
               hasSwapped = true;
             }
 
+            Comment::Build(writer, "it[" + ToString(_itIdx) + "]{" + ToString(*curIt) +
+                           "} <= next[" + ToString(_itIdx + 1) + "]{" + ToString(*(curIt + 1)) +
+                           "} : Ignore element", 2);
             Operation::Set<int>(writer, "it", ++_itIdx);
             Operation::Set<int>(writer, "pivot", _itIdx + 1);
           }
 
           if (!hasSwapped)
+          {
+            Comment::Build(writer, "No swap occured: sequence is sorted.");
             break;
+          }
 
+          Comment::Build(writer, "Restart bubbling until [end - 1][" +
+                         ToString(_seqSize + endIdx - 1) + "]", 1);
           Operation::Set<int>(writer, "it", 0);
           Operation::Set<int>(writer, "pivot", 1);
           curIt = begin;
@@ -181,6 +195,19 @@ namespace SHA_Logger
 
         Operation::Return<bool>(writer, true);
         writer.EndArray();
+
+        // Add Statistical informations
+        writer.Key("stats");
+        writer.StartObject();
+          writer.Key("nbComparisons");
+          writer.Int(stats.nbComparisons);
+          writer.Key("nbIterations");
+          writer.Int(stats.nbIterations);
+          writer.Key("nbOtherAccess");
+          writer.Int(stats.nbOtherAccess);
+          writer.Key("nbSwaps");
+          writer.Int(stats.nbSwaps);
+        writer.EndObject();
 
         return true;
       }

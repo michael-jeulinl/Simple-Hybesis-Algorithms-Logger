@@ -30,29 +30,141 @@
 
 // STD includes
 #include <iterator>
+#include <random>
 
 namespace SHA_Logger
 {
-  /// @class QuickLog
-  ///
-  template <typename IT, typename Compare = std::less_equal<typename std::iterator_traits<IT>::value_type>>
-  class QuickLog
+  template <typename IT>
+  class PickFirst
   {
     public:
-      /// eg https://cs.chromium.org/chromium/src/gpu/config/software_rendering_list_json.cc
-      static const String GetName() { return "Quick_Sort"; }
+      std::pair<uint16_t, std::string> operator()
+      (const IT& begin, const IT& end, const int offset)
+      {
+        // Get first element
+        const auto lenght = static_cast<const int>(std::distance(begin, end));
+        const uint16_t pivotPick = 0;
 
-      /// Write algorithm information
-      /// @todo Use string litteral for JSON description within c++ code
-      static bool WriteInfo(Writer& writer) { return true; }
+        // Comment
+        const std::string comment = "Pick first item as Pivot within [" + ToString(offset) + ", " +
+                                    ToString(offset + lenght - 1) + "] --> [" +
+                                    ToString(offset + pivotPick) + "]{" +
+                                    ToString(*(begin + pivotPick)) + "}";
 
-      /// Write algorithm decription
-      /// @todo Use string litteral for JSON description within c++ code
-      static bool WriteDoc(Writer& writer) { return true; }
+        return make_pair(pivotPick, comment);
+      }
+  };
 
-      /// Write algorithm sources
-      /// @todo Use string litteral for JSON description within c++ code
-      static bool WriteSrc(Writer& writer) { return true; }
+  template <typename IT>
+  class PickLast
+  {
+    public:
+      std::pair<uint16_t, std::string> operator()
+      (const IT& begin, const IT& end, const int offset)
+      {
+        // Get first element
+        const auto lenght = static_cast<const int>(std::distance(begin, end));
+        const uint16_t pivotPick = lenght - 1;
+
+        // Comment
+        const std::string comment = "Pick last item as Pivot within [" + ToString(offset) + ", " +
+                                    ToString(offset + lenght - 1) + "] --> [" +
+                                    ToString(offset + pivotPick) + "]{" +
+                                    ToString(*(begin + pivotPick)) + "}";
+
+        return make_pair(pivotPick, comment);
+      }
+  };
+
+  template <typename IT>
+  class PickMiddle
+  {
+    public:
+      std::pair<uint16_t, std::string> operator()
+      (const IT& begin, const IT& end, const int offset)
+      {
+        // Get first element
+        const auto lenght = static_cast<const int>(std::distance(begin, end));
+        const uint16_t pivotPick = lenght / 2;
+
+        // Comment
+        const std::string comment = "Pick middle item as Pivot within [" + ToString(offset) + ", " +
+                                    ToString(offset + lenght - 1) + "] --> [" +
+                                    ToString(offset + pivotPick) + "]{" +
+                                    ToString(*(begin + pivotPick)) + "}";
+
+        return make_pair(pivotPick, comment);
+      }
+  };
+
+  template <typename IT>
+  class PickThreeMedian
+  {
+    public:
+      std::pair<uint16_t, std::string> operator()
+      (const IT& begin, const IT& end, const int offset)
+      {
+        // Get middle element
+        const auto lenght = static_cast<const int>(std::distance(begin, end));
+        uint16_t pivotPick = lenght / 2;
+        const uint16_t middleValue = *(begin + pivotPick);
+
+        // Compute median
+        int x = *begin - middleValue;
+        int y = middleValue - *(end - 1);
+        int z = *begin - *(end - 1);
+        if (x * y > 0) pivotPick = pivotPick;
+        else if (x * z > 0) pivotPick = lenght - 1;
+        else  pivotPick = 0;
+
+        // Comment
+        const std::string comment = "Pick median (of three values) as Pivot within [" +
+                                    ToString(offset) + ", " +
+                                    ToString(offset + lenght - 1) + "] --> [" +
+                                    ToString(offset + pivotPick) + "]{" +
+                                    ToString(*(begin + pivotPick)) + "}";
+
+        return make_pair(pivotPick, comment);
+      }
+  };
+
+  template <typename IT>
+  class PickRandom
+  {
+    public:
+      PickRandom(const int seed = 130888) : random(seed) {}
+      std::pair<uint16_t, std::string> operator()
+      (const IT& begin, const IT& end, const int offset)
+      {
+        // Get first element
+        const auto lenght = static_cast<const int>(std::distance(begin, end));
+        const uint16_t pivotPick = random() % lenght;
+
+        // Comment
+        const std::string comment = "Pick random item as Pivot within [" + ToString(offset) + ", " +
+                                    ToString(offset + lenght - 1) + "] --> [" +
+                                    ToString(offset + pivotPick) + "]{" +
+                                    ToString(*(begin + pivotPick)) + "}";
+
+        return make_pair(pivotPick, comment);
+      }
+
+    private:
+      std::mt19937 random;
+  };
+
+  /// @class QuickLog
+  ///
+  template <typename IT,
+            typename Compare = std::less_equal<typename std::iterator_traits<IT>::value_type>,
+            typename Picker = PickThreeMedian<IT>>
+  class QuickLog
+  {
+    typedef PartitionLog<IT, Compare> Partition;
+    typedef QuickLog<IT, Compare, Picker> QuickSort;
+
+    public:
+      static const String GetName() { return "Quick Sort"; }
 
       // Assert correct JSON construction.
       ~QuickLog() { assert(this->writer->IsComplete()); }
@@ -62,10 +174,11 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with QuickLog object information,
       ///         error object information in case of failure.
-      static Ostream& Build(Ostream& os, Options opts, const IT& begin, const IT& end, const int offset = 0)
+      static Ostream& Build(Ostream& os, Options opts, const IT& begin, const IT& end,
+                            VecStats& stats, const int offset = 0)
       {
         std::unique_ptr<QuickLog> builder = std::unique_ptr<QuickLog>(new QuickLog(os));
-        builder->Write(opts, begin, end, offset);
+        builder->Write(opts, begin, end, stats, offset);
 
         return os;
       }
@@ -74,9 +187,10 @@ namespace SHA_Logger
       ///
       /// @return stream reference filled up with QuickLog object information,
       ///         error information in case of failure.
-      static Writer& Build(Writer& writer, Options opts, const IT& begin, const IT& end, const int offset = 0)
+      static Writer& Build(Writer& writer, Options opts, const IT& begin, const IT& end,
+                           VecStats& stats, const int offset = 0)
       {
-        Write(writer, opts, begin, end, offset);
+        Write(writer, opts, begin, end, stats, offset);
 
         return writer;
       }
@@ -86,36 +200,55 @@ namespace SHA_Logger
                               writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
       QuickLog operator=(QuickLog&) {} // Not Implemented
 
-      bool Write(Options opts, const IT& begin, const IT& end, const int offset)
-      { return Write(*this->writer, opts, begin, end, offset); }
+      ///
+      /// \brief Write
+      /// \param opts
+      /// \param begin
+      /// \param end
+      /// \param offset
+      /// \return
+      ///
+      bool Write(Options opts, const IT& begin, const IT& end, VecStats& stats, const int offset)
+      { return Write(*this->writer, opts, begin, end, stats, offset); }
 
-      static bool Write(Writer& writer, Options opts, const IT& begin, const IT& end, const int offset)
+      ///
+      /// \brief Write
+      /// \param writer
+      /// \param opts
+      /// \param begin
+      /// \param end
+      /// \param offset
+      /// \return
+      ///
+      static bool Write(Writer& writer, Options opts, const IT& begin, const IT& end,
+                        VecStats& stats, const int offset)
       {
         // Do not write sequence if no data to be processed
-        const int _seqSize = static_cast<int>(std::distance(begin, end));
-        if (_seqSize < 2)
+        if (static_cast<int>(std::distance(begin, end)) < 2)
         {
-          Comment::Build(writer, "Sequence size too small to be processed.", 0);
           Operation::Return<bool>(writer, true);
           return true;
         }
 
         writer.StartObject();
 
-        // Write description
-        Algo_Traits<QuickLog>::Build(writer, opts);
-
-        // Write parameters
-        WriteParameters(writer, opts, begin, end, offset);
-
-        // Write computation
-        WriteComputation(writer, begin, end, offset);
+        Algo_Traits<QuickLog>::Build(writer, opts);                 // Write description
+        WriteParameters(writer, opts, begin, end, offset);          // Write parameters
+        WriteComputation(writer, opts, begin, end, stats, offset);  // Write computation
 
         writer.EndObject();
 
         return true;
       }
 
+      ///
+      /// \brief WriteParameters
+      /// \param writer
+      /// \param opts
+      /// \param begin
+      /// \param end
+      /// \param offset
+      /// \return
       ///
       static bool WriteParameters(Writer& writer, Options opts,
                                   const IT& begin, const IT& end, const int offset)
@@ -124,9 +257,8 @@ namespace SHA_Logger
         writer.StartArray();
         if (opts & OpIsSub)
         {
-          const int _seqSize = static_cast<int>(std::distance(begin, end));
           Iterator::Build(writer, kSeqName, "begin", offset);
-          Iterator::Build(writer, kSeqName, "end", offset + _seqSize);
+          Iterator::Build(writer, kSeqName, "end", offset + static_cast<int>(std::distance(begin, end)));
         }
         else
         {
@@ -138,28 +270,59 @@ namespace SHA_Logger
       }
 
       ///
-      static bool WriteComputation(Writer& writer, const IT& begin, const IT& end, const int offset)
+      /// \brief WriteComputation
+      /// \param writer
+      /// \param begin
+      /// \param end
+      /// \param offset
+      /// \return
+      ///
+      static bool WriteComputation(Writer& writer, Options opts,
+                                   const IT& begin, const IT& end,
+                                   VecStats& stats, const int offset)
       {
-        const auto _pivotIdx = rand() % static_cast<const int>(std::distance(begin, end));
-
         // Local logged variables
         writer.Key("locals");
         writer.StartArray();
-        auto pivot = Iterator::BuildIt<IT>(writer, kSeqName, "pivot", offset + _pivotIdx, begin + _pivotIdx,
-                                           "Pick Random Pivot within [begin, end]");
+
+        const auto _pivot = Picker()(begin, end, offset);
+        ++stats.nbOtherAccess;
+
+        auto pivot = Iterator::BuildIt<IT>(writer, kSeqName, "pivot",
+                                           offset + _pivot.first, begin + _pivot.first, _pivot.second);
         writer.EndArray();
 
         writer.Key("logs");
         writer.StartArray();
+
         // Proceed partition
-        auto newPivot = PartitionLog<IT, Compare>::Build(writer, OpIsSub, begin, pivot, end, offset);
+        auto newPivot = Partition::Build(writer, OpIsSub, begin, pivot, end, stats, offset);
         auto newOffset = offset + std::distance(begin, newPivot);
 
-        // Recurse on first partition
-        QuickLog<IT, Compare>::Build(writer, OpIsSub, begin, newPivot, offset);
-        // Recurse on second partition
-        QuickLog<IT, Compare>::Build(writer, OpIsSub, newPivot + 1, end, newOffset + 1);
+        Comment::Build(writer, "Recurse on left-side partition");
+        QuickSort::Build(writer, OpIsSub, begin, newPivot, stats, offset);
+        Comment::Build(writer, "Recurse on right-side partition");
+        ++stats.nbOtherAccess;
+        QuickSort::Build(writer, OpIsSub, newPivot + 1, end, stats, newOffset + 1);
+
+        Operation::Return<bool>(writer, true);
         writer.EndArray();
+
+        if (!(opts & OpIsSub))
+        {
+          // Add Statistical informations
+          writer.Key("stats");
+          writer.StartObject();
+            writer.Key("nbComparisons");
+            writer.Int(stats.nbComparisons);
+            writer.Key("nbIterations");
+            writer.Int(stats.nbIterations);
+            writer.Key("nbOtherAccess");
+            writer.Int(stats.nbOtherAccess);
+            writer.Key("nbSwaps");
+            writer.Int(stats.nbSwaps);
+          writer.EndObject();
+        }
 
         return true;
       }
