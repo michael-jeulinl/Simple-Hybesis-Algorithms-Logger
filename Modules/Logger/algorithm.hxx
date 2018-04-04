@@ -71,12 +71,13 @@ namespace SHA_Logger
            writer.Key("name");
            writer.String(Algo::GetName());
         }
-        if (opts & OpGetDoc)
+
+        /*if (opts & OpGetDoc)
           Algo::WriteDoc(writer);
         if (opts & OpGetInfo)
           Algo::WriteInfo(writer);
         if (opts & OpGetSrc)
-          Algo::WriteSrc(writer);
+          Algo::WriteSrc(writer);*/
 
         return true;
       }
