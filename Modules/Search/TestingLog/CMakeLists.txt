@@ -21,11 +21,12 @@
 set(SHA ${PROJECT_NAME})
 
 # Source files
-set(MODULE_SEARCH_LOG_SRCS TestBinaryLog.cxx)
+set(MODULE_SEARCH_LOG_SRCS #TestBinaryLog.cxx)
+                           TestKthMaxElementLog.cxx)
 
 # --------------------------------------------------------------------------
 # Build Testing Log executables
 # --------------------------------------------------------------------------
 include_directories(${MODULES_DIR})
-include_directories(${LIB_DIR})     
+include_directories(${LIB_DIR})
 cxx_gtest(TestModuleSearchLog "${MODULE_SEARCH_LOG_SRCS}" ${SHA_SRCS})
