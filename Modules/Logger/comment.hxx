@@ -51,10 +51,11 @@ namespace SHA_Logger
 
       /// Use json writer passed as parameter to write iterator information.
       ///
+      /// // info, error, warn
       /// @return stream reference filled up with Comment object information,
       ///         error information in case of failure.
       static Writer& Build(Writer& writer,
-                           const String& message, int level = 0, const String extent = "normal")
+                           const String& message, int level = 0, const String extent = "")
       {
         Write(writer, message, level, extent);
 
@@ -78,8 +79,11 @@ namespace SHA_Logger
         writer.String(message);
         writer.Key("level");
         writer.Int(level);
-        writer.Key("extent");
-        writer.String(extent);
+        if (extent != "")
+        {
+          writer.Key("extent");
+          writer.String(extent);
+        }
         writer.EndObject();
 
         return true;

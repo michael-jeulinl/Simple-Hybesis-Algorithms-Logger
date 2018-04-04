@@ -97,21 +97,21 @@ namespace SHA_Logger
 
         // StartBuild - Main information
         writer.StartObject();
-        writer.Key("type");
-        writer.String("array");
-        writer.Key("name");
-        writer.String(name);
+          writer.Key("type");
+          writer.String("array");
+          writer.Key("name");
+          writer.String(name);
 
-        // Add data
-        writer.Key("data");
-        ValueType::BuildArray<IT>(writer, begin, end);
+          // Add data
+          writer.Key("data");
+          ValueType::BuildArray<IT>(writer, begin, end);
 
-        // Add Iterators
-        writer.Key("iterators");
-        writer.StartArray();
-        Iterator::Build(writer, name, beginName, 0);
-        Iterator::Build(writer, name, endName, static_cast<int>(kdataSize));
-        writer.EndArray();
+          // Add Iterators
+          writer.Key("iterators");
+          writer.StartArray();
+          Iterator::Build(writer, name, beginName, 0);
+          Iterator::Build(writer, name, endName, static_cast<int>(kdataSize));
+          writer.EndArray();
 
         // Finish object
         writer.EndObject();

@@ -26,6 +26,7 @@
 #include <Logger/operation.hxx>
 #include <Logger/typedef.hxx>
 #include <Logger/value.hxx>
+#include <Logger/vector.hxx>
 
 // STD includes
 #include <iterator>
@@ -37,22 +38,10 @@ namespace SHA_Logger
   template <typename IT, typename Compare = std::less_equal<typename std::iterator_traits<IT>::value_type>>
   class PartitionLog
   {
+    typedef Value<typename std::iterator_traits<IT>::value_type> Value_Type;
+
     public:
-    /// @todo Use string litteral for JSON description within c++ code
-    /// eg https://cs.chromium.org/chromium/src/gpu/config/software_rendering_list_json.cc
-    static const String GetName() { return "Partition"; }
-
-      /// Write algorithm information
-      /// @todo Use string litteral for JSON description within c++ code --> partition_desc.json.hxx
-      static bool WriteInfo(Writer& writer) { return true; }
-
-      /// Write algorithm decription
-      /// @todo Use string litteral for JSON description within c++ code --> partition_desc.json.hxx
-      static bool WriteDoc(Writer& writer) { return true; }
-
-      /// Write algorithm sources
-      /// @todo Use string litteral for JSON description within c++ code --> partition_desc.json.hxx
-      static bool WriteSrc(Writer& writer) { return true; }
+      static const String GetName() { return "Partition"; }
 
       // Assert correct JSON construction.
       ~PartitionLog() { assert(this->writer->IsComplete()); }
@@ -63,10 +52,11 @@ namespace SHA_Logger
       /// @return stream reference filled up with PartitionLog object information,
       ///         error object information in case of failure.
       static IT Build(Ostream& os, Options opts,
-                      const IT& begin, const IT& pivot, const IT& end, const int offSet = 0)
+                      const IT& begin, const IT& pivot, const IT& end,
+                      VecStats& stats, const int offSet = 0)
       {
         std::unique_ptr<PartitionLog> builder = std::unique_ptr<PartitionLog>(new PartitionLog(os));
-        return builder->Write(opts, begin, pivot, end, offSet);
+        return builder->Write(opts, begin, pivot, end, stats, offSet);
       }
 
       /// Use json writer passed as parameter to write iterator information.
@@ -74,9 +64,10 @@ namespace SHA_Logger
       /// @return stream reference filled up with PartitionLog object information,
       ///         error information in case of failure.
       static IT Build(Writer& writer, Options opts,
-                      const IT& begin, const IT& pivot, const IT& end, const int offSet = 0)
+                      const IT& begin, const IT& pivot, const IT& end,
+                      VecStats& stats, const int offSet = 0)
       {
-        return Write(writer, opts, begin, pivot, end, offSet);
+        return Write(writer, opts, begin, pivot, end, stats, offSet);
       }
 
     private:
@@ -84,39 +75,51 @@ namespace SHA_Logger
                                   writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
       PartitionLog operator=(PartitionLog&) {} // Not Implemented
 
-      IT Write(Options opts, const IT& begin, const IT& pivot, const IT& end, const int offset)
-      { return Write(*this->writer, opts, begin, pivot, end, offset); }
+      IT Write(Options opts, const IT& begin, const IT& pivot, const IT& end,
+               VecStats& stats, const int offset)
+      { return Write(*this->writer, opts, begin, pivot, end, stats, offset); }
 
+      ///
+      /// \brief Write
+      /// \param writer
+      /// \param opts
+      /// \param begin
+      /// \param pivot
+      /// \param end
+      /// \param offset
+      /// \return
+      ///
       static IT Write(Writer& writer, Options opts,
                       const IT& begin, const IT& pivot, const IT& end,
-                      const int offset)
+                      VecStats& stats, const int offset)
       {
         writer.StartObject();
 
         // Do not write sequence if no data to be processed
-        const int _seqSize = static_cast<int>(std::distance(begin, end));
-        if (_seqSize < 2 || pivot == end)
+        if (static_cast<int>(std::distance(begin, end)) < 2 || pivot == end)
         {
-          Comment::Build(writer, "Sequence size too small to be processed.", 0);
-          // @todo return pivot
           Operation::Return<bool>(writer, true);
           return pivot;
         }
 
-        // Write description
-        Algo_Traits<PartitionLog>::Build(writer, opts);
-
-        // Write parameters
-        WriteParameters(writer, opts, begin, pivot, end, offset);
-
-        // Write computation
-        auto newPivot = WriteComputation(writer, begin, pivot, end, offset);
+        Algo_Traits<PartitionLog>::Build(writer, opts);                                   // Write description
+        WriteParameters(writer, opts, begin, pivot, end, offset);                         // Write parameters
+        auto newPivot = WriteComputation(writer, opts, begin, pivot, end, stats, offset); // Write computation
 
         writer.EndObject();
 
         return newPivot;
       }
 
+      ///
+      /// \brief WriteParameters
+      /// \param writer
+      /// \param opts
+      /// \param begin
+      /// \param pivot
+      /// \param end
+      /// \param offset
+      /// \return
       ///
       static bool WriteParameters(Writer& writer, Options opts,
                                   const IT& begin, const IT& pivot, const IT& end,
@@ -125,6 +128,7 @@ namespace SHA_Logger
         const int _pivIdx = static_cast<int>(std::distance(begin,pivot));
         writer.Key("parameters");
         writer.StartArray();
+
         if (opts & OpIsSub)
         {
           const int _seqSize = static_cast<int>(std::distance(begin, end));
@@ -137,61 +141,112 @@ namespace SHA_Logger
           Array<IT>::Build(writer, kSeqName, "begin", begin, "end", end);
           Iterator::Build(writer, kSeqName, "pivot", _pivIdx);
         }
+
         writer.EndArray();
 
         return true;
       }
 
       ///
-      static IT WriteComputation(Writer& writer,
+      static IT WriteComputation(Writer& writer, Options opts,
                                  const IT& begin, const IT& pivot, const IT& end,
-                                 const int offset)
+                                 VecStats& stats, const int offset)
       {
-        // Not part of the logs
         auto _seqSize = static_cast<int>(std::distance(begin, end));
+        const int _pivotIdx = static_cast<int>(std::distance(begin, pivot)) + offset;
         int _itIdx = offset;
         int _storeIdx = offset;
 
         // Local logged variables
         writer.Key("locals");
         writer.StartArray();
-        auto it = Iterator::BuildIt<IT>(writer, kSeqName, "it", offset, begin, "Cur IT");
-        Iterator::BuildIt<IT>(writer, kSeqName, "last", offset + _seqSize - 1, end - 1, "Lst IT");
-        auto pivotValue = Value<typename std::iterator_traits<IT>::value_type>::
-                          BuildValue(writer, "pivotValue", *pivot, "Keet pivot val.");
-        auto store = Iterator::BuildIt<IT>(writer, kSeqName, "store", offset, begin, "Store IT");
+
+        auto it = Iterator::BuildIt<IT>(writer, kSeqName, "it", offset, begin);
+        ++stats.nbOtherAccess;
+        Iterator::BuildIt<IT>(writer, kSeqName, "last", offset + _seqSize - 1, end - 1);
+        auto pivotValue = Value_Type::BuildValue(writer, "pivotValue", *pivot);
+        auto store = Iterator::BuildIt<IT>(writer, kSeqName, "store", offset, begin,
+          "Set a store iterator delimiting both partition at the beginning of the current sequence: [" +
+          ToString(offset) + "]{" + ToString(*begin) + "}");
+
         writer.EndArray();
 
         writer.Key("logs");
         writer.StartArray();
-        Comment::Build(writer, "Start Partitinning", 0);
 
-        Comment::Build(writer, "Put the pivot at the end for convenience", 0);
-        Operation::Swap(writer, "pivot", "last");
-        std::swap(*pivot, *(end - 1));
-
-        Comment::Build(writer, "Swap each element with ", 0);
-        for (it = begin; it != end - 1; ++it, Operation::Set<int>(writer, "it", ++_itIdx))
+        if (_pivotIdx - offset != _seqSize - 1)
         {
-          if (Compare()(*it, pivotValue))
-          {
-            Comment::Build(writer, "it <= pivot: swap(it, store).", 1);
-            Operation::Swap(writer, "store", "it");
-            Operation::Set<int>(writer, "store", ++_storeIdx);
-            std::swap(*store, *it);
-            ++store;
-          } else
-            Comment::Build(writer, "pivot > it : Ignore element.", 1);
+          Comment::Build(writer,
+                         "Put the pivot[" + ToString(_pivotIdx) + "]{" +
+                         ToString(pivotValue) + "} at the end for convenience.");
+
+          ++stats.nbSwaps;
+          Operation::Swap(writer, "pivot", "last");
+          std::swap(*pivot, *(end - 1));
         }
 
-        Comment::Build(writer, "Replace the pivot at its good position and replace its value.", 0);
-        Operation::Set<int>(writer, "pivot", _storeIdx);
-        Operation::Swap(writer, "store", "last");
-        std::swap(*(end - 1), *store);
+        Comment::Build(writer, "Put each value <= pivot on the left side of the store pointer:");
+        for (it = begin; it != end - 1; ++it, Operation::Set<int>(writer, "it", ++_itIdx), ++stats.nbIterations)
+        {
+          ++stats.nbComparisons;
+          if (Compare()(*it, pivotValue))
+          {
+            // Swap if needed
+            if (_itIdx != _storeIdx)
+            {
+              Comment::Build(writer, "it[" + ToString(_itIdx) + "]{" + ToString(*it) +
+                                     "} <= pivot{" + ToString(pivotValue) + "}" +
+                                     ": swap it with the store and increment store pointer[" +
+                                     ToString(_storeIdx + 1) + "]", 1);
 
-        // @todo Return Iterator
+              Operation::Swap(writer, "store", "it");
+              std::swap(*store, *it);
+              ++stats.nbSwaps;
+            }
+
+            Operation::Set<int>(writer, "store", ++_storeIdx);
+            ++stats.nbOtherAccess;
+            ++store;
+          }
+          else
+          {
+            Comment::Build(writer, "it[" + ToString(_itIdx) + "]{" + ToString(*it) +
+                           "} > pivot{" + ToString(pivotValue) + "} : Ignore element.", 1);
+          }
+        }
+
+        if (_storeIdx != (offset + _seqSize - 1) && Compare()(pivotValue, *store))
+        {
+          Comment::Build(writer, "Restore pivot[" + ToString(offset + _seqSize - 1) +
+                         "]{" + ToString(*(end - 1)) + "} at the current store[" +
+                         ToString(_storeIdx) + "]{" + ToString(*store) + "}.", 0);
+          Operation::Set<int>(writer, "pivot", _storeIdx);
+
+          ++stats.nbSwaps;
+          ++stats.nbOtherAccess;
+          Operation::Swap(writer, "store", "last");
+          std::swap(*(end - 1), *store);
+        }
+
         Operation::Return<bool>(writer, true);
         writer.EndArray();
+
+        if (!(opts & OpIsSub))
+        {
+          // Add Statistical informations
+          writer.Key("stats");
+          writer.StartObject();
+            writer.Key("nbComparisons");
+            writer.Int(stats.nbComparisons);
+            writer.Key("nbIterations");
+            writer.Int(stats.nbIterations);
+            writer.Key("nbOtherAccess");
+            writer.Int(stats.nbOtherAccess);
+            writer.Key("nbSwaps");
+            writer.Int(stats.nbSwaps);
+          writer.EndObject();
+        }
+
         return store;
       }
 

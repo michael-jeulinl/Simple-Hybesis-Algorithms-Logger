@@ -18,7 +18,7 @@
  *
  *=========================================================================================================*/
 #include <gtest/gtest.h>
-#include <binary_log.hxx>
+#include <kth_max_element_log.hxx>
 
 // STD includes
 #include <fstream>
@@ -28,26 +28,18 @@ using namespace SHA_Logger;
 
 #ifndef DOXYGEN_SKIP
 namespace {
-  template <typename T>
-  struct EQUAL
-  { bool operator()(const T& a, const T& b) const { return a == b; } };
-
-  typedef std::vector<int> Container;
-  typedef Container::const_iterator IT;
-  typedef BinaryLog<IT, int, EQUAL<int>> BinaryLogT;
-
   std::map<std::string, std::vector<int>> Integers
   {
     // Random ranged
-    { "Int_5", { 806, 1120, -737, -975, 675 } },
-    { "Int_10", { 1424, 982, 109, 1409, 383, 1363, 384, 1493, 161, 1296 } },
-    { "Int_20", { 1048, 74, 1467, 394, -417, 959, 533, -713, -159, 1411, 88, 996, 629, -1495, 1128, -637,
+    { "Int_Rand_5", { 806, 1120, -737, -975, 675 } },
+    { "Int_Rand_10", { 1424, 982, 109, 1409, 383, 1363, 384, 1493, 161, 1296 } },
+    { "Int_Rand_20", { 1048, 74, 1467, 394, -417, 959, 533, -713, -159, 1411, 88, 996, 629, -1495, 1128, -637,
         784, -25, 895, -1333 } },
-    { "Int_50", { 530, -568, -468, -1449, -624, -188, 643, -651, -409, -725, 275, -1016, -364, -825,
+    { "Int_Rand_50", { 530, -568, -468, -1449, -624, -188, 643, -651, -409, -725, 275, -1016, -364, -825,
         277, 937, -1108, 1348, -951, -271, 485, 1287, -494, 1127, 178, -973, 1244, 197, 234, -659, -770, 1190,
         1010, 1161, -680, 1294, -1484, 987, 696, 63, -127, 1450, -779, -1466, 1374, 346, 1131, 918, 490, 460 }
     },
-    { "Int_100", { 258, 23, 373, 87, 439, 381, 116, 412, 491, 242, 200, -46, -386, 271, 148, 495, 382,
+    { "Int_Rand_100", { 258, 23, 373, 87, 439, 381, 116, 412, 491, 242, 200, -46, -386, 271, 148, 495, 382,
         -106, 365, 166, -130, 219, 335, 98, 424, 73, 312, 69, 406, 11, 204, -86, 468, 129, 283, 160, 236, 402,
         -291, 109, 297, -65, 140, -195, -154, 296, 493, 187, 372, 127, -198, 435, -356, 33, 99, 292,
         -206, 426, 421, -430, 246, -183, -77, -16, -168, -257, 362, 443, -285, -448, -230, -275, -364,
@@ -56,16 +48,16 @@ namespace {
     },
 
     // Few Uniques
-    { "Int_Few_5", { 1319, 169, -118, 169, 319 } },
-    { "Int_Few_10", { 1240, 374, 162, -1133, 681, -183, 1229, 374, 192, -1133 } },
-    { "Int_Few_20", { 1048, 74, 1467, 74, -417, 959, 533, -713, -159, 88, 88, 996, 629, -1495, 629, -637,
+    { "Int_Rand_Few_5", { 1319, 169, -118, 169, 319 } },
+    { "Int_Rand_Few_10", { 1240, 374, 162, -1133, 681, -183, 1229, 374, 192, -1133 } },
+    { "Int_Rand_Few_20", { 1048, 74, 1467, 74, -417, 959, 533, -713, -159, 88, 88, 996, 629, -1495, 629, -637,
         784, -25, 895, -1333 } },
-    { "Int_Few_50", { 530, -568, -468, 277, 624, -188, -490, 651, 409, 696, -275, -1016, 364, 825, 277,
+    { "Int_Rand_Few_50", { 530, -568, -468, 277, 624, -188, -490, 651, 409, 696, -275, -1016, 364, 825, 277,
         937, 1108, 1348, -951, 271, -485, 1287, -494, -1127, -178, 973, 1244, -197, -234, 659, -770, 1190,
         1010, 1161, -191, -1294, -1484, 696, 696, -63, -127, 1450, 779, -1466, 1374, -346, 696, 918, -490,
         460 }
     },
-    { "Int_Few_100", { 58, 123, 7, 152, 60, 75, 75, 70, 23, 190, 111, 44, -133, 18,
+    { "Int_Rand_Few_100", { 58, 123, 7, 152, 60, 75, 75, 70, 23, 190, 111, 44, -133, 18,
         18, 61, 191, 179, 166, -157, -173, 73, 1, -21, 101, 37, 111, -195, -14, 83, 39, 10,
         20, 39, -144, 161, 161, -114, 166, 175, 196, 128, 114, 22, 117, -195, 109, 154, 88,
         193, 130, 5, 76, 183, -197, -99, 138, 73, 140, 102, 22, -99, 84, 176, 179, 183, -99,
@@ -74,7 +66,7 @@ namespace {
     },
   };
 
-  std::map<int, std::vector<int>> KeySearch
+  std::map<int, std::vector<int>> IndexSearch
   {
     // Random ranged
     { 5, { 2, 4 } },
@@ -83,32 +75,30 @@ namespace {
     { 50, { 3, 25, 40 } },
     { 100, { 3, 25, 50, 75 } }
   };
+
+  typedef std::vector<int> Container;
+  typedef std::vector<int>::iterator IT;
 }
 #endif /* DOXYGEN_SKIP */
 
-// Test Binary with different integer sequences
-TEST(TestBinaryLog, build)
+// Test KthElement with different integer sequences
+TEST(TestKthElementLog, build)
 {
-  OFStream valueStream("values.txt");
-
   // Generate log for all Random integers
   for (auto it = Integers.begin(); it != Integers.end(); ++it)
   {
-    auto rangeIt = KeySearch.find(it->second.size());
-    if (rangeIt == KeySearch.end())
+    auto rangeIt = IndexSearch.find(it->second.size());
+    if (rangeIt == IndexSearch.end())
       continue;
 
-    for (auto keyIt = rangeIt->second.begin(); keyIt != rangeIt->second.end(); ++keyIt)
+    for (auto idxIt = rangeIt->second.begin(); idxIt != rangeIt->second.end(); ++idxIt)
     {
       Container data(it->second);
-      auto key = data[*keyIt];
-      std::sort(data.begin(), data.end());
+      OFStream fileStream(std::string(it->first + "_" + std::to_string(*idxIt) + ".json"));
 
-      OFStream fileStream(std::string(it->first + "_" + std::to_string(*keyIt) + ".json"));
-      valueStream << std::string(it->first + "_" + std::to_string(*keyIt)) << " : " << key << std::endl;
-      BinaryLogT::Build(fileStream, OpGetAll, data.begin(), data.end(), key);
+      VecStats tmpVar;
+      KthElementLog<IT>::Build(fileStream, OpGetAll, data.begin(), data.end(), *idxIt, tmpVar);
     }
   }
-
-  valueStream.close();
 }
+

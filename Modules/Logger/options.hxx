@@ -22,14 +22,18 @@
 
 namespace SHA_Logger
 {
+  // @todo option with template<stats> --> avoid manual cp/past
+  // @todo comment Level to retrieve (-1 for none) --> log file much much lighter
+
   enum Options
   {
-    OpGetMin = 0x00,   // Retrieve only logs
-    OpGetName = 0x01,  // Retrieve the name
-    OpGetDoc = 0x02,   // Retrieve the technical documentation
-    OpGetInfo = 0x04,  // Retrieve diverse information
-    OpGetSrc = 0x08,   // Retrieve the original source code
-    OpIsSub = 0x10,    // !SubRoutine Call - Do not build parameter but only indexes!
+    OpGetMin = 0x00,      // Retrieve only logs
+    OpGetName = 0x01,     // Retrieve the name
+    OpGetDoc = 0x02,      // Retrieve the technical documentation
+    OpGetInfo = 0x04,     // Retrieve diverse information
+    OpGetSrc = 0x08,      // Retrieve the original source code
+    OpGetComment = 0x10,  // Retrieve comments written during computation
+    OpIsSub = 0x10,       // !SubRoutine Call - Do not build parameter but only indexes!
     OpGetAll = OpGetName | OpGetDoc | OpGetInfo | OpGetSrc  // Retrieve all information
   };
 }

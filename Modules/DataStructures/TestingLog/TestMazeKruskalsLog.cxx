@@ -17,42 +17,34 @@
  * substantial portions of the Software.
  *
  *=========================================================================================================*/
-#ifndef MODULE_LOGGER_TYPEDEF_HXX
-#define MODULE_LOGGER_TYPEDEF_HXX
-
-// JSON lib includes
-#include <rapidjson/ostreamwrapper.h>
-#include <rapidjson/prettywriter.h>
+#include <gtest/gtest.h>
+#include <maze_kruskals_log.hxx>
 
 // STD includes
-#include <string>
+#include <fstream>
 
-namespace SHA_Logger
-{
-  typedef rapidjson::OStreamWrapper Stream;
-  //typedef rapidjson::PrettyWriter<Stream> Writer;
-  typedef rapidjson::Writer<Stream> Writer;
+// Testing namespace
+using namespace SHA_Logger;
 
-  // STD typedef
-  typedef const std::string String;
-  typedef std::ostream Ostream;
-  typedef std::ofstream OFStream;
-
-  // Constants
-  static const std::string kSeqName = "sequence";
-
-  // String value
-  template<typename T>
-  typename std::enable_if<std::is_fundamental<T>::value, std::string>::type ToString(const T& t)
-  { return std::to_string(t); }
-
-  template<>
-  inline std::string ToString<char>(const char& t)
-  { return std::string(1, t); }
-
-  template<class T>
-  typename std::enable_if<!std::is_fundamental<T>::value, std::string>::type  ToString(const T& t)
-  { return std::string(t); }
+#ifndef DOXYGEN_SKIP
+namespace {
+  std::vector<uint8_t> Widths = {5, 10, 20, 30, 50, 75};
+  std::vector<uint8_t> Seeds = {1, 2, 3, 4};
 }
+#endif /* DOXYGEN_SKIP */
 
-#endif // MODULE_LOGGER_TYPEDEF_HXX
+// Test TestAlgo Construction
+TEST(TestMazeKruskalsTreeLog, build)
+{
+  // Generate log for all Random integers
+  for (auto seed = Seeds.begin(); seed != Seeds.end(); ++seed)
+    for (auto width = Widths.rbegin(); width != Widths.rend(); ++width)
+      for (auto height = width; std::distance(width, height) != 3 && height != Widths.rend(); ++height)
+      {
+        OFStream fileStream(std::string(
+                              ToString(*width) + "_" + ToString(*height) + "_" + ToString(*seed) + ".json"));
+
+        // Build Maze
+        MazeKruskalsLog::Build(fileStream, *width, *height, *seed);
+      }
+}

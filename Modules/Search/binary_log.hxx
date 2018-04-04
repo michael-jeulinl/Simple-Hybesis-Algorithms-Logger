@@ -35,21 +35,7 @@ namespace SHA_Logger
   class BinaryLog
   {
     public:
-    /// @todo Use string litteral for JSON description within c++ code
-    /// eg https://cs.chromium.org/chromium/src/gpu/config/software_rendering_list_json.cc
-    static const String GetName() { return "Binary_Sort"; }
-
-      /// Write algorithm information
-      /// @todo Use string litteral for JSON description within c++ code --> binary_desc.json.hxx
-      static bool WriteInfo(Writer& writer) { return true; }
-
-      /// Write algorithm decription
-      /// @todo Use string litteral for JSON description within c++ code --> binary_desc.json.hxx
-      static bool WriteDoc(Writer& writer) { return true; }
-
-      /// Write algorithm sources
-      /// @todo Use string litteral for JSON description within c++ code --> binary_desc.json.hxx
-      static bool WriteSrc(Writer& writer) { return true; }
+      static const String GetName() { return "Binary Search"; }
 
       // Assert correct JSON construction.
       ~BinaryLog() { assert(this->writer->IsComplete()); }
@@ -90,14 +76,9 @@ namespace SHA_Logger
       {
         writer.StartObject();
 
-        // Write description
-        Algo_Traits<BinaryLog>::Build(writer, opts);
-
-        // Write parameters
-        WriteParameters(writer, begin, end, key);
-
-        // Write computation
-        WriteComputation(writer, begin, end, key);
+        Algo_Traits<BinaryLog>::Build(writer, opts);  // Write description
+        WriteParameters(writer, begin, end, key);     // Write parameters
+        WriteComputation(writer, begin, end, key);    // Write computation
 
         writer.EndObject();
 
@@ -108,9 +89,9 @@ namespace SHA_Logger
       static bool WriteParameters(Writer& writer, const IT& begin, const IT& end, const T& key)
       {
         writer.Key("parameters");
-        writer.StartArray();
-        Array<IT>::Build(writer, kSeqName, "begin", begin, "end", end);
-        Value<T>::Build(writer, "key", key);
+          writer.StartArray();
+          Array<IT>::Build(writer, kSeqName, "begin", begin, "end", end);
+          Value<T>::Build(writer, "key", key);
         writer.EndArray();
 
         return true;
@@ -120,59 +101,77 @@ namespace SHA_Logger
       static bool WriteComputation(Writer& writer, const IT& begin, const IT& end, const T& key)
       {
         // Not part of the logs
-        int _lowIdx = 0;
+        const auto seqSize = static_cast<int>(std::distance(begin, end));
+        auto lowIt = begin;
+        auto highIt = end;
+        int middleIdx = seqSize / 2;
 
         // Local logged variables
         writer.Key("locals");
         writer.StartArray();
-        auto index = Value<int>::BuildValue(writer, "index", -1);
-        auto seqSize = Value<int>::BuildValue(writer, "seqSize", static_cast<int>(std::distance(begin, end)));
-        auto lowIt = Iterator::BuildIt<IT>(writer, kSeqName, "lowIt", 0, begin);
-        auto highIt = Iterator::BuildIt<IT>(writer, kSeqName, "highIt", seqSize + 1, end);
-        auto middleIt = Iterator::BuildIt<IT>(writer, kSeqName, "middleIt", seqSize / 2,
-          lowIt + seqSize / 2, "Initiate index on the middle element of the sequence");
+          auto index = Value<int>::BuildValue(writer, "index", -1);
+          auto middleIt =
+            Iterator::BuildIt<IT>(writer, kSeqName, "it", middleIdx, lowIt + middleIdx);
         writer.EndArray();
 
         // Log algorithm operations
         writer.Key("logs");
         writer.StartArray();
-        Comment::Build(writer, "Start Binary Search", 0);
         while (lowIt < highIt && index < 0)
         {
+          middleIdx = static_cast<int>(std::distance(begin, middleIt));
+          Operation::Set<int>(writer, "it", middleIdx);
+
           if (IsEqualT()(key, *middleIt))
           {
-            index = static_cast<int>(std::distance(begin, middleIt));
+            index = middleIdx;
 
-            Comment::Build(writer, "Found!", 1);
+            Comment::Build(writer,
+              "Key {" + std::to_string(key) + "} Found at index [" + std::to_string(index) + "]", 1);
             Operation::Set<int>(writer, "index", index);
             break;
           }
           else if (key > *middleIt)
           {
             lowIt = middleIt + 1;
-            _lowIdx += seqSize / 2 + 1;
-            seqSize -= seqSize / 2 + 1;
 
-            Comment::Build(writer, "(key > current): search upper sequence.", 1);
-            Operation::Set<int>(writer, "lowIt", _lowIdx);
+            Comment::Build(writer, "Key{" + std::to_string(key) + "} > it[" +
+              std::to_string(middleIdx) + "]{" + std::to_string(*middleIt) +
+              "}: search within upper sequence.", 1);
           }
           else
           {
             highIt = middleIt;
 
-            Comment::Build(writer, "(key < current): search lower sequence.", 1);
-            Operation::Set<int>(writer, "highIt", seqSize / 2);
-            seqSize -= seqSize / 2;
+            Comment::Build(writer, "Key{" + std::to_string(key) + "} < it[" +
+              std::to_string(middleIdx) + "]{" + std::to_string(*middleIt) +
+              "}: search within lower sequence.", 1);
           }
 
-          middleIt = lowIt + seqSize / 2;
-          Comment::Build(writer, "Select the middle element of the remaining sequence.", 1);
-          Operation::Set<int>(writer, "middleIt", _lowIdx + seqSize / 2);
+          /// LOG RANGE CHANGED
+          /// @todo check new type of operation
+          writer.StartObject();
+            writer.Key("type");
+            writer.String("operation");
+            writer.Key("name");
+            writer.String("setRange");
+            writer.Key("range");
+            writer.StartArray();
+              writer.Int(static_cast<int>(std::distance(begin, lowIt)));
+              writer.Int(static_cast<int>(std::distance(begin, highIt)));
+            writer.EndArray();
+          writer.EndObject();
+
+          middleIt = lowIt + std::distance(lowIt, highIt) / 2;
+          middleIdx = static_cast<int>(std::distance(begin, middleIt));
+          Comment::Build(writer, "Select middle element[" + std::to_string(middleIdx) +
+            "]{" + std::to_string(*middleIt) + "}.", 1);
+          Operation::Set<int>(writer, "it", middleIdx);
         }
 
         // Logs failure
         if (index < 0)
-          Comment::Build(writer, "Key not found.", 0);
+          Comment::Build(writer, "Key {" + std::to_string(key) + "} was not found.", 0);
 
         Operation::Return<int>(writer, index);
         writer.EndArray();

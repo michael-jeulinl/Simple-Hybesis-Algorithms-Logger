@@ -19,36 +19,123 @@
  *=========================================================================================================*/
 #include <gtest/gtest.h>
 #include <comb_log.hxx>
+#include "data.hxx"
 
 // STD includes
 #include <fstream>
-#include <functional>
-#include <vector>
 
 // Testing namespace
 using namespace SHA_Logger;
 
 #ifndef DOXYGEN_SKIP
 namespace {
-  // Simple random array of integers with negative values
-  const int Data[] = {-1, 6, -4, 5, 8, 4, -5, -6, 7, 0, 2, -2, -3, 3, 3, -7, -8, 1};
-
   typedef std::vector<int> Container;
   typedef Container::iterator IT;
 }
 #endif /* DOXYGEN_SKIP */
 
-// Test TestAlgo Construction
+// Test Comb with different integer sequences
 TEST(TestCombLog, build)
 {
-  Container data(Data, Data + sizeof(Data) / sizeof(int));
+  // Generate log for all Random integers
+  for (auto it = SHA_DATA::Integers.begin(); it != SHA_DATA::Integers.end(); ++it)
+  {
+    Container data(it->second);
+    OFStream fileStream(std::string(it->first + ".json"));
 
-  OFStream fileStream("Comb_output.json");
+    VecStats tmpVar;
+    CombLog<IT>::Build(fileStream, OpGetAll, data.begin(), data.end(), tmpVar);
 
-  // Run Merge - Should result in fully sorted container
-  CombLog<IT>::Build(fileStream, OpGetAll, data.begin(), data.end());
-
-  // All elements of the final array are sorted
-  for (auto it = data.begin(); it < data.end() - 1; ++it)
-    EXPECT_LE(*it, *(it + 1));
+    // All elements of the final array are sorted
+    for (auto it = data.begin(); it < data.end() - 1; ++it)
+      EXPECT_LE(*it, *(it + 1));
+  }
 }
+
+// Test Comb with reversed integer sequences
+TEST(TestCombLog, Reversed)
+{
+  Container sizes({10, 20, 50, 100});
+
+  for (auto size = sizes.begin(); size != sizes.end(); ++size)
+  {
+    Container data;
+    data.reserve(*size);
+    for (auto i = 0; i < *size; ++i)
+      data.push_back((*size / 2) - i);
+
+    OFStream fileStream(std::string("Int_Rev_" + std::to_string(*size) + ".json"));
+    VecStats tmpVar;
+    CombLog<IT>::Build(fileStream, OpGetAll, data.begin(), data.end(), tmpVar);
+
+    // All elements of the final array are sorted
+    for (auto it = data.begin(); it < data.end() - 1; ++it)
+      EXPECT_LE(*it, *(it + 1));
+  }
+}
+
+// Test with reversed char sequences
+TEST(TestCombLog, ReversedChars)
+{
+  Container sizes({10, 20, 50});
+
+  for (auto size = sizes.begin(); size != sizes.end(); ++size)
+  {
+    std::vector<char> data;
+    data.reserve(*size);
+    for (auto i = 0; i < *size; ++i)
+      data.push_back(static_cast<char>(*size - i + 65));
+
+    OFStream fileStream(std::string("Char_Rev_" + std::to_string(*size) + ".json"));
+    VecStats tmpVar;
+    CombLog<std::vector<char>::iterator>::Build(fileStream, OpGetAll, data.begin(), data.end(), tmpVar);
+
+    // All elements of the final array are sorted
+    for (auto it = data.begin(); it < data.end() - 1; ++it)
+      EXPECT_LE(*it, *(it + 1));
+  }
+}
+
+// Test with random char sequences
+TEST(TestCombLog, RandomChars)
+{
+  // Generate log for all Random integers
+  for (auto it = SHA_DATA::Integers.begin(); it != SHA_DATA::Integers.end(); ++it)
+  {
+    auto size = it->second.size();
+
+    if (size > 50)
+      continue;
+
+    std::vector<char> data;
+    data.reserve(size);
+    for (auto i = 0; i < size; ++i)
+      data.push_back(static_cast<char>(it->second[i] + (size / 2) + 65));
+
+    OFStream fileStream(std::string("Char" + it->first.substr(3) + ".json"));
+
+    VecStats tmpVar;
+    CombLog<std::vector<char>::iterator>::Build(fileStream, OpGetAll, data.begin(), data.end(), tmpVar);
+
+    // All elements of the final array are sorted
+    for (auto it = data.begin(); it < data.end() - 1; ++it)
+      EXPECT_LE(*it, *(it + 1));
+  }
+}
+
+/*TEST(TestCombLog, Strings)
+{
+  // Generate log for all Random integers
+  for (auto it = SHA_DATA::Strings.begin(); it != SHA_DATA::Strings.end(); ++it)
+  {
+    auto str = it->second;
+    OFStream fileStream(std::string(it->first + ".json"));
+
+    VecStats tmpVar;
+    CombLog<std::string::iterator>::Build(fileStream, OpGetAll, str.begin(), str.end(), tmpVar);
+
+    // All elements of the final array are sorted
+    for (auto it = str.begin(); it < str.end() - 1; ++it)
+      EXPECT_LE(*it, *(it + 1));
+  }
+}*/

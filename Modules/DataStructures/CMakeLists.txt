@@ -27,3 +27,8 @@ set(SHA_SRCS "${CMAKE_CURRENT_SOURCE_DIR}")
 if(BUILD_TESTING)
   add_subdirectory(Testing)
 endif()
+
+# Testing Log
+if(BUILD_TESTING_LOG)
+  add_subdirectory(TestingLog)
+endif()
