@@ -24,6 +24,7 @@ set(SHA ${PROJECT_NAME})
 set(MODULE_LOGGER_SRCS TestAlgorithm.cxx
                        TestArray.cxx
                        TestIterator.cxx
+                       TestVector.cxx
                        #TestValueType.cxx
                        )
 

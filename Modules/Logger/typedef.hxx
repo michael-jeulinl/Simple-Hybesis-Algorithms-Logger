@@ -30,8 +30,8 @@
 namespace SHA_Logger
 {
   typedef rapidjson::OStreamWrapper Stream;
-  //typedef rapidjson::PrettyWriter<Stream> Writer;
-  typedef rapidjson::Writer<Stream> Writer;
+  typedef rapidjson::PrettyWriter<Stream> Writer;
+  //typedef rapidjson::Writer<Stream> Writer;
 
   // STD typedef
   typedef const std::string String;
@@ -40,6 +40,16 @@ namespace SHA_Logger
 
   // Constants
   static const std::string kSeqName = "sequence";
+
+  // TODO Delete
+  struct VecStats
+  {
+    VecStats() : nbComparisons(0), nbIterations(0), nbOtherAccess(0), nbSwaps(0) {}
+    int nbComparisons;
+    int nbIterations;
+    int nbOtherAccess;
+    int nbSwaps;
+  };
 
   // String value
   template<typename T>

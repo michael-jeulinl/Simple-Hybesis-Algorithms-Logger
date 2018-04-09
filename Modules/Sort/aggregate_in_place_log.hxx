@@ -42,9 +42,6 @@ namespace SHA_Logger
     public:
       static const String GetName() { return "Aggregate In Place"; }
 
-      // Assert correct JSON construction.
-      ~AggregateInPlaceLog() { assert(this->writer->IsComplete()); }
-
       /// Instantiate a new json writer using the stream passed as
       /// argument, run and write algorithm computation information.
       ///
@@ -60,6 +57,19 @@ namespace SHA_Logger
 
         return os;
       }
+
+
+      /// Instantiate a new json writer using the stream passed as
+      /// argument, run and write algorithm computation information.
+      ///
+      /// @return stream reference filled up with AggregateInPlaceLog object information,
+      ///         error object information in case of failure.
+      static bool Build(const IT& begin, const IT& pivot, const IT& end, Options opts = Options())
+      {
+        Write(*begin.GetWriter(), opts, begin, pivot, end);
+        return true;
+      }
+
 
       /// Use json writer passed as parameter to write iterator information.
       ///
@@ -93,6 +103,37 @@ namespace SHA_Logger
                  VecStats& stats, const int offset)
       { return Write(*this->writer, opts, begin, pivot, end, stats, offset); }
 
+
+      ///
+      /// \brief Write
+      /// \param writer
+      /// \param opts
+      /// \param begin
+      /// \param pivot
+      /// \param end
+      /// \return
+      ///
+      static bool Write(Writer& writer, Options opts, const IT& begin, const IT& pivot, const IT& end)
+      {
+        // Do not write sequence if no data to be processed
+        if (std::distance(begin, pivot) < 1 || std::distance(pivot, end) < 1)
+        {
+          Operation::Return<bool>(writer, true);
+          return true;
+        }
+
+        writer.StartObject();
+
+        Algo_Traits<AggregateInPlaceLog>::Build(writer, opts);  // Write description
+        WriteParameters(writer, opts, begin, pivot, end);       // Write parameters
+        WriteComputation(writer, opts, begin, pivot, end);      // Write computation
+
+        writer.EndObject();
+
+        return true;
+      }
+
+
       ///
       /// \brief Write
       /// \param writer
@@ -125,6 +166,30 @@ namespace SHA_Logger
         return true;
       }
 
+
+      static bool WriteParameters(Writer& writer, Options opts,
+                                  const IT& begin, const IT& pivot, const IT& end)
+      {
+        int offset = 0;
+        const int _pivIdx = static_cast<int>(std::distance(begin, pivot));
+        writer.Key("parameters");
+        writer.StartArray();
+        if (opts & OpIsSub)
+        {
+          const int _seqSize = static_cast<int>(std::distance(begin, end));
+          Iterator::Build(writer, kSeqName, "begin", offset);
+          Iterator::Build(writer, kSeqName, "pivot", offset + _pivIdx);
+          Iterator::Build(writer, kSeqName, "end", offset + _seqSize);
+        }
+        else
+        {
+          Array<IT>::Build(writer, kSeqName, "begin", begin, "end", end);
+          Iterator::Build(writer, kSeqName, "pivot", _pivIdx);
+        }
+        writer.EndArray();;
+
+        return true;
+      }
       ///
       /// \brief WriteParameters
       /// \param writer
@@ -172,6 +237,106 @@ namespace SHA_Logger
                                    const IT& begin, const IT& pivot, const IT& end,
                                    VecStats& stats, const int offset)
       {
+        auto _beginIdx = offset;
+        const auto _pIdx = offset + static_cast<const int>(std::distance(begin, pivot));
+
+        // Local logged variables
+        writer.Key("locals");
+        writer.StartArray();
+        auto it = Iterator::BuildIt<IT>(writer, kSeqName, "it", _beginIdx, begin);
+        ++stats.nbOtherAccess;
+        Iterator::BuildIt<IT>(writer, kSeqName, "it_increment", _beginIdx + 1, begin + 1);
+        writer.EndArray();
+
+        writer.Key("logs");
+        writer.StartArray();
+
+        Comment::Build(writer, static_cast<std::string>(
+                       "Swap if smaller, second part first element with first part current element") +
+                       " and place the new first at its right position:");
+        for (auto curBegin = begin; curBegin < pivot; ++curBegin, ++_beginIdx, ++stats.nbIterations)
+        {
+          Operation::Set<int>(writer, "begin", _beginIdx);
+          ++stats.nbComparisons;
+          if (Compare()(*curBegin, *pivot))
+          {
+            Comment::Build(writer, "it[" + ToString(_beginIdx) + "]{" + ToString(*curBegin) +
+                           "} < pivot[" + ToString(_pIdx) + "]{" + ToString(*pivot) +
+                           "} : Ignore element.", 1);
+            continue;
+          }
+
+          Comment::Build(writer, "it[" + ToString(_beginIdx) + "]{" + ToString(*curBegin) +
+                         "} >= pivot[" + ToString(_pIdx) + "]{" + ToString(*pivot) +
+                         "} : Swap pivot with the current it.", 1);
+          ++stats.nbSwaps;
+          Operation::Swap(writer, "begin", "pivot");
+          std::swap(*curBegin, *pivot);
+
+          it = pivot;
+          auto _itIdx = offset + static_cast<int>(std::distance(begin, it));
+          Comment::Build(writer, "Displace new pivot value in the right place by bubbling:", 1);
+          for (; it != end - 1; ++it, ++_itIdx, ++stats.nbIterations)
+          {
+            Operation::Set<int>(writer, "it", _itIdx);
+            Operation::Set<int>(writer, "it_increment", _itIdx + 1);
+
+            ++stats.nbComparisons;
+            ++stats.nbOtherAccess;
+            if (!Compare()(*(it + 1), *it))
+            {
+              Comment::Build(writer, "it[" + ToString(_itIdx) + "]{" + ToString(*it) +
+                             "} <= next[" + ToString(_itIdx + 1) + "]{" + ToString(*(it + 1)) +
+                             "} : Element at its right place, break.", 2);
+              break;
+            }
+
+            Comment::Build(writer, "it[" + ToString(_itIdx) + "]{" + ToString(*it) +
+                           "} > next[" + ToString(_itIdx + 1) + "]{" + ToString(*(it + 1)) +
+                           "} : Bubble element.", 2);
+
+            ++stats.nbSwaps;
+            Operation::Swap(writer, "it", "it_increment");
+            std::swap(*it, *(it + 1));
+          }
+        }
+
+        Operation::Return<bool>(writer, true);
+        writer.EndArray();
+
+        if (!(opts & OpIsSub))
+        {
+          // Add Statistical informations
+          writer.Key("stats");
+          writer.StartObject();
+            writer.Key("nbComparisons");
+            writer.Int(stats.nbComparisons);
+            writer.Key("nbIterations");
+            writer.Int(stats.nbIterations);
+            writer.Key("nbOtherAccess");
+            writer.Int(stats.nbOtherAccess);
+            writer.Key("nbSwaps");
+            writer.Int(stats.nbSwaps);
+          writer.EndObject();
+        }
+
+        return true;
+      }
+
+      ///
+      /// \brief WriteComputation
+      /// \param writer
+      /// \param begin
+      /// \param pivot
+      /// \param end
+      /// \param offset
+      /// \return
+      ///
+      static bool WriteComputation(Writer& writer, Options opts,
+                                   const IT& begin, const IT& pivot, const IT& end)
+      {
+        VecStats stats;
+        int offset = 0;
         auto _beginIdx = offset;
         const auto _pIdx = offset + static_cast<const int>(std::distance(begin, pivot));
 

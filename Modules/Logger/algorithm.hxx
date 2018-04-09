@@ -55,6 +55,7 @@ namespace SHA_Logger
         return writer;
       }
 
+
     private:
       Algo_Traits(Ostream& os) : stream(std::unique_ptr<Stream>(new Stream(os))),
                                  writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
@@ -66,11 +67,13 @@ namespace SHA_Logger
       {
         writer.Key("type");
         writer.String(GetType());
-        if (opts & OpGetName || opts & OpIsSub)
-        {
+        writer.Key("version");
+        writer.String("check how to handle versionning with visualizers / structures and releases.");
+        //if (opts & OpGetName || opts & OpIsSub)
+        //{
            writer.Key("name");
            writer.String(Algo::GetName());
-        }
+        //}
 
         /*if (opts & OpGetDoc)
           Algo::WriteDoc(writer);

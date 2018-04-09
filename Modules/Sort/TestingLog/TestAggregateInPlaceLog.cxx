@@ -30,13 +30,30 @@ using namespace SHA_Logger;
 
 #ifndef DOXYGEN_SKIP
 namespace {
-  typedef std::vector<int> Container;
-  typedef Container::iterator IT;
+  //typedef std::vector<int> Container;
+  //typedef Container::iterator IT;
+
+  typedef Vector<int> Container;
+  typedef Container::h_iterator IT;
 }
 #endif /* DOXYGEN_SKIP */
 
-// Test AggregateInPlace with different integer sequences
 TEST(TestAggregateInPlaceLog, build)
+{
+  OFStream fileStream("agg_log.json");
+  Container data({-8, -6, -4, -3, -1, 0, 2, 4, 6, 9, -7, -5, -2, 1, 3, 5, 7, 8, 9, 10}, fileStream);
+  IT pivot = IT(data.begin() + 10, &data, 10, "pivot"); // Rotation Index
+
+  // Launch
+  AggregateInPlaceLog<IT>::Build(data.h_begin(), pivot, data.h_end());
+
+  // All elements of the final array are sorted
+  for (auto it = data.begin(); it < data.end() - 1; ++it)
+    EXPECT_LE(*it, *(it + 1));
+}
+
+// Test AggregateInPlace with different integer sequences
+/*TEST(TestAggregateInPlaceLog, build)
 {
   // Generate log for all Random integers
   for (auto it = SHA_DATA::RotatedIntegers.begin(); it != SHA_DATA::RotatedIntegers.end(); ++it)
@@ -139,4 +156,4 @@ TEST(TestAggregateInPlaceLog, RotatedChars)
     for (auto it = data.begin(); it < data.end() - 1; ++it)
       EXPECT_LE(*it, *(it + 1));
   }
-}
+}*/
