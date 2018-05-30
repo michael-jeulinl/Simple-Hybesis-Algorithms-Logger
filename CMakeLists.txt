@@ -1,13 +1,13 @@
 #############################################################################################################
 #
-# SHA - Simple Hybesis Algorithm
+# HUC - Hurna Core
 #
 # Copyright (c) Michael Jeulin-Lagarrigue
 #
 #  Licensed under the MIT License, you may not use this file except in compliance with the License.
 #  You may obtain a copy of the License at
 #
-#         https://github.com/michael-jeulinl/Simple-Hybesis-Algorithms/blob/master/LICENSE
+#         https://github.com/Hurna/Hurna-Core/blob/master/LICENSE
 #
 # Unless required by applicable law or agreed to in writing, software distributed under the License is
 # distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,7 +21,7 @@
 cmake_minimum_required(VERSION 2.8.2)
 
 #-----------------------------------------------------------------------------
-project(SimpleHybesisAlgorithm)
+project(HurnaCore)
 #-----------------------------------------------------------------------------
 
 #-----------------------------------------------------------------------------
@@ -39,26 +39,26 @@ endif()
 # Version number.
 # An even minor number corresponds to releases.
 #
-set(SHA_VERSION_MAJOR 0)
-set(SHA_VERSION_MINOR 2)
-set(SHA_VERSION_PATCH 0)
-set(SHA_VERSION
-    "${SHA_VERSION_MAJOR}.${SHA_VERSION_MINOR}.${SHA_VERSION_PATCH}")
+set(HUC_VERSION_MAJOR 1)
+set(HUC_VERSION_MINOR 0)
+set(HUC_VERSION_PATCH 0)
+set(HUC_VERSION
+    "${HUC_VERSION_MAJOR}.${HUC_VERSION_MINOR}.${HUC_VERSION_PATCH}")
 
 #-----------------------------------------------------------------------------
 # Information.
 # Variables containing project information.
 #
-set(SHA_PROJECT_TITLE "Simple-Hybesis-Algorithms")
+set(HUC_PROJECT_TITLE "Hurna-Core")
 
 #-----------------------------------------------------------------------------
 # Install directories, used for install rules.
 #
-if(NOT SHA_SOURCE_DIR)
-  set(SHA_SOURCE_DIR "Modules")
+if(NOT HUC_SOURCE_DIR)
+  set(HUC_SOURCE_DIR "Modules")
 endif()
-if(NOT SHA_INSTALL_DOC_DIR)
-  set(SHA_INSTALL_DOC_DIR "Doc")
+if(NOT HUC_INSTALL_DOC_DIR)
+  set(HUC_INSTALL_DOC_DIR "Doc")
 endif()
 
 #-----------------------------------------------------------------------------
@@ -120,11 +120,11 @@ set(ADDITIONAL_CXX_FLAGS "" CACHE STRING "Additional CXX Flags")
 mark_as_advanced(ADDITIONAL_CXX_FLAGS)
 
 #-----------------------------------------------------------------------------
-# SHA C/CXX Flags
+# HUC C/CXX Flags
 #
-set(SHA_C_FLAGS
+set(HUC_C_FLAGS
   "${CMAKE_C_FLAGS_INIT} ${COVERAGE_C_FLAGS} ${ADDITIONAL_C_FLAGS}")
-set(SHA_CXX_FLAGS
+set(HUC_CXX_FLAGS
   "${CMAKE_CXX_FLAGS_INIT} ${VISIBILITY_CXX_FLAGS} ${COVERAGE_CXX_FLAGS} ${ADDITIONAL_CXX_FLAGS}")
 
 if(CMAKE_COMPILER_IS_GNUCXX)
@@ -132,13 +132,13 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 
   if(MINGW)
     # suppress warnings about auto imported symbols
-    set(SHA_CXX_FLAGS "-Wl,--enable-auto-import ${SHA_CXX_FLAGS}")
+    set(HUC_CXX_FLAGS "-Wl,--enable-auto-import ${HUC_CXX_FLAGS}")
   endif()
 
-  set(SHA_C_FLAGS "${cflags} ${SHA_C_FLAGS}")
-  set(SHA_CXX_FLAGS "${cflags} ${SHA_CXX_FLAGS}")
-#      -Woverloaded-virtual -Wold-style-cast ${SHA_CXX_FLAGS}")
-#      -Wstrict-null-sentinel -Wsign-promo ${SHA_CXX_FLAGS}")
+  set(HUC_C_FLAGS "${cflags} ${HUC_C_FLAGS}")
+  set(HUC_CXX_FLAGS "${cflags} ${HUC_CXX_FLAGS}")
+#      -Woverloaded-virtual -Wold-style-cast ${HUC_CXX_FLAGS}")
+#      -Wstrict-null-sentinel -Wsign-promo ${HUC_CXX_FLAGS}")
 endif()
 
 if(MSVC)
@@ -146,7 +146,7 @@ if(MSVC)
     "/wd4290" # C++ exception specification ignored except to indicate a function is not __declspec(nothrow)
   )
 
-  set(SHA_CXX_FLAGS "${SHA_CXX_FLAGS} ${msvc_suppressed_warnings}")
+  set(HUC_CXX_FLAGS "${HUC_CXX_FLAGS} ${msvc_suppressed_warnings}")
 
   # Add compiler flag for MSVC 2012
   # VS2012 doesn't support correctly the tuples used by GTest
@@ -162,8 +162,8 @@ add_definitions(-D_CRT_NONSTDC_NO_DEPRECATE
 #-----------------------------------------------------------------------------
 # Set C/CXX Flags
 #
-set(CMAKE_CXX_FLAGS ${SHA_CXX_FLAGS} CACHE STRING "CMake C Flags" FORCE)
-set(CMAKE_C_FLAGS ${SHA_C_FLAGS} CACHE STRING "CMake CXX Flags" FORCE)
+set(CMAKE_CXX_FLAGS ${HUC_CXX_FLAGS} CACHE STRING "CMake C Flags" FORCE)
+set(CMAKE_C_FLAGS ${HUC_C_FLAGS} CACHE STRING "CMake CXX Flags" FORCE)
 
 # Force static runtime libraries to build against gtest
 FOREACH(flag
