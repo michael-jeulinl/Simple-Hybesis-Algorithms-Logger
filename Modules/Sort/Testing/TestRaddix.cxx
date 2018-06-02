@@ -21,7 +21,7 @@
 #include <raddix.hxx>
 
 // Testing namespace
-using namespace HUC_Sort;
+using namespace huc::sort;
 
 #ifndef DOXYGEN_SKIP
 namespace {

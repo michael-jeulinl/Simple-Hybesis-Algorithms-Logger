@@ -23,7 +23,7 @@
 // STD includes
 #include <list>
 
-using namespace HUC_Combinatory;
+using namespace huc::combinatory;
 
 #ifndef DOXYGEN_SKIP
 namespace {

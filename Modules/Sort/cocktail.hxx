@@ -23,52 +23,55 @@
 // STD includes
 #include <iterator>
 
-namespace HUC_Sort
+namespace huc
 {
-  /// Cocktail Sort - Proceed an in-place sort on the elements.
-  ///
-  /// @tparam IT type using to go through the collection.
-  /// @tparam Compare functor type (std::less_equal in order, std::greater_equal for inverse order).
-  ///
-  /// @param begin,end iterators to the initial and final positions of
-  /// the sequence to be sorted. The range used is [first,last), which contains all the elements between
-  /// first and last, including the element pointed by first but not the element pointed by last.
-  ///
-  /// @return void.
-  template <typename IT,
-            typename Compare = std::less<typename std::iterator_traits<IT>::value_type>>
-  void Cocktail(const IT& begin, const IT& end)
+  namespace sort
   {
-    const auto distance = static_cast<const int>(std::distance(begin, end));
-    if (distance < 2)
-      return;
-
-    int beginIdx = 0;
-    int endIdx = distance - 1;
-    bool hasSwapped = true;
-    while (hasSwapped && beginIdx < distance - 1)
+    /// Cocktail Sort - Proceed an in-place sort on the elements.
+    ///
+    /// @tparam IT type using to go through the collection.
+    /// @tparam Compare functor type (std::less_equal in order, std::greater_equal for inverse order).
+    ///
+    /// @param begin,end iterators to the initial and final positions of
+    /// the sequence to be sorted. The range used is [first,last), which contains all the elements between
+    /// first and last, including the element pointed by first but not the element pointed by last.
+    ///
+    /// @return void.
+    template <typename IT, typename Compare = std::less<typename std::iterator_traits<IT>::value_type>>
+    void Cocktail(const IT& begin, const IT& end)
     {
-      hasSwapped = false;
-      // for each element from beginning - bubble it up until the end.
-      for (auto it = begin + beginIdx; it < begin + endIdx; ++it)
-        if (Compare()(*(it + 1), *it))
-        {
-          std::swap(*it, *(it + 1));
-          hasSwapped = true;
-        }
-      --endIdx;
+      const auto distance = static_cast<const int>(std::distance(begin, end));
+      if (distance < 2)
+        return;
 
-      if (!hasSwapped)
-        break;
+      int beginIdx = 0;
+      int endIdx = distance - 1;
+      bool hasSwapped = true;
+      while (hasSwapped && beginIdx < distance - 1)
+      {
+        hasSwapped = false;
+        // for each element from beginning - bubble it up until the end.
+        for (auto it = begin + beginIdx; it < begin + endIdx; ++it)
+          if (Compare()(*(it + 1), *it))
+          {
+            std::swap(*it, *(it + 1));
+            hasSwapped = true;
+          }
+        --endIdx;
 
-      // for each element from the end- bubble it down until the beginning.
-      for (auto it = begin + endIdx - 1; it >= begin + beginIdx; --it)
-        if (Compare()(*(it + 1), *it))
-        {
-          std::swap(*it, *(it + 1));
-          hasSwapped = true;
-        }
-      ++beginIdx;
+        if (!hasSwapped)
+          break;
+
+        // for each element from the end- bubble it down until the beginning.
+        for (auto it = begin + endIdx - 1; it >= begin + beginIdx; --it)
+          if (Compare()(*(it + 1), *it))
+          {
+            std::swap(*it, *(it + 1));
+            hasSwapped = true;
+          }
+
+        ++beginIdx;
+      }
     }
   }
 }

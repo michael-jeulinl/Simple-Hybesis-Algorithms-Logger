@@ -20,7 +20,7 @@
 #include <gtest/gtest.h>
 #include <max_m_elements.hxx>
 
-using namespace HUC_Search;
+using namespace huc::search;
 
 #ifndef DOXYGEN_SKIP
 namespace {

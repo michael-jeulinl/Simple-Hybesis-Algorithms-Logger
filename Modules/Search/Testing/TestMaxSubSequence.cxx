@@ -24,7 +24,7 @@
 #include <functional>
 
 // Testing namespace
-using namespace HUC_Search;
+using namespace huc::search;
 
 #ifndef DOXYGEN_SKIP
 namespace {

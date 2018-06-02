@@ -20,7 +20,7 @@
 #include <gtest/gtest.h>
 #include <is_interleaved.hxx>
 
-using namespace HUC_Combinatory;
+using namespace huc::combinatory;
 
 #ifndef DOXYGEN_SKIP
 namespace {

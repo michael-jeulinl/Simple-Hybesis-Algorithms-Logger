@@ -23,7 +23,7 @@
 #include <functional>
 #include <list>
 
-using namespace HUC_DataStructures;
+using namespace huc;
 
 #ifndef DOXYGEN_SKIP
 namespace {

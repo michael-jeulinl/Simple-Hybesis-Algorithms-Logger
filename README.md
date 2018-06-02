@@ -1,15 +1,84 @@
-# Simple-Hybesis-Algorithms
-Educational demonstration of building simple algorithms under good practices development (cross-building, unit testing, ...)
-- http://michaeljeulin-l.com/Projects/HUCC/Doc/ **(Documentation)**
-- http://my.cdash.org/index.php?project=Simple-Hybesis-Algorithm **(Dashboard)**
+# H.urna Core - C++
 
-# Simple-Hybesis-Algorithms
-You can find a fork repository adding algorithm logging features (used for visualization) and its documentation here:
-- https://github.com/Hurna/Hurna-Core-Logger/
-- http://michaeljeulin-l.com/Projects/HUCL/Doc/
+H.urna Core is a relatively small **open source template project** that uses modern C++.
+It is implemented as a **cross-platform, easy to build, full headed library** containing some of the
+most known **Algorithms and Data Structures** (cf. [Implementations](#implementations)).
 
-# CMake - Cross-Building
-The building relies on CMake, an Open-Source system that allows to easily build cross-platform applications by generating native makefiles (cf. http://www.cmake.org/cmake/resources/software.html).
+It aims to **help to learn programming in C++, practice job interview coding tests** and
+allows anyone to **build its own best quality software and
+work-flow with no proprietary dependencies nor costs**.
+
+It uses **best practices software development**
+(cross-building, unit testing, automated documentation...); giving you a **great caveat to start developing
+with the promise to conserve great quality standards**.
+Please note that **all the possible dependencies included are open-source and free to use**.
+
+## Practices and Guidelines
+
+- **Automated, Customized, Documentation Generation**: CMake, Doxygen, Bootstrap-Doxygen
+- **Automated Building, Cross Building, Portability**: CMake
+- **Bug Tracking System, Code Reviews**: Git
+- **Coding Style, Coding Standard**: _CppLint_
+- **Code Coverage, Code Quality, Dashboarding, Monitoring**: CDash, CTest, GTest
+- **Statical analysis**: _Cppcheck_
+- **Proper Folders Structure - Consistency**
+- **Testing, Unit Testing (UT), Test-Driven Development (TDD)**: CMake, GTest
+- **Version Control System**: Git
+
+## Tools
+*Required:*
+- [**CMake**](http://www.cmake.org):
+The building relies on CMake, an Open-Source system that
+allows to easily build cross-platform applications by generating native makefiles.
+- [**Git**](https://git-scm.com):
+Git is a free and open source distributed version control system designed to
+handle everything from small to very large projects with speed and efficiency.
+
+*Optionnal:*
+- [**CDash**](https://www.cdash.org): Is a web dashboard that aggregates, analyzes, and displays summary and
+detailed views of build and test results on a historical basis.
+It builds organized builds by submitter, platform, architecture, compiler, and compiler setting.
+- [**CppLint**](https://github.com/google/styleguide):
+Every major open-source project has its own style guide: a set of conventions (sometimes arbitrary)
+about how to write code for that project. It is much easier to understand a large codebase when
+all the code in it is in a consistent style.
+CppLint a C++ style checker following Google's C++ style guide.
+- [**Cppcheck**](https://github.com/danmar/cppcheck):
+Cppcheck is a static analysis tool for C/C++ code. It provides unique code analysis to
+detect bugs and focuses on detecting undefined behaviour and dangerous coding constructs.
+The goal is to detect only real errors in the code (i.e. have very few false positives).
+- [**CTest**](https://gitlab.kitware.com/cmake/community/wikis/doc/ctest/Testing-With-CTest):
+CTest is a testing tool distributed as a part of CMake. It can be used
+to automate updating (using CVS for example), configuring, building,
+testing, performing memory checking, performing coverage, and submitting
+results to a CDash orcDart dashboard system.
+- [**Doxygen**](http://www.stack.nl/~dimitri/doxygen):
+Doxygen is the de facto standard tool for generating documentation from annotated C++ sources,
+but it also supports other popular programming languages such as C, Objective-C, C#, PHP, Java, Python,
+ IDL (Corba, Microsoft, and UNO/OpenOffice flavors), Fortran, VHDL, Tcl, and to some extent D.
+- [**Doxygen-Bootstrapped**](https://github.com/Velron/doxygen-bootstrapped):
+Customize doxygen output to use the twitter bootstrap framework.
+- [**GTest**](https://github.com/google/googletest):
+Google Test (GTest) is a cross-platform unit testing library for the C++ programming language.
+It allows unit-testing of C sources as well as C++ with minimal modification.
+The tests themselves could be run one at a time, or even be called to run all at once,
+making the debugging process very flexible.
+
+
+This toolset lower costs and reduce risk by identifying problems earlier:
+it **improves work-flow, increase productivity, gives you agility and project health monitoring**.
+
+## Quick Access
+
+- [**Documentation**](http://wiki.hurna.io/hurna_core/doc/index.html)
+- [**Git Repository**](https://github.com/Hurna/Hurna-Core)
+- [**Kitware Dashboard**](https://my.cdash.org/index.php?project=Hurna+Core)
+
+### Related
+
+- [**H.urna Website**](http://hurna.io/): The main website of H.urna organization.
+- [**H.urna Explorer**](http://demo.hurna.io/): A free, online, visualization platform.
+- [**H.urna Wiki**](http://wiki.hurna.io/): The main Wiki of H.urna organization.
 
 # Getting Started
 ## Build using CMake-GUI:
@@ -20,60 +89,71 @@ The building relies on CMake, an Open-Source system that allows to easily build 
     Click on Generate the Solution files
     Open the solution file (if MSVC) and build or use make command.
 
-## Build in Command-Line (UNIX):
+## Build using Command-Line (UNIX):
 
-    mkdir Simple-Hybesis-Algorithms-Build (Create Build directory)
-    cd Simple-Hybesis-Algorithms-Build    (Open build director)
-    ccmake ../Simple-Hybesis-Algorithms   (Configure the make given Source repository)
-    make                                  (Make command, use -j parameter to use multi-core)
+    mkdir Hurna-Core-Build (Create Build directory)
+    cd Hurna-Core-Build    (Open build director)
+    ccmake ../Hurna-Core   (Configure the make given Source repository)
+                           (Press 'c' to configure, then 'g' to generate the solution)
+    make                   (Make command, use -j parameter to use multi-core)
 
-# Doxygen Documentation & CMake
-Use the CMake **'BUILD_DOC'** (default to true) option to automatically setup Documentation Generation with doxygen.
+## Build using QT Creator:
 
-Please find the last generated documentation here:
-http://michaeljeulin-l.com/Projects/HUCC/Doc/
+    Open CMakeLists.txt
+    Configure build directories and CMake options
+    Build
 
-# GTest - Unit Testing & CMake
-Use the CMake **'BUILD_TESTING'** (default to true) option to automatically setup Unit Testing with google test.
-It allows to very quickly get set up with C++ and google test:
+# Doxygen Documentation
+Use the CMake **BUILD_DOC** (default to true) option to automatically setup Documentation Generation.
+
+# GTest - Unit Testing
+Use the CMake **BUILD_TESTING** (default to true) option to automatically setup Unit Testing.
+It allows to very quickly get set up with google test:
 
 - Clone GTest via GIT
 - Setup the Unit Testings
 - Compile GTest at build time
 
-Use the CMake **'WITH_COVERAGE'** (default to true) option to automatically setup Coverage Generation.
-The minimal requiered coverage is **95%**.
+Use the CMake **WITH_COVERAGE** (default to true) option to automatically setup Coverage Generation.
+The minimal required coverage for this project is **95%**.
 
-Please find the last testing dashboard here:
-http://my.cdash.org/index.php?project=Simple-Hybesis-Algorithm
+# Running Unit Tests (UTs) and Update Dashboards
+You can whether use **CTest** or **manually** run the unit tests.
 
-## Running Unit Tests (UTs)
-You can whether use CTest or manually run the unit tests.
+To run the set of tests in multi-core:
 
-E.g. to manually run the 'TestBasicBinary' Unit Test (using GTest):
+    cd Hurna-Core-Build
+    ctest -j4
 
-    Simple-Hybesis-Algorithms-Build/Modules/Search/Testing/Debug/TestBinary.exe  (Win)
-    ./Simple-Hybesis-Algorithms-Build/Modules/Search/Testing/Debug/TestBinary    (UNIX)
+To run the set and upload them to the dashboard:
 
-# Current Algorithms - Data Structures
-#### Combinatory
+    cd Hurna-Core-Build
+    ctest -D Experimental
+
+To manually run the 'TestBasicBinary' Unit Test (using GTest):
+
+    Hurna-Core-Build/Modules/Search/Testing/Debug/TestBinary.exe  (Win)
+    ./Hurna-Core-Build/Modules/Search/Testing/Debug/TestBinary    (UNIX)
+
+# <a name="implementations"></a>Implementations
+## Combinatory
 - **Combinations:** Compute all possible combinations of elements containing within the sequence.
 - **Intersection:** Compute the intersection of two sequences keeping duplicate keys distinct.
 - **IsInterleaved:** Determine whether or not a sequence is the interleave of the two others.
 - **Permutations:** Compute all possible permutations of elements containing within the sequence.
 
-#### Data Structures
-- **BinarySearchTree:** Binary Search Tree, Ordered Tree or Sorted Binary Tree divides all its sub-trees into two segments: left sub-tree and right sub-tree.
+## Data Structures
+- **Binary Search Tree:** Binary Search Tree, Ordered Tree or Sorted Binary Tree divides all its sub-trees into two segments: left sub-tree and right sub-tree.
 
-#### Search
+## Search
 - **Binary Search:** Iteratively proceed a dichotomous search, within a sorted sequence, on the first occurrence of the key.
-- **Kth Smallest / Biggest element - Order Statitstics:** Find the kth smallest/biggest element.
+- **K'th Order Statistics:** Find the k'th smallest/biggest element.
 - **Maximal/Minimal Distance:** Identify the two elements of the sequence that give the maximal/minimal distance.
 - **Maximal/Minimal M Elements:** Retrieve the m maximal/minimal values sorted in respectively decreasing increasing order.
 - **Maximal/Minimal Sub-Sequence:** Identify the sub-sequence with the maximum/minimum sum. One of the problem resolved by this algorithm is:
 "Given an array of gains/losses over time, find the period that represents the best/worst cumulative gain."
 
-#### Sort
+## Sort
 - **Bubble Sort:** Sometimes referred to as sinking sort: proceed an in-place bubble-sort on the elements.
 - **Cocktail Sort:** Variation of bubble sort. Optimize a bubble sort bubbling in both directions on each pass.
 - **Comb Sort:** Variation of bubble sort. The inner loop of bubble sort, which does the actual swap,

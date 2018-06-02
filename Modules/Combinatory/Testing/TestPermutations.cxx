@@ -20,7 +20,7 @@
 #include <gtest/gtest.h>
 #include <permutations.hxx>
 
-using namespace HUC_Combinatory;
+using namespace huc::combinatory;
 
 #ifndef DOXYGEN_SKIP
 namespace {
@@ -78,7 +78,6 @@ TEST(TestCore, Permutations)
     EXPECT_EQ(6, permutations.size());
     for (auto it = permutations.begin(); it != permutations.end(); ++it)
       EXPECT_EQ(3, it->size());
-    //@TODO check sequence by sequence? (non ordered)
   }
 
   // String run
@@ -89,6 +88,5 @@ TEST(TestCore, Permutations)
     EXPECT_EQ(6, permutations.size());
     for (std::list<std::string>::const_iterator it = permutations.begin(); it != permutations.end(); ++it)
       EXPECT_EQ(3, it->size());
-    //@TODO check sequence by sequence? (non ordered)
   }
 }

@@ -23,45 +23,47 @@
 // STD includes
 #include <iterator>
 
-namespace HUC_Sort
+namespace huc
 {
-  /// Comb Sort - Proceed an in-place sort on the elements.
-  ///
-  /// @tparam IT type using to go through the collection.
-  /// @tparam Compare functor type (std::less_equal in order, std::greater_equal for inverse order).
-  ///
-  /// @param begin,end iterators to the initial and final positions of
-  /// the sequence to be sorted. The range used is [first,last), which contains all the elements between
-  /// first and last, including the element pointed by first but not the element pointed by last.
-  ///
-  /// @return void.
-  template <typename IT,
-            typename Compare = std::less<typename std::iterator_traits<IT>::value_type>>
-  void Comb(const IT& begin, const IT& end)
+  namespace sort
   {
-    const auto distance = static_cast<const int>(std::distance(begin, end));
-    if (distance < 2)
-      return;
-
-    auto gap = distance;
-    double shrink = 1.3;
-    bool hasSwapped = true;
-    while (hasSwapped)
+    /// Comb Sort - Proceed an in-place sort on the elements.
+    ///
+    /// @tparam IT type using to go through the collection.
+    /// @tparam Compare functor type (std::less_equal in order, std::greater_equal for inverse order).
+    ///
+    /// @param begin,end iterators to the initial and final positions of
+    /// the sequence to be sorted. The range used is [first,last), which contains all the elements between
+    /// first and last, including the element pointed by first but not the element pointed by last.
+    ///
+    /// @return void.
+    template <typename IT, typename Compare = std::less<typename std::iterator_traits<IT>::value_type>>
+    void Comb(const IT& begin, const IT& end)
     {
-      hasSwapped = false;
+      const auto distance = static_cast<const int>(std::distance(begin, end));
+      if (distance < 2)
+        return;
 
-      gap /= shrink;
-      if (gap > 1)
-        hasSwapped = true;
-      else
-        gap = 1;
+      auto gap = distance;
+      double shrink = 1.3;
+      bool hasSwapped = true;
+      while (hasSwapped)
+      {
+        hasSwapped = false;
 
-      for (auto it = begin; it + gap < end; ++it)
-        if (Compare()(*(it + gap), *it))
-        {
-          std::swap(*it, *(it + gap));
+        gap /= shrink;
+        if (gap > 1)
           hasSwapped = true;
-        }
+        else
+          gap = 1;
+
+        for (auto it = begin; it + gap < end; ++it)
+          if (Compare()(*(it + gap), *it))
+          {
+            std::swap(*it, *(it + gap));
+            hasSwapped = true;
+          }
+      }
     }
   }
 }

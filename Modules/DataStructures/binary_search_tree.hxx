@@ -22,7 +22,7 @@
 
 #include <memory>
 
-namespace HUC_DataStructures
+namespace huc
 {
   /// @class BST
   ///
@@ -367,6 +367,6 @@ namespace HUC_DataStructures
       std::unique_ptr<BST> leftChild;
       std::unique_ptr<BST> rightChild;
   };
-};
+}
 
 #endif // MODULE_DATA_STRUCTURES_BST_HXX

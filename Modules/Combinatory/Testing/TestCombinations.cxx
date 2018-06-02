@@ -20,7 +20,7 @@
 #include <gtest/gtest.h>
 #include <combinations.hxx>
 
-using namespace HUC_Combinatory;
+using namespace huc::combinatory;
 
 #ifndef DOXYGEN_SKIP
 namespace {

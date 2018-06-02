@@ -23,7 +23,7 @@
 // STD includes
 #include <functional>
 
-using namespace HUC_Search;
+using namespace huc::search;
 
 #ifndef DOXYGEN_SKIP
 namespace {
