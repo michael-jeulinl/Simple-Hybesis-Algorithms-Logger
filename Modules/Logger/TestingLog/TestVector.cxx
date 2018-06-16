@@ -36,5 +36,5 @@ TEST(TestVector, constructor)
   // Has to be linked to a stream otherwise useless to use
   // Can still use its normal iterators to handle unlogged operations
   OFStream fileStream("vec_log.json");
-  Vector<int> sequence({1, 2, 3, 4, 5}, fileStream);
+  Vector<int> sequence(fileStream, {1, 2, 3, 4, 5});
 }

@@ -33,13 +33,52 @@ using namespace SHA_Logger;
 
 #ifndef DOXYGEN_SKIP
 namespace {
-  typedef std::vector<int> Container;
-  typedef Container::iterator IT;
+  //typedef std::vector<int> Container;
+  //typedef Container::iterator IT;
+
+  typedef Vector<int> Vec;
+  typedef Vec::h_iterator IT;
+  typedef Bubble<IT> Sort;
 }
 #endif /* DOXYGEN_SKIP */
 
+/*TEST(TestBubbleLog, build)
+{
+  Container data({ 1, -4, 2, 3, -1, 4, 0 , -2, -5, -3 });
+  OFStream fileStream("bubble_log_origin.json");
+
+  VecStats tmpVar;
+  BubbleLog<IT>::Build(fileStream, OpGetAll, data.begin(), data.end(), tmpVar);
+
+  // All elements of the final array are sorted
+  for (auto it = data.begin(); it < data.end() - 1; ++it)
+    EXPECT_LE(*it, *(it + 1));
+}
+*/
+TEST(TestBubbleLog, buildFacto)
+{
+  //OFStream fileStream("bubble_log.json");
+  // File Stream
+  OFStream fileStream("bubble_log.json");
+  auto logger = std::shared_ptr<Logger>(new Logger(fileStream));
+
+  // Run
+  //Vec data(logger, { 1 });
+  Vec data(logger, { 1, -4, 2, 3, -1, 4, 0 , -2, -5, -3 });
+  Sort::Build(*logger.get(), data.h_begin(), data.h_end());
+
+
+  // All elements of the final array are sorted
+  for (auto it = data.begin(); it < data.end() - 1; ++it)
+    EXPECT_LE(*it, *(it + 1));
+}
+
+
+
+
+
 // Test Bubble with different integer sequences
-TEST(TestBubbleLog, build)
+/*TEST(TestBubbleLog, build)
 {
   // Generate log for all Random integers
   for (auto it = SHA_DATA::Integers.begin(); it != SHA_DATA::Integers.end(); ++it)
@@ -57,7 +96,7 @@ TEST(TestBubbleLog, build)
 }
 
 // Test Bubble with reversed integer sequences
-TEST(TestBubbleLog, Reversed)
+/*TEST(TestBubbleLog, Reversed)
 {
   Container sizes({10, 20, 50, 100});
 
@@ -125,4 +164,4 @@ TEST(TestBubbleLog, RandomChars)
     for (auto it = data.begin(); it < data.end() - 1; ++it)
       EXPECT_LE(*it, *(it + 1));
   }
-}
+}*/

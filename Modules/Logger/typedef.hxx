@@ -39,9 +39,10 @@ namespace SHA_Logger
   typedef std::ofstream OFStream;
 
   // Constants
+  /// @todo delete
   static const std::string kSeqName = "sequence";
 
-  // TODO Delete
+  /// @todo Delete
   struct VecStats
   {
     VecStats() : nbComparisons(0), nbIterations(0), nbOtherAccess(0), nbSwaps(0) {}
@@ -61,8 +62,15 @@ namespace SHA_Logger
   { return std::string(1, t); }
 
   template<class T>
-  typename std::enable_if<!std::is_fundamental<T>::value, std::string>::type  ToString(const T& t)
+  typename std::enable_if<!std::is_fundamental<T>::value, std::string>::type ToString(const T& t)
   { return std::string(t); }
+
+  // Range To String
+  // @todo tuple to make it more generic
+  template<class Pair>
+  inline std::string RangeToString(const Pair& range)
+  { return "[" + ToString(range.first) + ", " + ToString(range.second) + "]"; }
+
 }
 
 #endif // MODULE_LOGGER_TYPEDEF_HXX

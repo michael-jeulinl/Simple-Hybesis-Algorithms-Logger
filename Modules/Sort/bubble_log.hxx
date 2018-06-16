@@ -33,187 +33,197 @@
 
 namespace SHA_Logger
 {
-  /// @class BubbleLog
-  ///
-  template <typename IT, typename Compare = std::less<typename std::iterator_traits<IT>::value_type>>
-  class BubbleLog
+  class Swap
   {
+  public:
+    template <typename IT>
+    void operator()(Logger& logger, const IT& first, const IT& second)
+    {
+      const bool sharedOwner = (first.GetOwnerRef() == second.GetOwnerRef());
+
+      logger.StartObject();
+        logger.AddEntry("type", "operation");
+        logger.AddEntry("name", "Swap");
+
+        // Owner reference(s)
+        if (sharedOwner) logger.AddEntry("ref", first.GetOwnerRef());
+        else
+        {
+          logger.StartArray("refs");
+            logger.Add(first.GetOwnerRef());
+            logger.Add(second.GetOwnerRef());
+          logger.EndArray();
+        }
+
+        logger.StartArray("indexes");
+          logger.Add(first.GetIndex());
+          logger.Add(second.GetIndex());
+        logger.EndArray();
+      logger.EndObject();
+
+      std::swap(*first, *second);
+      first.AddSwap(true);
+      second.AddSwap((sharedOwner) ? false : true);
+    }
+  };
+
+  // A container will log only once the comparisons on two of its iterator
+  // e.g. vector would not be able to say which iterator it owns or have owned.
+  // necessaary to keep statistic reliable.
+  template <typename IT, typename CompareT>
+  class CompareWrap
+  {
+  public:
+    bool operator()(const IT& first, const IT& second)
+    {
+      const bool sharedOwner = (first.GetOwnerRef() == second.GetOwnerRef());
+
+      first.AddCompare(true);
+      second.AddCompare((sharedOwner) ? false : true);
+
+      return CompareT()(*first, *second);
+    }
+  };
+
+  /// @class Bubble
+  ///
+  ///
+  ///
+  template <typename IT, typename Compare = std::greater<typename std::iterator_traits<IT>::value_type>>
+  class Bubble
+  {
+    // Specification to get h_iterator (if normal iterator subBuild bubble using h_iterator as template)
+    typedef CompareWrap<IT, Compare> CompareF;
+
     public:
       static const String GetName() { return "Bubble Sort"; }
+      static const String GetVersion() { return "1.0.0"; }
+      static const String GetType() { return "algorithm"; }
 
-      // Assert correct JSON construction.
-      ~BubbleLog() { assert(this->writer->IsComplete()); }
+      // @TODO both specialization for hurna iterator that log themself otherwise create temporary
+      // hurna vector to run computation with logging capability (allows to log from classic iterators)
 
       /// Instantiate a new json writer using the stream passed as
       /// argument, run and write algorithm computation information.
       ///
-      /// @return stream reference filled up with BubbleLog object information,
+      /// @return stream reference filled up with AggregateInPlaceLog object information,
       ///         error object information in case of failure.
-      static Ostream& Build(Ostream& os, Options opts, const IT& begin, const IT& end, VecStats& stats)
+      static Ostream& Build(Ostream& os, const IT& begin, const IT& end)
       {
-        std::unique_ptr<BubbleLog> builder = std::unique_ptr<BubbleLog>(new BubbleLog(os));
-        builder->Write(opts, begin, end, stats);
+        std::unique_ptr<Bubble> builder =
+          std::unique_ptr<Bubble>(new Bubble(os));
+        builder->Write(begin, end);
 
         return os;
       }
 
-      /// Use json writer passed as parameter to write iterator information.
+      /// Instantiate a new json writer using the stream passed as
+      /// argument, run and write algorithm computation information.
       ///
-      /// @return stream reference filled up with BubbleLog object information,
-      ///         error information in case of failure.
-      static Writer& Build(Writer& writer, Options opts, const IT& begin, const IT& end, VecStats& stats)
-      {
-        Write(writer, opts, begin, end, stats);
-
-        return writer;
-      }
+      /// @return true in case of success, false otherwise.
+      //void operator()
+      static void Build(Logger& logger, const IT& begin, const IT& end)
+      { Write(logger, begin, end); }
 
     private:
-      BubbleLog(Ostream& os) : stream(std::unique_ptr<Stream>(new Stream(os))),
-                               writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
-      BubbleLog operator=(BubbleLog&) {} // Not Implemented
+      Bubble(Ostream& os) : logger(std::unique_ptr<Logger>(new Logger(os))) {}
+      Bubble operator=(Bubble&) {} // Not Implemented
 
-      bool Write(Options opts, const IT& begin, const IT& end, VecStats& stats)
-      { return Write(*this->writer, opts, begin, end, stats); }
+      bool Write(const IT& begin, const IT& end) { return Write(*this->logger, begin, end); }
 
-      static bool Write(Writer& writer, Options opts, const IT& begin, const IT& end, VecStats& stats)
+      ///
+      static void Write(Logger& logger, const IT& begin, const IT& end)
       {
-        // Do not write sequence if no data to be processed
-        const int _seqSize = static_cast<int>(std::distance(begin, end));
-        if (_seqSize < 2)
-        {
-          Comment::Build(writer, "Sequence size too small to be processed.", 0);
-          Operation::Return<bool>(writer, true);
-          return true;
-        }
+        logger.Start();                        // Start Logging Procedure
 
-        writer.StartObject();
+        Algo_Traits<Bubble>::Build(logger);    // Write description
+        WriteParameters(logger, begin, end);   // Write parameters
+        WriteComputation(logger, begin, end);  // Write computation
 
-        Algo_Traits<BubbleLog>::Build(writer, opts); // Write description
-        WriteParameters(writer, opts, begin, end);   // Write parameters
-        WriteComputation(writer, begin, end, stats); // Write computation
+        logger.End();                          // Close Logging Procedure
 
-        writer.EndObject();
-
-        return true;
       }
 
       ///
-      static bool WriteParameters(Writer& writer, Options opts, const IT& begin, const IT& end)
+      static void WriteParameters(Logger& logger, const IT& begin, const IT& end)
       {
-        writer.Key("parameters");
-        writer.StartArray();
-        if (opts & OpIsSub)
+        logger.StartArray("parameters");
+        if (logger.GetCurrentLevel() > 0)           // Write only iterators
         {
-          const int _seqSize = static_cast<int>(std::distance(begin, end));
-          Iterator::Build(writer, kSeqName, "begin", 0);
-          Iterator::Build(writer, kSeqName, "end", _seqSize);
+          logger.AddObject(begin);
+          logger.AddObject(end);
         }
-        else
-        {
-          Array<IT>::Build(writer, kSeqName, "begin", begin, "end", end);
-        }
-        writer.EndArray();
-
-        return true;
+        else { logger.AddDataDetails(begin, end); } // Write all data
+        logger.EndArray();
       }
 
       ///
-      static bool WriteComputation(Writer& writer, const IT& begin, const IT& end, VecStats& stats)
+      static void WriteComputation(Logger& logger, const IT& begin, const IT& end)
       {
-        int _itIdx = 0;
-        const auto _seqSize = static_cast<const int>(std::distance(begin, end));
-        int endIdx = -1;
-        bool hasSwapped;
-
-        // Log locals
-        writer.Key("locals");
-        writer.StartArray();
-        auto curIt = Iterator::BuildIt<IT>(writer, kSeqName, "it", 0, begin);
-        ++stats.nbOtherAccess;
-        Iterator::BuildIt<IT>(writer, kSeqName, "pivot", 1, begin + 1);
-        writer.EndArray();
-
-        // Proceed sort
-        writer.Key("logs");
-        writer.StartArray();
-        Comment::Build(writer, "Bubble biggest element at the end and restart to [end-1] until sorted:");
-        for (auto it = begin; it < end - 1; ++it, --endIdx, ++stats.nbIterations)
+        // No data to be processed
+        const auto size = static_cast<const int>(std::distance(begin, end));
+        if (size < 2)
         {
-          /// LOG RANGE CHANGED
-          /// @todo check new type of operation
-          writer.StartObject();
-            writer.Key("type");
-            writer.String("operation");
-            writer.Key("name");
-            writer.String("setRange");
-            writer.Key("range");
-            writer.StartArray();
-              writer.Int(0);
-              writer.Int(_seqSize + endIdx);
-            writer.EndArray();
-          writer.EndObject();
+          logger.Comment("Sequence too small to be procesed: already sorted.");
+          logger.Return("void");
+          return;
+        }
 
-          hasSwapped = false;
-          _itIdx = 0;
-          Comment::Build(writer, "Bubble up biggest value within [0, " +
-                         ToString(_seqSize + endIdx) + "]:", 1);
-          for (; curIt < end + endIdx; ++curIt, ++stats.nbIterations)
+        // Locals
+        logger.StartArray("locals");
+          int endIdx = -1;
+          bool hasSwapped;
+          auto curIt = IT(begin, "current", true);
+          auto nextIt = IT(curIt + 1, "next", true);
+        logger.EndArray();
+
+        // Computation
+        logger.StartArray("logs");
+          logger.StartLoop("Bubble biggest element at the end and restart to [end-i] until sorted:");
+          for (auto it = begin; it < end - 1; ++it, --endIdx)
           {
-            ++stats.nbComparisons;
-            ++stats.nbOtherAccess;
-            if (Compare()(*(curIt + 1), *curIt))
+            hasSwapped = false;
+
+            // Notify new search space
+            auto range = std::make_pair(0, size + endIdx);
+            logger.SetRange(range);
+            logger.StartLoop("Bubble up biggest value within " + RangeToString(range) + ":");
+            for (curIt = begin; curIt < end + endIdx; ++curIt)
             {
-              Comment::Build(writer, "it[" + ToString(_itIdx) + "]{" + ToString(*curIt) +
-                             "} > next[" + ToString(_itIdx + 1) + "]{" + ToString(*(curIt + 1)) +
-                             "} : Bubble up.", 2);
-              ++stats.nbSwaps;
-              Operation::Swap(writer, "it", "pivot");
-              std::swap(*curIt, *(curIt + 1));
-              hasSwapped = true;
+              nextIt = IT(curIt + 1);
+              if (CompareF()(curIt, nextIt))
+              {
+                logger.Comment(curIt.String() + " > " + nextIt.String() + " : Bubble up.");
+                Swap()(logger, curIt, nextIt);
+                hasSwapped = true;
+              }
+              else { logger.Comment(curIt.String() + " <= " + nextIt.String() + " : Ignore element."); }
             }
+            logger.EndLoop();
 
-            Comment::Build(writer, "it[" + ToString(_itIdx) + "]{" + ToString(*curIt) +
-                           "} <= next[" + ToString(_itIdx + 1) + "]{" + ToString(*(curIt + 1)) +
-                           "} : Ignore element", 2);
-            Operation::Set<int>(writer, "it", ++_itIdx);
-            Operation::Set<int>(writer, "pivot", _itIdx + 1);
+            if (!hasSwapped)
+            {
+              logger.Comment("No swap occured: sequence is sorted.");
+              break;
+            }
           }
+          logger.EndLoop();
 
-          if (!hasSwapped)
-          {
-            Comment::Build(writer, "No swap occured: sequence is sorted.");
-            break;
-          }
+          logger.Return("void");
+        logger.EndArray();
 
-          Comment::Build(writer, "Restart bubbling until [end - 1][" +
-                         ToString(_seqSize + endIdx - 1) + "]", 1);
-          Operation::Set<int>(writer, "it", 0);
-          Operation::Set<int>(writer, "pivot", 1);
-          curIt = begin;
+        // Add Statistical informations for the main computation
+        if (logger.GetCurrentLevel() == 0)
+        {
+          logger.StartArray("stats");
+            logger.AddStats(curIt, true);
+            logger.AddStats(nextIt);
+          logger.EndArray();
         }
-
-        Operation::Return<bool>(writer, true);
-        writer.EndArray();
-
-        // Add Statistical informations
-        writer.Key("stats");
-        writer.StartObject();
-          writer.Key("nbComparisons");
-          writer.Int(stats.nbComparisons);
-          writer.Key("nbIterations");
-          writer.Int(stats.nbIterations);
-          writer.Key("nbOtherAccess");
-          writer.Int(stats.nbOtherAccess);
-          writer.Key("nbSwaps");
-          writer.Int(stats.nbSwaps);
-        writer.EndObject();
-
-        return true;
       }
 
-      std::unique_ptr<Stream> stream; // Stream wrapper
-      std::unique_ptr<Writer> writer; // Writer used to fill the stream
+      // Unique as created only at execution as a RAII ressource
+      std::unique_ptr<Logger> logger; // Logger used to fill the stream
   };
 }
 

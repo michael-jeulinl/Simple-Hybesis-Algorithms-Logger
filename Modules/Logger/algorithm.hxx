@@ -22,6 +22,7 @@
 
 #include <Logger/options.hxx>
 #include <Logger/typedef.hxx>
+#include <Logger/vector.hxx>
 
 namespace SHA_Logger
 {
@@ -53,6 +54,15 @@ namespace SHA_Logger
         Write(writer, opts);
 
         return writer;
+      }
+
+      static bool Build(Logger& logger)
+      {
+        logger.AddEntry("type", Algo::GetType());
+        logger.AddEntry("version", Algo::GetVersion());
+        logger.AddEntry("name", Algo::GetName());
+
+        return true;
       }
 
 
