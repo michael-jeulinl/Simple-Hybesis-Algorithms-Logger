@@ -18,294 +18,93 @@
  *
  *=========================================================================================================*/
 #include <gtest/gtest.h>
-#include "data.hxx"
 #include <quick_log.hxx>
 
 // STD includes
-#include <fstream>
+#include <ostream>
 
-// Testing namespace
-using namespace SHA_Logger;
+// Hurna Lib namespace
+using namespace hul;
+using namespace hul::sort;
 
 #ifndef DOXYGEN_SKIP
 namespace {
-  typedef std::vector<int> Container;
-  typedef Container::iterator IT;
+  typedef Vector<int> Array;
+  typedef Array::h_iterator IT;
+  typedef IT::value_type T;
 
-  typedef QuickLog<IT, std::less_equal<typename std::iterator_traits<IT>::value_type>, PickRandom<IT>>
-    QuickLogPRand;
-  typedef QuickLog<IT, std::less_equal<typename std::iterator_traits<IT>::value_type>, PickFirst<IT>>
-    QuickLogPFirst;
-  typedef QuickLog<IT, std::less_equal<typename std::iterator_traits<IT>::value_type>, PickLast<IT>>
-    QuickLogPLast;
-  typedef QuickLog<IT, std::less_equal<typename std::iterator_traits<IT>::value_type>, PickMiddle<IT>>
-    QuickLogPMiddle;
-  typedef QuickLog<IT, std::less_equal<typename std::iterator_traits<IT>::value_type>, PickThreeMedian<IT>>
-    QuickLogPTMed;
+  // Defines the different strategies
+  typedef Quick<IT, std::less<T>, picker::First<IT>> QuickFirst;
+  typedef Quick<IT, std::less<T>, picker::Last<IT>> QuickLast;
+  typedef Quick<IT, std::less<T>, picker::Middle<IT>> QuickMiddle;
+  typedef Quick<IT, std::less<T>, picker::Random<IT>> QuickRand;
+  typedef Quick<IT, std::less<T>, picker::ThreeMedian<IT>> QuickThreeMed;
+
+  const std::vector<int> DUMP = { 1, -4, 2, 3, -1, 4, 0 , -2, -5, -3 };
 }
 #endif /* DOXYGEN_SKIP */
 
-// Test Quick with different integer sequences
-TEST(TestQuickLog, buildPRand)
+TEST(TestQuickLog, QuickFirstLog)
 {
-  // Generate log for all Random integers
-  for (auto it = SHA_DATA::Integers.begin(); it != SHA_DATA::Integers.end(); ++it)
-  {
-    Container data(it->second);
-    OFStream fileStream(std::string(it->first + "_prand.json"));
+  std::stringstream dumpStream;
+  auto logger = std::shared_ptr<Logger>(new Logger(dumpStream));
+  Array data(logger, DUMP);
 
-    VecStats tmpVar;
-    QuickLogPRand::Build(fileStream, OpGetAll, data.begin(), data.end(), tmpVar);
+  QuickFirst::Build(*logger.get(), data.h_begin(), data.h_end());
 
-    // All elements of the final array are sorted
-    for (auto it = data.begin(); it < data.end() - 1; ++it)
-      EXPECT_LE(*it, *(it + 1));
-  }
+  // All elements of the final array are sorted
+  for (auto it = data.begin(); it < data.end() - 1; ++it)
+    EXPECT_LE(*it, *(it + 1));
 }
 
-// Test Quick with reversed integer sequences
-TEST(TestQuickLog, ReversedPRand)
+TEST(TestQuickLog, QuickLastLog)
 {
-  Container sizes({10, 20, 50, 100});
+  std::stringstream dumpStream;
+  auto logger = std::shared_ptr<Logger>(new Logger(dumpStream));
+  Array data(logger, DUMP);
 
-  for (auto size = sizes.begin(); size != sizes.end(); ++size)
-  {
-    Container data;
-    data.reserve(*size);
-    for (auto i = 0; i < *size; ++i)
-      data.push_back((*size / 2) - i);
+  QuickLast::Build(*logger.get(), data.h_begin(), data.h_end());
 
-    OFStream fileStream(std::string("Int_Rev_" + std::to_string(*size) + "_prand.json"));
-    VecStats tmpVar;
-    QuickLogPRand::Build(fileStream, OpGetAll, data.begin(), data.end(), tmpVar);
-
-    // All elements of the final array are sorted
-    for (auto it = data.begin(); it < data.end() - 1; ++it)
-      EXPECT_LE(*it, *(it + 1));
-  }
+  // All elements of the final array are sorted
+  for (auto it = data.begin(); it < data.end() - 1; ++it)
+    EXPECT_LE(*it, *(it + 1));
 }
 
-// Test Quick using first picking strategy with different integer sequences
-TEST(TestQuickLog, buildPFirst)
+TEST(TestQuickLog, QuicMiddleLog)
 {
-  std::vector<std::string> dataStr = {"Int_Rand_20", "Int_Rand_50", "Int_Rand_100"};
+  std::stringstream dumpStream;
+  auto logger = std::shared_ptr<Logger>(new Logger(dumpStream));
+  Array data(logger, DUMP);
 
-  // Generate log for all Random integers
-  for (auto dataIt = dataStr.begin(); dataIt != dataStr.end(); ++dataIt)
-  {
-    auto it = SHA_DATA::Integers.find(*dataIt);
+  QuickMiddle::Build(*logger.get(), data.h_begin(), data.h_end());
 
-    Container data(it->second);
-    OFStream fileStream(std::string(it->first + "_pfirst.json"));
-
-    VecStats tmpVar;
-    QuickLogPFirst::Build(fileStream, OpGetAll, data.begin(), data.end(), tmpVar);
-
-    // All elements of the final array are sorted
-    for (auto it = data.begin(); it < data.end() - 1; ++it)
-      EXPECT_LE(*it, *(it + 1));
-  }
+  // All elements of the final array are sorted
+  for (auto it = data.begin(); it < data.end() - 1; ++it)
+    EXPECT_LE(*it, *(it + 1));
 }
 
-// Test Quick with reversed integer sequences
-TEST(TestQuickLog, ReversedPFirst)
+TEST(TestQuickLog, QuickRandLog)
 {
-  Container sizes({20, 50, 100});
+  std::stringstream dumpStream;
+  auto logger = std::shared_ptr<Logger>(new Logger(dumpStream));
+  Array data(logger, DUMP);
 
-  for (auto size = sizes.begin(); size != sizes.end(); ++size)
-  {
-    Container data;
-    data.reserve(*size);
-    for (auto i = 0; i < *size; ++i)
-      data.push_back((*size / 2) - i);
+  QuickRand::Build(*logger.get(), data.h_begin(), data.h_end());
 
-    OFStream fileStream(std::string("Int_Rev_" + std::to_string(*size) + "_pfirst.json"));
-    VecStats tmpVar;
-    QuickLogPFirst::Build(fileStream, OpGetAll, data.begin(), data.end(), tmpVar);
-
-    // All elements of the final array are sorted
-    for (auto it = data.begin(); it < data.end() - 1; ++it)
-      EXPECT_LE(*it, *(it + 1));
-  }
+  // All elements of the final array are sorted
+  for (auto it = data.begin(); it < data.end() - 1; ++it)
+    EXPECT_LE(*it, *(it + 1));
 }
 
-// Test Quick using last picking strategy with different integer sequences
-TEST(TestQuickLog, buildPLast)
+TEST(TestQuickLog, QuickThreeMedLog)
 {
-  std::vector<std::string> dataStr = {"Int_Rand_20", "Int_Rand_50", "Int_Rand_100"};
+  std::stringstream dumpStream;
+  auto logger = std::shared_ptr<Logger>(new Logger(dumpStream));
+  Array data(logger, DUMP);
 
-  // Generate log for all Random integers
-  for (auto dataIt = dataStr.begin(); dataIt != dataStr.end(); ++dataIt)
-  {
-    auto it = SHA_DATA::Integers.find(*dataIt);
+  QuickThreeMed::Build(*logger.get(), data.h_begin(), data.h_end());
 
-    Container data(it->second);
-    OFStream fileStream(std::string(it->first + "_plast.json"));
-
-    VecStats tmpVar;
-    QuickLogPLast::Build(fileStream, OpGetAll, data.begin(), data.end(), tmpVar);
-
-    // All elements of the final array are sorted
-    for (auto it = data.begin(); it < data.end() - 1; ++it)
-      EXPECT_LE(*it, *(it + 1));
-  }
-}
-
-// Test Quick using last picking strategy with reversed integer sequences
-TEST(TestQuickLog, ReversedPLast)
-{
-  Container sizes({20, 50, 100});
-
-  for (auto size = sizes.begin(); size != sizes.end(); ++size)
-  {
-    Container data;
-    data.reserve(*size);
-    for (auto i = 0; i < *size; ++i)
-      data.push_back((*size / 2) - i);
-
-    OFStream fileStream(std::string("Int_Rev_" + std::to_string(*size) + "_plast.json"));
-    VecStats tmpVar;
-    QuickLogPLast::Build(fileStream, OpGetAll, data.begin(), data.end(), tmpVar);
-
-    // All elements of the final array are sorted
-    for (auto it = data.begin(); it < data.end() - 1; ++it)
-      EXPECT_LE(*it, *(it + 1));
-  }
-}
-
-// Test Quick using middle picking strategy with different integer sequences
-TEST(TestQuickLog, buildPMiddle)
-{
-  std::vector<std::string> dataStr = {"Int_Rand_20", "Int_Rand_50", "Int_Rand_100"};
-
-  // Generate log for all Random integers
-  for (auto dataIt = dataStr.begin(); dataIt != dataStr.end(); ++dataIt)
-  {
-    auto it = SHA_DATA::Integers.find(*dataIt);
-
-    Container data(it->second);
-    OFStream fileStream(std::string(it->first + "_pmiddle.json"));
-
-    VecStats tmpVar;
-    QuickLogPMiddle::Build(fileStream, OpGetAll, data.begin(), data.end(), tmpVar);
-
-    // All elements of the final array are sorted
-    for (auto it = data.begin(); it < data.end() - 1; ++it)
-      EXPECT_LE(*it, *(it + 1));
-  }
-}
-
-// Test Quick using middle picking strategy with reversed integer sequences
-TEST(TestQuickLog, ReversedPMiddle)
-{
-  Container sizes({20, 50, 100});
-
-  for (auto size = sizes.begin(); size != sizes.end(); ++size)
-  {
-    Container data;
-    data.reserve(*size);
-    for (auto i = 0; i < *size; ++i)
-      data.push_back((*size / 2) - i);
-
-    OFStream fileStream(std::string("Int_Rev_" + std::to_string(*size) + "_pmiddle.json"));
-    VecStats tmpVar;
-    QuickLogPMiddle::Build(fileStream, OpGetAll, data.begin(), data.end(), tmpVar);
-
-    // All elements of the final array are sorted
-    for (auto it = data.begin(); it < data.end() - 1; ++it)
-      EXPECT_LE(*it, *(it + 1));
-  }
-}
-
-// Test Quick using three median picking strategy with different integer sequences
-TEST(TestQuickLog, buildTmed)
-{
-  std::vector<std::string> dataStr = {"Int_Rand_20", "Int_Rand_50", "Int_Rand_100"};
-
-  // Generate log for all Random integers
-  for (auto dataIt = dataStr.begin(); dataIt != dataStr.end(); ++dataIt)
-  {
-    auto it = SHA_DATA::Integers.find(*dataIt);
-
-    Container data(it->second);
-    OFStream fileStream(std::string(it->first + "_ptmed.json"));
-
-    VecStats tmpVar;
-    QuickLogPTMed::Build(fileStream, OpGetAll, data.begin(), data.end(), tmpVar);
-
-    // All elements of the final array are sorted
-    for (auto it = data.begin(); it < data.end() - 1; ++it)
-      EXPECT_LE(*it, *(it + 1));
-  }
-}
-
-// Test Quick using three median picking strategy with reversed integer sequences
-TEST(TestQuickLog, ReversedPTMed)
-{
-  Container sizes({20, 50, 100});
-
-  for (auto size = sizes.begin(); size != sizes.end(); ++size)
-  {
-    Container data;
-    data.reserve(*size);
-    for (auto i = 0; i < *size; ++i)
-      data.push_back((*size / 2) - i);
-
-    OFStream fileStream(std::string("Int_Rev_" + std::to_string(*size) + "_ptmed.json"));
-    VecStats tmpVar;
-    QuickLogPTMed::Build(fileStream, OpGetAll, data.begin(), data.end(), tmpVar);
-
-    // All elements of the final array are sorted
-    for (auto it = data.begin(); it < data.end() - 1; ++it)
-      EXPECT_LE(*it, *(it + 1));
-  }
-}
-
-// Test with reversed char sequences
-TEST(TestQuickLog, ReversedChars)
-{
-  Container sizes({10, 20, 50});
-
-  for (auto size = sizes.begin(); size != sizes.end(); ++size)
-  {
-    std::vector<char> data;
-    data.reserve(*size);
-    for (auto i = 0; i < *size; ++i)
-      data.push_back(static_cast<char>(*size - i + 65));
-
-    OFStream fileStream(std::string("Char_Rev_" + std::to_string(*size) + "_prand.json"));
-    VecStats tmpVar;
-    QuickLog<std::vector<char>::iterator>::Build(fileStream, OpGetAll, data.begin(), data.end(), tmpVar);
-
-    // All elements of the final array are sorted
-    for (auto it = data.begin(); it < data.end() - 1; ++it)
-      EXPECT_LE(*it, *(it + 1));
-  }
-}
-
-// Test with random char sequences
-TEST(TestQuickLog, RandomChars)
-{
-  // Generate log for all Random integers
-  for (auto it = SHA_DATA::Integers.begin(); it != SHA_DATA::Integers.end(); ++it)
-  {
-    auto size = it->second.size();
-
-    if (size > 50)
-      continue;
-
-    std::vector<char> data;
-    data.reserve(size);
-    for (auto i = 0; i < size; ++i)
-      data.push_back(static_cast<char>(it->second[i] + (size / 2) + 65));
-
-    OFStream fileStream(std::string("Char" + it->first.substr(3) + "_prand.json"));
-
-    VecStats tmpVar;
-    QuickLog<std::vector<char>::iterator>::Build(fileStream, OpGetAll, data.begin(), data.end(), tmpVar);
-
-    // All elements of the final array are sorted
-    for (auto it = data.begin(); it < data.end() - 1; ++it)
-      EXPECT_LE(*it, *(it + 1));
-  }
+  // All elements of the final array are sorted
+  for (auto it = data.begin(); it < data.end() - 1; ++it)
+    EXPECT_LE(*it, *(it + 1));
 }

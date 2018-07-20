@@ -18,142 +18,34 @@
  *
  *=========================================================================================================*/
 #include <gtest/gtest.h>
-#include "data.hxx"
 #include <aggregate_in_place_log.hxx>
 
-// Testing namespace
-using namespace SHA_Logger;
+// Hurna Lib namespace
+using namespace hul;
 
 // STD includes
-#include <fstream>
-#include <functional>
+#include <ostream>
 
 #ifndef DOXYGEN_SKIP
 namespace {
-  //typedef std::vector<int> Container;
-  //typedef Container::iterator IT;
-
-  typedef Vector<int> Container;
-  typedef Container::h_iterator IT;
+  typedef Vector<int> Vec;
+  typedef Vec::h_iterator IT;
+  typedef sort::AggregateInPlace<IT> Sort;
 }
 #endif /* DOXYGEN_SKIP */
 
-TEST(TestAggregateInPlaceLog, build)
+TEST(TestAggregateInPlaceLog, buildFacto)
 {
-  OFStream fileStream("agg_log.json");
-  Container data({-8, -6, -4, -3, -1, 0, 2, 4, 6, 9, -7, -5, -2, 1, 3, 5, 7, 8, 9, 10}, fileStream);
-  IT pivot = IT(data.begin() + 10, &data, 10, "pivot"); // Rotation Index
+  std::stringstream dumpStream;
+  auto logger = std::shared_ptr<Logger>(new Logger(dumpStream));
 
-  // Launch
-  AggregateInPlaceLog<IT>::Build(data.h_begin(), pivot, data.h_end());
+  // Run
+  Vec data(logger, {-8, -6, -4, -3, -1, 0, 2, 4, 6, 9, -7, -5, -2, 1, 3, 5, 7, 8, 9, 10});
+  auto pivot = IT(data.h_begin() + 10, "pivot"); // Rotation Index
+
+  Sort::Build(*logger.get(), data.h_begin(), pivot, data.h_end());
 
   // All elements of the final array are sorted
   for (auto it = data.begin(); it < data.end() - 1; ++it)
     EXPECT_LE(*it, *(it + 1));
 }
-
-// Test AggregateInPlace with different integer sequences
-/*TEST(TestAggregateInPlaceLog, build)
-{
-  // Generate log for all Random integers
-  for (auto it = SHA_DATA::RotatedIntegers.begin(); it != SHA_DATA::RotatedIntegers.end(); ++it)
-  {
-    Container data(it->second);
-    IT pivot = data.begin() + it->first;
-    OFStream fileStream(std::string(
-      "Int_Rand_" + std::to_string(it->second.size()) + "_" + std::to_string(it->first) + ".json"));
-
-    VecStats tmpVar;
-    AggregateInPlaceLog<IT>::Build(fileStream, OpGetAll, data.begin(), pivot, data.end(), tmpVar);
-
-    // All elements of the final array are sorted
-    for (auto it = data.begin(); it < data.end() - 1; ++it)
-      EXPECT_LE(*it, *(it + 1));
-  }
-}
-
-// Test AggregateInPlace with elements in first bigger than second
-TEST(TestAggregateInPlaceLog, FirstBigger)
-{
-  Container sizes({10, 20, 50});
-  Container pivots({4, 12, 25}); // Create rotation on those pivots
-
-  auto pivotIdx = pivots.begin();
-  for (auto size = sizes.begin(); size != sizes.end(); ++size, ++pivotIdx)
-  {
-    Container data;
-    data.reserve(*size);
-    // Create first half with biggest elements sorted
-    for (auto i = 0; i < *pivotIdx; ++i)
-      data.push_back((*size / 2) - *pivotIdx + i);
-    // Create second half with smallest elements sorted
-    for (auto i = *pivotIdx; i < *size; ++i)
-      data.push_back(i - *pivotIdx - (*size / 2));
-
-    OFStream fileStream(std::string("Int_First_" + std::to_string(*size) +
-                                    "_" + std::to_string(*pivotIdx) + ".json"));
-    VecStats tmpVar;
-    IT pivot = data.begin() + *pivotIdx;
-    AggregateInPlaceLog<IT>::Build(fileStream, OpGetAll, data.begin(), pivot, data.end(), tmpVar);
-
-    // All elements of the final array are sorted
-    for (auto it = data.begin(); it < data.end() - 1; ++it)
-      EXPECT_LE(*it, *(it + 1));
-  }
-}
-
-// Test AggregateInPlace with elements in second bigger than first
-TEST(TestAggregateInPlaceLog, SecondBigger)
-{
-  Container sizes({10, 20, 50});
-  Container pivots({4, 12, 30}); // Create rotation on those pivots
-
-  auto pivotIdx = pivots.begin();
-  for (auto size = sizes.begin(); size != sizes.end(); ++size, ++pivotIdx)
-  {
-    Container data;
-    data.reserve(*size);
-    // Create first half with biggest elements sorted
-    for (auto i = 0; i < *pivotIdx; ++i)
-      data.push_back(-(*size / 2) + i);
-    // Create second half with smallest elements sorted
-    for (auto i = *pivotIdx; i < *size; ++i)
-      data.push_back((*size / 2) - *pivotIdx + i);
-
-    OFStream fileStream(std::string("Int_Second_" + std::to_string(*size) +
-                                    "_" + std::to_string(*pivotIdx) + ".json"));
-    VecStats tmpVar;
-    IT pivot = data.begin() + *pivotIdx;
-    AggregateInPlaceLog<IT>::Build(fileStream, OpGetAll, data.begin(), pivot, data.end(), tmpVar);
-
-    // All elements of the final array are sorted
-    for (auto it = data.begin(); it < data.end() - 1; ++it)
-      EXPECT_LE(*it, *(it + 1));
-  }
-}
-
-// Test with random char sequences
-TEST(TestAggregateInPlaceLog, RotatedChars)
-{
-  // Generate log for all Random integers
-  for (auto it = SHA_DATA::RotatedIntegers.begin(); it != SHA_DATA::RotatedIntegers.end(); ++it)
-  {
-    auto size = it->second.size();
-    std::vector<char> data;
-    data.reserve(size);
-    for (auto i = 0; i < size; ++i)
-      data.push_back(static_cast<char>(it->second[i] + (size / 2) + 65));
-    std::vector<char>::iterator pivot = data.begin() + it->first;
-
-    OFStream fileStream(std::string(
-      "Char_Rand_" + std::to_string(it->second.size()) + "_" + std::to_string(it->first) + ".json"));
-
-    VecStats tmpVar;
-    AggregateInPlaceLog<std::vector<char>::iterator>::Build
-      (fileStream, OpGetAll, data.begin(), pivot, data.end(), tmpVar);
-
-    // All elements of the final array are sorted
-    for (auto it = data.begin(); it < data.end() - 1; ++it)
-      EXPECT_LE(*it, *(it + 1));
-  }
-}*/
