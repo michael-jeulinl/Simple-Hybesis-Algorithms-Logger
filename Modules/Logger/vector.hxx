@@ -20,188 +20,15 @@
 #ifndef MODULE_LOGGER_VECTOR_HXX
 #define MODULE_LOGGER_VECTOR_HXX
 
-#include <Logger/iterator.hxx>
-#include <Logger/value_type.hxx>
-#include <Logger/typedef.hxx>
+#include <Logger/logger.hxx>
 
 // STD includes
 #include <iterator>
 #include <memory>
 #include <vector>
 
-namespace SHA_Logger
+namespace hul
 {
-  // Should be its own class
-  struct Logger
-  {
-    Logger(Ostream& os) :
-      currentLevel(-1),
-      stream(std::unique_ptr<Stream>(new Stream(os))),
-      writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
-
-    ~Logger() { assert(this->writer->IsComplete()); }
-
-    void AddEntry(const String& key, const String& value)
-    {
-      writer->Key(key);
-      writer->String(value);
-    }
-
-    void AddEntry(const String& key, const int& value)
-    {
-      writer->Key(key);
-      writer->Int(value);
-    }
-
-    template <typename T>
-    void AddObject(const T& object, const String& key = "")
-    {
-      if (!key.empty()) writer->Key(key);
-      object.Log();
-    }
-
-    template <typename IT>
-    void AddData(const IT& begin, const IT& end, const String& key = "")
-    {
-      if (!key.empty()) writer->Key(key);
-
-      StarArray();
-        for (auto it = begin; it != end; ++it) Add(*it);
-      EndArray();
-    }
-
-    template <typename IT>
-    void AddStats(const IT& it, bool logOwner = false)
-    {
-      if (logOwner)
-        it.LogOwnerStats();
-      it.LogStats();
-    }
-
-    template <typename IT, typename Comp>
-    static bool Compare(IT& first, IT& second)
-    {
-      // first.increment
-      // second.increment
-
-      return true;//compare(*first, *second);
-    }
-
-    template <typename T>
-    void Return(const T& value)
-    {
-      StartObject();
-        AddEntry("type", "operation");
-        AddEntry("name", "Return");
-        AddEntry("data", value);
-      EndObject();
-    }
-
-    template <typename IT>
-    void AddDataDetails(const IT& begin, const IT& end, const String& key = "")
-    {
-      if (!key.empty()) writer->Key(key);
-
-      /// @todo use raw
-
-      StartObject();
-        AddEntry("type", begin.GetOwnerType());
-        AddEntry("name", begin.GetOwnerRef());
-        AddData(begin, end, "data");
-
-        StartArray("iterators");
-          AddObject(begin);
-          AddObject(end);
-        EndArray();
-      EndObject();
-    }
-
-    void Start()
-    {
-      ++currentLevel;
-      writer->StartObject();
-    }
-
-    void StartLoop(const String& comment = "")
-    {
-      if (!comment.empty()) Comment(comment);
-      ++currentLevel;
-    }
-
-    void EndLoop(const String& comment = "")
-    {
-      --currentLevel;
-      if (!comment.empty()) Comment(comment);
-    }
-
-    void End()
-    {
-      --currentLevel;
-      writer->EndObject();
-    }
-
-    /// @todo make it tuple
-    template<class Pair>
-    void SetRange(const Pair& range)
-    {
-      StartObject();
-        AddEntry("type", "operation");
-        AddEntry("name", "setRange");
-        StartArray("range");
-          writer->Int(range.first);
-          writer->Int(range.second);
-        EndArray();
-      EndObject();
-    }
-
-
-
-    void StartArray(const String& key)
-    {
-      writer->Key(key);
-      writer->StartArray();
-    }
-    void StarArray() { writer->StartArray(); }
-    void EndArray() { writer->EndArray(); }
-
-    void StartObject(const String& key = "")
-    {
-      if (!key.empty()) writer->Key(key);
-      writer->StartObject();
-    }
-    void EndObject() { writer->EndObject(); }
-
-
-    void Comment(const String& message, const String& extent = "")
-    {
-      writer->StartObject();
-
-      AddEntry("type", "comment");
-      AddEntry("message", message);
-      if (currentLevel != 0) { writer->Key("level"); writer->Int(currentLevel); }
-      if (extent != "") { AddEntry("extent", extent); }
-
-      writer->EndObject();
-    }
-
-    int GetCurrentLevel() const { return currentLevel; }
-
-    // Specifications
-    void Add(bool value)          { writer->Bool(value); }
-    void Add(double value)        { writer->Double(value); }
-    void Add(char value)          { writer->String(String(1, value)); }
-    void Add(int value)           { writer->Int(value); }
-    void Add(int64_t value)       { writer->Int64(value); }
-    void Add(const String& value) { writer->String(value); }
-    void Add(unsigned value)      { writer->Uint(value); }
-    void Add(uint64_t value)      { writer->Uint64(value); }
-
-    private:
-      int currentLevel;
-      std::unique_ptr<Stream> stream; // Stream wrapper
-      std::unique_ptr<Writer> writer; // Writer used to fill the stream
-  };
-
   /// @class Vector
   /// Wrap std::vector adding log operations writing and statisticals informations
   ///
@@ -215,10 +42,11 @@ namespace SHA_Logger
     // Vector and Vector::h_iterator Statistics
     struct Stats
     {
-      Stats() : nbAccess(0), nbCompares(0), nbIterations(0), nbSwaps(0) {}
+      Stats() : nbAccess(0), nbCompares(0), nbIterations(0), nbItCopy(0), nbSwaps(0) {}
       int nbAccess;
       int nbCompares;
       int nbIterations;
+      int nbItCopy;
       int nbSwaps;
     };
 
@@ -226,9 +54,13 @@ namespace SHA_Logger
       logger(std::shared_ptr<Logger>(new Logger(os))),
       data(init) {}
 
-    explicit Vector(std::shared_ptr<Logger> logger, std::initializer_list<T> init) :
+    explicit Vector(std::shared_ptr<Logger> logger, std::initializer_list<T> init = {}) :
       logger(logger),
       data(init) {}
+
+    explicit Vector(std::shared_ptr<Logger> logger, const std::vector<T>& vector) :
+      logger(logger),
+      data(vector) {}
 
       class h_iterator : public std::iterator<std::random_access_iterator_tag, T>
       {
@@ -377,8 +209,12 @@ namespace SHA_Logger
             this->index = other.index;
             this->owner = other.owner;
 
-            // Log
-            if (this->logOperations) this->LogNewIndex();
+            // Stats & Log
+            if (this->logOperations)
+            {
+              this->owner->AddItCopy();
+              this->LogNewIndex();
+            }
 
             return *this;
           }
@@ -486,7 +322,7 @@ namespace SHA_Logger
 
 
           // Log itself
-          void Log() const
+          void Log(bool isConst=false) const
           {
             auto logger = this->owner->GetLogger();
             logger->StartObject();
@@ -496,6 +332,7 @@ namespace SHA_Logger
             logger->AddEntry("name", this->name);
             logger->AddEntry("ref", this->GetOwnerRef());
             logger->AddEntry("data", this->index);
+            if (isConst) logger->AddEntry("const", 1);
             if (!this->comment.empty()) logger->AddEntry("comment", comment);
 
             logger->EndObject();
@@ -535,6 +372,7 @@ namespace SHA_Logger
             logger->AddEntry("nbAccess", this->stats.nbAccess);
             logger->AddEntry("nbCompares", this->stats.nbCompares);
             logger->AddEntry("nbIterations", this->stats.nbIterations);
+            //logger->AddEntry("nbItCopy", this->stats.nbItCopy);
             logger->AddEntry("nbSwaps", this->stats.nbSwaps);
 
             // Finish object
@@ -573,17 +411,24 @@ namespace SHA_Logger
       };
 
       // Preserve normal iterator accesses
-      typename std::vector<T>::iterator begin() { return data.begin(); }
-      typename std::vector<T>::iterator end() { return data.end(); }
+      typename std::vector<T>::iterator begin() { return this->data.begin(); }
+      typename std::vector<T>::iterator end() { return this->data.end(); }
 
-      const typename std::vector<T>::iterator cbegin() const { return data.cbegin(); }
-      const typename std::vector<T>::iterator cend() const { return data.cend(); }
+      const typename std::vector<T>::iterator cbegin() const { return this->data.cbegin(); }
+      const typename std::vector<T>::iterator cend() const { return this->data.cend(); }
+
+      void push_back (const T& val) { this->data.push_back(val); }
+      void reserve (size_t n) { this->data.reserve(n); }
+      const size_t size() const { return this->data.size(); }
+
 
       // Observale iterator
       h_iterator h_begin() { return h_iterator(data.begin(), this, static_cast<int>(0), "begin"); }
       h_iterator h_end() { return h_iterator(data.end(), this, static_cast<int>(data.size()), "end"); }
 
-      // @TODO Implement Meta-Language functions (swap/etc)
+      ///
+      /// \brief Log
+      ///
       void Log() const
       {
         // StartBuild - Main information
@@ -600,6 +445,9 @@ namespace SHA_Logger
         logger->EndObject();
       }
 
+      ///
+      /// \brief LogStats
+      ///
       void LogStats() const
       {
         // StartBuild - Main information
@@ -611,6 +459,7 @@ namespace SHA_Logger
           logger->AddEntry("nbAccess", stats.nbAccess);
           logger->AddEntry("nbCompares", stats.nbCompares);
           logger->AddEntry("nbIterations", stats.nbIterations);
+          logger->AddEntry("nbItCopy", this->stats.nbItCopy);
           logger->AddEntry("nbSwaps", stats.nbSwaps);
 
         // Finish object
@@ -620,11 +469,12 @@ namespace SHA_Logger
       void AddAccess() const { ++stats.nbAccess; }
       void AddCompare() const { ++stats.nbCompares; }
       void AddIteration() const { ++stats.nbIterations; }
+      void AddItCopy() const { ++stats.nbItCopy; }
       void AddSwap() const { ++stats.nbSwaps; }
 
       // Accessors
       std::shared_ptr<Logger> GetLogger() { return logger; }
-      std::string GetRef() const { return "sequence"; }
+      std::string GetRef() const { return "sequence"; } /// @todo *this to string
 
     private:
       Vector operator=(Vector&) {}    // Not Implemented
@@ -633,5 +483,4 @@ namespace SHA_Logger
       mutable Stats stats;            // Computation statistics
   };
 }
-
 #endif // MODULE_LOGGER_VECTOR_HXX

@@ -56,14 +56,14 @@ namespace SHA_Logger
         return writer;
       }
 
-      static bool Build(Logger& logger)
+      /*static bool Build(Logger& logger)
       {
         logger.AddEntry("type", Algo::GetType());
         logger.AddEntry("version", Algo::GetVersion());
         logger.AddEntry("name", Algo::GetName());
 
         return true;
-      }
+      }*/
 
 
     private:
@@ -99,6 +99,26 @@ namespace SHA_Logger
 
       std::unique_ptr<Stream> stream; // Stream wrapper
       std::unique_ptr<Writer> writer; // Writer used to fill the stream
+  };
+}
+
+namespace hul
+{
+  /// @class Algo_Traits
+  ///
+  template <typename Algo>
+  class Algo_Traits
+  {
+  public:
+    static bool Build(Logger& logger)
+    {
+      logger.AddEntry("type", Algo::GetType());
+      logger.AddEntry("version", Algo::GetVersion());
+      logger.AddEntry("name", Algo::GetName());
+      if (logger.GetCurrentLevel() > 0) logger.AddEntry("level", logger.GetCurrentLevel());
+
+      return true;
+    }
   };
 }
 

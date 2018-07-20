@@ -24,7 +24,7 @@
 #include <fstream>
 #include <string>
 
-using namespace SHA_Logger;
+using namespace hul;
 
 #ifndef DOXYGEN_SKIP
 namespace {}

@@ -20,13 +20,28 @@
 
 set(SHA ${PROJECT_NAME})
 
-# Source files
-set(MODULE_SEARCH_LOG_SRCS #TestBinaryLog.cxx)
-                           TestKthMaxElementLog.cxx)
-
-# --------------------------------------------------------------------------
-# Build Testing Log executables
-# --------------------------------------------------------------------------
 include_directories(${MODULES_DIR})
 include_directories(${LIB_DIR})
-cxx_gtest(TestModuleSearchLog "${MODULE_SEARCH_LOG_SRCS}" ${SHA_SRCS})
+
+# --------------------------------------------------------------------------
+# Build Testing Log executables for simple testing
+# --------------------------------------------------------------------------
+if(BUILD_TESTING_LOG)
+  set(MODULE_SEARCH_LOG_SRCS TestBinaryLog.cxx
+                             TestKthOrderStatisticLog.cxx)
+
+  cxx_gtest(TestModuleSearchLog "${MODULE_SEARCH_LOG_SRCS}" ${SHA_SRCS})
+endif()
+
+# --------------------------------------------------------------------------
+# Build Testing Log executables for the data logs generation
+# --------------------------------------------------------------------------
+if(BUILD_TESTING_GEN_LOGS)
+  set(MODULE_SEARCH_GEN_LOGS_SRCS TestBinaryGenLogs.cxx
+                                  TestKthOrderStatisticGenLogs.cxx)
+
+  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/binary)
+  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/order_statistic)
+
+  cxx_gtest(TestModuleSearchGenLogs "${MODULE_SEARCH_GEN_LOGS_SRCS}" ${SHA_SRCS})
+endif()

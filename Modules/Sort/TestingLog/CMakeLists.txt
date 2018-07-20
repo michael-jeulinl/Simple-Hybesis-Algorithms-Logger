@@ -20,18 +20,43 @@
 
 set(SHA ${PROJECT_NAME})
 
-# Source files
-set(MODULE_SORT_LOG_SRCS #TestAggregateInPlaceLog.cxx)
-                         #TestBubbleLog.cxx)
-                         #TestCocktailLog.cxx)
-                         #TestCombLog.cxx)
-                         #TestMergeInPlaceLog.cxx)
-                         #TestPartitionLog.cxx)
-                         TestQuickLog.cxx)
-
-# --------------------------------------------------------------------------
-# Build Testing Log executables
-# --------------------------------------------------------------------------
 include_directories(${MODULES_DIR})
 include_directories(${LIB_DIR})
-cxx_gtest(TestModuleSortLog "${MODULE_SORT_LOG_SRCS}" ${SHA_SRCS})
+
+# --------------------------------------------------------------------------
+# Build Testing Log executables for simple testing
+# --------------------------------------------------------------------------
+if(BUILD_TESTING_LOG)
+  set(MODULE_SORT_LOG_SRCS TestAggregateInPlaceLog.cxx
+                           TestBubbleLog.cxx
+                           TestCocktailLog.cxx
+                           TestCombLog.cxx
+                           TestMergeInPlaceLog.cxx
+                           TestPartitionLog.cxx
+                           TestQuickLog.cxx)
+
+  cxx_gtest(TestModuleSortLog "${MODULE_SORT_LOG_SRCS}" ${SHA_SRCS})
+endif()
+
+# --------------------------------------------------------------------------
+# Build Testing Log executables for the data logs generation
+# --------------------------------------------------------------------------
+if(BUILD_TESTING_GEN_LOGS)
+  set(MODULE_SORT_GEN_LOGS_SRCS TestAggregateInPlaceGenLogs.cxx
+                                TestBubbleGenLogs.cxx
+                                TestCocktailGenLogs.cxx
+                                TestCombGenLogs.cxx
+                                TestMergeInPlaceGenLogs.cxx
+                                TestPartitionGenLogs.cxx
+                                TestQuickGenLogs.cxx)
+
+  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/aggregate)
+  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bubble)
+  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cocktail)
+  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/merge_in_place)
+  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/comb)
+  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/partition)
+  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/quick)
+
+  cxx_gtest(TestModuleSortGenLogs "${MODULE_SORT_GEN_LOGS_SRCS}" ${SHA_SRCS})
+endif()

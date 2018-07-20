@@ -30,27 +30,13 @@
 namespace SHA_Logger
 {
   typedef rapidjson::OStreamWrapper Stream;
-  typedef rapidjson::PrettyWriter<Stream> Writer;
-  //typedef rapidjson::Writer<Stream> Writer;
+  //typedef rapidjson::PrettyWriter<Stream> Writer;
+  typedef rapidjson::Writer<Stream> Writer;
 
   // STD typedef
   typedef const std::string String;
   typedef std::ostream Ostream;
   typedef std::ofstream OFStream;
-
-  // Constants
-  /// @todo delete
-  static const std::string kSeqName = "sequence";
-
-  /// @todo Delete
-  struct VecStats
-  {
-    VecStats() : nbComparisons(0), nbIterations(0), nbOtherAccess(0), nbSwaps(0) {}
-    int nbComparisons;
-    int nbIterations;
-    int nbOtherAccess;
-    int nbSwaps;
-  };
 
   // String value
   template<typename T>
@@ -66,11 +52,41 @@ namespace SHA_Logger
   { return std::string(t); }
 
   // Range To String
-  // @todo tuple to make it more generic
+  /// @todo tuple to make it more generic
   template<class Pair>
   inline std::string RangeToString(const Pair& range)
   { return "[" + ToString(range.first) + ", " + ToString(range.second) + "]"; }
+}
 
+namespace hul
+{
+  typedef rapidjson::OStreamWrapper Stream;
+  //typedef rapidjson::PrettyWriter<Stream> Writer;
+  typedef rapidjson::Writer<Stream> Writer;
+
+  // STD typedef
+  typedef const std::string String;
+  typedef std::ostream Ostream;
+  typedef std::ofstream OFStream;
+
+  // String value
+  template<typename T>
+  typename std::enable_if<std::is_fundamental<T>::value, std::string>::type ToString(const T& t)
+  { return std::to_string(t); }
+
+  template<>
+  inline std::string ToString<char>(const char& t)
+  { return std::string(1, t); }
+
+  template<class T>
+  typename std::enable_if<!std::is_fundamental<T>::value, std::string>::type ToString(const T& t)
+  { return std::string(t); }
+
+  // Range To String
+  /// @todo tuple to make it more generic
+  template<class Pair>
+  inline std::string RangeToString(const Pair& range)
+  { return "[" + ToString(range.first) + ", " + ToString(range.second) + "]"; }
 }
 
 #endif // MODULE_LOGGER_TYPEDEF_HXX
