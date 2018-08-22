@@ -18,33 +18,45 @@
  *
  *=========================================================================================================*/
 #include <gtest/gtest.h>
-#include <comb_log.hxx>
+#include <binary_log.hxx>
+#include "data.hxx"
 
 // STD includes
-#include <ostream>
+#include <fstream>
 
-// Hurna Lib namespace
+// Testing namespace
 using namespace hul;
-using namespace hul::sort;
 
 #ifndef DOXYGEN_SKIP
 namespace {
   typedef Vector<int> Array;
   typedef Array::h_iterator IT;
-  typedef Comb<IT> Sort;
+  typedef search::Binary<IT> Search;
+
+  const std::string DIR = "binary";
 }
 #endif /* DOXYGEN_SKIP */
 
-TEST(TestCombLog, buildFacto)
+// Test Binary with different integer sequences
+TEST(TestBinaryGenLogs, build)
 {
-  std::stringstream dumpStream;
-  auto logger = std::shared_ptr<Logger>(new Logger(dumpStream));
-  Array data(logger, { 1, -4, 2, 3, -1, 4, 0 , -2, -5, -3 });
+  // Generate log for all Random integers
+  for (auto it = DATA::Integers.begin(); it != DATA::Integers.end(); ++it)
+  {
+    auto rangeIt = DATA::IndexSearch.find(it->second.size());
+    if (rangeIt == DATA::IndexSearch.end())
+      continue;
 
-  // Computation
-  Sort::Build(*logger.get(), data.h_begin(), data.h_end());
+    for (auto keyIt = rangeIt->second.begin(); keyIt != rangeIt->second.end(); ++keyIt)
+    {
+      OFStream fileStream(DIR + "/" + it->first + "_" + std::to_string(*keyIt) + ".json");
+      auto logger = std::shared_ptr<Logger>(new Logger(fileStream));
 
-  // Test: all elements of the final array are sorted
-  for (auto it = data.begin(); it < data.end() - 1; ++it)
-    EXPECT_LE(*it, *(it + 1));
+      const auto key = it->second[*keyIt];
+      Array data(logger, it->second);
+      std::sort(data.begin(), data.end());
+
+      Search::Build(*logger.get(), data.h_begin(), data.h_end(), key);
+    }
+  }
 }

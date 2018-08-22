@@ -21,246 +21,157 @@
 #define MODULE_SORT_AGGREGATE_IN_PLACE_LOG_HXX
 
 #include <Logger/algorithm.hxx>
-#include <Logger/array.hxx>
-#include <Logger/comment.hxx>
-#include <Logger/operation.hxx>
-#include <Logger/typedef.hxx>
-#include <Logger/value.hxx>
+#include <Logger/command.hxx>
 #include <Logger/vector.hxx>
 
-
-// STD includes
-#include <iterator>
-
-namespace SHA_Logger
+namespace hul
 {
-  /// @class AggregateInPlaceLog
-  ///
-  template <typename IT, typename Compare = std::less<typename std::iterator_traits<IT>::value_type>>
-  class AggregateInPlaceLog
+  namespace sort
   {
-    public:
-      static const String GetName() { return "Aggregate In Place"; }
+  /// @class AggregateInPlace
+  ///
+  template <typename IT, typename Compare = std::less_equal<typename std::iterator_traits<IT>::value_type>>
+  class AggregateInPlace
+  {
+  // Specification to get h_iterator (if normal iterator subBuild bubble using h_iterator as template)
+  typedef CompareWrap<IT, Compare> CompareF;
 
-      // Assert correct JSON construction.
-      ~AggregateInPlaceLog() { assert(this->writer->IsComplete()); }
+  public:
+    static const String GetName() { return "Aggregate In Place"; }
+    static const String GetVersion() { return "1.0.0"; }
+    static const String GetType() { return "algorithm"; }
 
-      /// Instantiate a new json writer using the stream passed as
-      /// argument, run and write algorithm computation information.
-      ///
-      /// @return stream reference filled up with AggregateInPlaceLog object information,
-      ///         error object information in case of failure.
-      static Ostream& Build(Ostream& os, Options opts,
-                            const IT& begin, const IT& pivot, const IT& end,
-                            VecStats& stats, const int offset = 0)
+    /// Instantiate a new json writer using the stream passed as
+    /// argument, run and write algorithm computation information.
+    ///
+    /// @return stream reference filled up with AggregateInPlace object information,
+    ///         error object information in case of failure.
+    static Ostream& Build(Ostream& os, const IT& begin, const IT& pivot, const IT& end)
+    {
+      auto builder = std::unique_ptr<AggregateInPlace>(new AggregateInPlace(os));
+      builder->Write(begin, pivot, end);
+
+      return os;
+    }
+
+    /// Instantiate a new json writer using the stream passed as
+    /// argument, run and write algorithm computation information.
+    ///
+    /// @return true in case of success, false otherwise.
+    //void operator()(Logger& logger, const IT& begin, const IT& end)
+    static void Build(Logger& logger, const IT& begin, const IT& pivot, const IT& end)
+    { Write(logger, begin, pivot, end); }
+
+  private:
+    AggregateInPlace(Ostream& os) : logger(std::unique_ptr<Logger>(new Logger(os))) {}
+    AggregateInPlace operator=(AggregateInPlace&) {} // Not Implemented
+
+
+    bool Write(const IT& begin, const IT& pivot, const IT& end)
+    { return Write(*this->logger, begin, pivot, end); }
+
+
+    ///
+    static void Write(Logger& logger, const IT& begin, const IT& pivot, const IT& end)
+    {
+      logger.Start();                        // Start Logging Procedure
+
+      Algo_Traits<AggregateInPlace>::Build(logger); // Write description
+      WriteParameters(logger, begin, pivot, end);   // Write parameters
+      WriteComputation(logger, begin, pivot, end);  // Write computation
+
+      logger.End();                          // Close Logging Procedure
+    }
+
+
+    static void WriteParameters(Logger& logger, const IT& begin, const IT& pivot, const IT& end)
+    {
+      logger.StartArray("parameters");
+      if (logger.GetCurrentLevel() > 0)           // Write only iterators
       {
-        std::unique_ptr<AggregateInPlaceLog> builder =
-          std::unique_ptr<AggregateInPlaceLog>(new AggregateInPlaceLog(os));
-        builder->Write(opts, begin, pivot, end, stats, offset);
-
-        return os;
+        logger.AddObject(begin, true);
+        logger.AddObject(pivot, true);
+        logger.AddObject(end, true);
       }
-
-      /// Use json writer passed as parameter to write iterator information.
-      ///
-      /// @return stream reference filled up with AggregateInPlaceLog object information,
-      ///         error information in case of failure.
-      static Writer& Build(Writer& writer, Options opts,
-                           const IT& begin, const IT& pivot, const IT& end,
-                           VecStats& stats, const int offset = 0)
+      else // Write all data
       {
-        Write(writer, opts, begin, pivot, end, stats, offset);
-
-        return writer;
+        logger.AddDataDetails(begin, end, true);
+        logger.AddObject(pivot, true);
       }
+      logger.EndArray();
+    }
 
-    private:
-      AggregateInPlaceLog(Ostream& os) : stream(std::unique_ptr<Stream>(new Stream(os))),
-                                         writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
-      AggregateInPlaceLog operator=(AggregateInPlaceLog&) {} // Not Implemented
 
-      ///
-      /// \brief Write
-      /// \param opts
-      /// \param begin
-      /// \param pivot
-      /// \param end
-      /// \param offset
-      /// \return
-      ///
-      bool Write(Options opts,
-                 const IT& begin, const IT& pivot, const IT& end,
-                 VecStats& stats, const int offset)
-      { return Write(*this->writer, opts, begin, pivot, end, stats, offset); }
-
-      ///
-      /// \brief Write
-      /// \param writer
-      /// \param opts
-      /// \param begin
-      /// \param pivot
-      /// \param end
-      /// \param offset
-      /// \return
-      ///
-      static bool Write(Writer& writer, Options opts,
-                        const IT& begin, const IT& pivot, const IT& end,
-                        VecStats& stats, const int offset)
+    static void WriteComputation(Logger& logger, const IT& begin, const IT& pivot, const IT& end)
+    {
+      if (std::distance(begin, pivot) < 1 || std::distance(pivot, end) < 1)
       {
-        // Do not write sequence if no data to be processed
-        if (std::distance(begin, pivot) < 1 || std::distance(pivot, end) < 1)
+        if (logger.GetCurrentLevel() == 0)
         {
-          Operation::Return<bool>(writer, true);
-          return true;
+          logger.Comment("Sequence too small to be procesed: already sorted.");
+          logger.Return("void");
+        }
+        return;
+      }
+
+      // Locals
+      logger.StartArray("locals");
+        auto firstIt = IT(begin, "firstIt", true);
+        auto secondIt = IT(pivot, "secondIt", true);
+        auto secondItNext = IT(secondIt, "secondIt_next", true);
+      logger.EndArray();
+
+      // Use first half as receiver
+      logger.StartArray("logs");
+      logger.StartLoop(String("Swap, if greater, first part element with the pivot. ") +
+                       String("Bubble up then the new pivot value at its right position:"));
+      for(; firstIt < pivot; ++firstIt)
+      {
+        if (CompareF()(firstIt, pivot)) {
+          logger.Comment(firstIt.String() + " <= " + pivot.String() + " : Ignore element.");
+          continue;
         }
 
-        writer.StartObject();
+        logger.Comment(firstIt.String() + " <= " + pivot.String() + " : Swap firstIt with pivot.");
+        Swap()(logger, firstIt, pivot);
 
-        Algo_Traits<AggregateInPlaceLog>::Build(writer, opts);            // Write description
-        WriteParameters(writer, opts, begin, pivot, end, offset);         // Write parameters
-        WriteComputation(writer, opts, begin, pivot, end, stats, offset); // Write computation
 
-        writer.EndObject();
-
-        return true;
-      }
-
-      ///
-      /// \brief WriteParameters
-      /// \param writer
-      /// \param opts
-      /// \param begin
-      /// \param pivot
-      /// \param end
-      /// \param offset
-      /// \return
-      ///
-      static bool WriteParameters(Writer& writer, Options opts,
-                                  const IT& begin, const IT& pivot, const IT& end,
-                                  const int offset)
-      {
-        const int _pivIdx = static_cast<int>(std::distance(begin, pivot));
-        writer.Key("parameters");
-        writer.StartArray();
-        if (opts & OpIsSub)
+        logger.StartLoop("Displace new pivot value in the right place by bubbling up:");
+        secondIt = pivot;
+        for (secondItNext = secondIt + 1; secondIt != end - 1; ++secondIt, ++secondItNext)
         {
-          const int _seqSize = static_cast<int>(std::distance(begin, end));
-          Iterator::Build(writer, kSeqName, "begin", offset);
-          Iterator::Build(writer, kSeqName, "pivot", offset + _pivIdx);
-          Iterator::Build(writer, kSeqName, "end", offset + _seqSize);
-        }
-        else
-        {
-          Array<IT>::Build(writer, kSeqName, "begin", begin, "end", end);
-          Iterator::Build(writer, kSeqName, "pivot", _pivIdx);
-        }
-        writer.EndArray();;
-
-        return true;
-      }
-
-      ///
-      /// \brief WriteComputation
-      /// \param writer
-      /// \param begin
-      /// \param pivot
-      /// \param end
-      /// \param offset
-      /// \return
-      ///
-      static bool WriteComputation(Writer& writer, Options opts,
-                                   const IT& begin, const IT& pivot, const IT& end,
-                                   VecStats& stats, const int offset)
-      {
-        auto _beginIdx = offset;
-        const auto _pIdx = offset + static_cast<const int>(std::distance(begin, pivot));
-
-        // Local logged variables
-        writer.Key("locals");
-        writer.StartArray();
-        auto it = Iterator::BuildIt<IT>(writer, kSeqName, "it", _beginIdx, begin);
-        ++stats.nbOtherAccess;
-        Iterator::BuildIt<IT>(writer, kSeqName, "it_increment", _beginIdx + 1, begin + 1);
-        writer.EndArray();
-
-        writer.Key("logs");
-        writer.StartArray();
-
-        Comment::Build(writer, static_cast<std::string>(
-                       "Swap if smaller, second part first element with first part current element") +
-                       " and place the new first at its right position:");
-        for (auto curBegin = begin; curBegin < pivot; ++curBegin, ++_beginIdx, ++stats.nbIterations)
-        {
-          Operation::Set<int>(writer, "begin", _beginIdx);
-          ++stats.nbComparisons;
-          if (Compare()(*curBegin, *pivot))
+          if (CompareF()(secondIt, secondItNext))
           {
-            Comment::Build(writer, "it[" + ToString(_beginIdx) + "]{" + ToString(*curBegin) +
-                           "} < pivot[" + ToString(_pIdx) + "]{" + ToString(*pivot) +
-                           "} : Ignore element.", 1);
-            continue;
+            logger.Comment(secondIt.String() + " <= " + secondItNext.String() +
+                           " : Element at its right place, break.");
+            break;
           }
 
-          Comment::Build(writer, "it[" + ToString(_beginIdx) + "]{" + ToString(*curBegin) +
-                         "} >= pivot[" + ToString(_pIdx) + "]{" + ToString(*pivot) +
-                         "} : Swap pivot with the current it.", 1);
-          ++stats.nbSwaps;
-          Operation::Swap(writer, "begin", "pivot");
-          std::swap(*curBegin, *pivot);
-
-          it = pivot;
-          auto _itIdx = offset + static_cast<int>(std::distance(begin, it));
-          Comment::Build(writer, "Displace new pivot value in the right place by bubbling:", 1);
-          for (; it != end - 1; ++it, ++_itIdx, ++stats.nbIterations)
-          {
-            Operation::Set<int>(writer, "it", _itIdx);
-            Operation::Set<int>(writer, "it_increment", _itIdx + 1);
-
-            ++stats.nbComparisons;
-            ++stats.nbOtherAccess;
-            if (!Compare()(*(it + 1), *it))
-            {
-              Comment::Build(writer, "it[" + ToString(_itIdx) + "]{" + ToString(*it) +
-                             "} <= next[" + ToString(_itIdx + 1) + "]{" + ToString(*(it + 1)) +
-                             "} : Element at its right place, break.", 2);
-              break;
-            }
-
-            Comment::Build(writer, "it[" + ToString(_itIdx) + "]{" + ToString(*it) +
-                           "} > next[" + ToString(_itIdx + 1) + "]{" + ToString(*(it + 1)) +
-                           "} : Bubble element.", 2);
-
-            ++stats.nbSwaps;
-            Operation::Swap(writer, "it", "it_increment");
-            std::swap(*it, *(it + 1));
-          }
+          logger.Comment(secondIt.String() + " > " + secondItNext.String() + " : Bubble up.");
+          Swap()(logger, secondIt, secondItNext);
         }
-
-        Operation::Return<bool>(writer, true);
-        writer.EndArray();
-
-        if (!(opts & OpIsSub))
-        {
-          // Add Statistical informations
-          writer.Key("stats");
-          writer.StartObject();
-            writer.Key("nbComparisons");
-            writer.Int(stats.nbComparisons);
-            writer.Key("nbIterations");
-            writer.Int(stats.nbIterations);
-            writer.Key("nbOtherAccess");
-            writer.Int(stats.nbOtherAccess);
-            writer.Key("nbSwaps");
-            writer.Int(stats.nbSwaps);
-          writer.EndObject();
-        }
-
-        return true;
+        logger.EndLoop();
       }
+      logger.EndLoop();
 
-      std::unique_ptr<Stream> stream; // Stream wrapper
-      std::unique_ptr<Writer> writer; // Writer used to fill the stream
+      logger.Return("void");
+      logger.EndArray();
+
+      // Statistics
+      if (logger.GetCurrentLevel() == 0)
+      {
+        logger.StartArray("stats");
+          logger.AddStats(firstIt, true);
+          logger.AddStats(secondIt);
+          logger.AddStats(secondItNext);
+        logger.EndArray();
+      }
+    }
+
+    // Unique as created only at execution as a RAII ressource
+    std::unique_ptr<Logger> logger; // Logger used to fill the stream
   };
+  }
 }
 
 #endif // MODULE_SORT_AGGREGATE_IN_PLACE_LOG_HXX

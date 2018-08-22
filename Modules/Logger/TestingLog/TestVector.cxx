@@ -18,33 +18,23 @@
  *
  *=========================================================================================================*/
 #include <gtest/gtest.h>
-#include <comb_log.hxx>
+#include <vector.hxx>
 
 // STD includes
-#include <ostream>
+#include <fstream>
+#include <string>
 
-// Hurna Lib namespace
 using namespace hul;
-using namespace hul::sort;
 
 #ifndef DOXYGEN_SKIP
-namespace {
-  typedef Vector<int> Array;
-  typedef Array::h_iterator IT;
-  typedef Comb<IT> Sort;
-}
+namespace {}
 #endif /* DOXYGEN_SKIP */
 
-TEST(TestCombLog, buildFacto)
+// Test Vector
+TEST(TestVector, constructor)
 {
-  std::stringstream dumpStream;
-  auto logger = std::shared_ptr<Logger>(new Logger(dumpStream));
-  Array data(logger, { 1, -4, 2, 3, -1, 4, 0 , -2, -5, -3 });
-
-  // Computation
-  Sort::Build(*logger.get(), data.h_begin(), data.h_end());
-
-  // Test: all elements of the final array are sorted
-  for (auto it = data.begin(); it < data.end() - 1; ++it)
-    EXPECT_LE(*it, *(it + 1));
+  // Has to be linked to a stream otherwise useless to use
+  // Can still use its normal iterators to handle unlogged operations
+  OFStream fileStream("vec_log.json");
+  Vector<int> sequence(fileStream, {1, 2, 3, 4, 5});
 }

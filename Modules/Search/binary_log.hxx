@@ -21,166 +21,146 @@
 #define MODULE_SEARCH_BINARY_LOG_HXX
 
 #include <Logger/algorithm.hxx>
-#include <Logger/array.hxx>
-#include <Logger/comment.hxx>
-#include <Logger/operation.hxx>
-#include <Logger/typedef.hxx>
-#include <Logger/value.hxx>
+#include <Logger/vector.hxx>
 
-namespace SHA_Logger
+namespace hul
 {
-  /// @class BinaryLog
-  ///
-  template <typename IT, typename T, typename IsEqualT>
-  class BinaryLog
+  namespace search
   {
-    public:
-      static const String GetName() { return "Binary Search"; }
+  /// @class Binary
+  ///
+  template <typename IT, typename Equal = std::equal_to<typename std::iterator_traits<IT>::value_type>>
+  class Binary
+  {
+  typedef typename std::iterator_traits<IT>::value_type T;
 
-      // Assert correct JSON construction.
-      ~BinaryLog() { assert(this->writer->IsComplete()); }
+  public:
+    static const String GetName() { return "Binary Search"; }
+    static const String GetVersion() { return "1.0.0"; }
+    static const String GetType() { return "algorithm"; }
 
-      /// Instantiate a new json writer using the stream passed as
-      /// argument, run and write algorithm computation information.
-      ///
-      /// @return stream reference filled up with BinaryLog object information,
-      ///         error object information in case of failure.
-      static Ostream& Build(Ostream& os, Options opts, const IT& begin, const IT& end, const T& key)
+    ///
+    static Ostream& Build(Ostream& os, const IT& begin, const IT& end, const T& key)
+    {
+      auto builder = std::unique_ptr<Binary>(new Binary(os));
+      builder->Write(begin, end, key);
+
+      return os;
+    }
+
+    ///
+    static IT Build(Logger& logger, const IT& begin, const IT& end, const T& key)
+    { return Write(logger, begin, end, key); }
+
+  private:
+    Binary(Ostream& os) : logger(std::unique_ptr<Logger>(new Logger(os))) {}
+    Binary operator=(Binary&) {} // Not Implemented
+
+    IT Write(const IT& begin, const IT& end, const T& key) { return Write(*this->logger, begin, end, key); }
+
+    ///
+    static IT Write(Logger& logger, const IT& begin, const IT& end, const T& key)
+    {
+      logger.Start();                        // Start Logging Procedure
+
+      Algo_Traits<Binary>::Build(logger);         // Write description
+      WriteParameters(logger, begin, end, key);   // Write parameters
+      auto it = WriteComputation(logger, begin, end, key);  // Write computation
+
+      logger.End();                          // Close Logging Procedure
+
+      return it;
+    }
+
+    ///
+    static void WriteParameters(Logger& logger, const IT& begin, const IT& end, const T& key)
+    {
+      logger.StartArray("parameters");
+      if (logger.GetCurrentLevel() > 0) // Only iterators
       {
-        std::unique_ptr<BinaryLog> builder = std::unique_ptr<BinaryLog>(new BinaryLog(os));
-        builder->Write(opts, begin, end, key);
+        logger.AddObject(begin, true);
+        logger.AddObject(end, true);
+        logger.AddValue("key", key);
+      }
+      else                              // All data
+      {
+        logger.AddDataDetails(begin, end, true);
+        logger.AddValue("key", key);
+      }
+      logger.EndArray();
+    }
 
-        return os;
+    ///
+    static IT WriteComputation(Logger& logger, const IT& begin, const IT& end, const T& key)
+    {
+      const auto size = static_cast<const int>(std::distance(begin, end));
+      if (size < 2)
+      {
+        if (logger.GetCurrentLevel() == 0)
+        {
+          logger.Comment("Sequence too small to be procesed: already sorted.");
+          logger.Return("void");
+        }
+        return end;
       }
 
-      /// Use json writer passed as parameter to write iterator information.
-      ///
-      /// @return stream reference filled up with BinaryLog object information,
-      ///         error information in case of failure.
-      static Writer& Build(Writer& writer, Options opts, const IT& begin, const IT& end, const T& key)
-      {
-        Write(writer, opts, begin, end, key);
-
-        return writer;
-      }
-
-    private:
-      BinaryLog(Ostream& os) : stream(std::unique_ptr<Stream>(new Stream(os))),
-                               writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
-      BinaryLog operator=(BinaryLog&) {} // Not Implemented
-
-      bool Write(Options opts, const IT& begin, const IT& end, const T& key)
-      { return Write(*this->writer, opts, begin, end, key); }
-
-      static bool Write(Writer& writer, Options opts, const IT& begin, const IT& end, const T& key)
-      {
-        writer.StartObject();
-
-        Algo_Traits<BinaryLog>::Build(writer, opts);  // Write description
-        WriteParameters(writer, begin, end, key);     // Write parameters
-        WriteComputation(writer, begin, end, key);    // Write computation
-
-        writer.EndObject();
-
-        return true;
-      }
-
-      ///
-      static bool WriteParameters(Writer& writer, const IT& begin, const IT& end, const T& key)
-      {
-        writer.Key("parameters");
-          writer.StartArray();
-          Array<IT>::Build(writer, kSeqName, "begin", begin, "end", end);
-          Value<T>::Build(writer, "key", key);
-        writer.EndArray();
-
-        return true;
-      }
-
-      ///
-      static bool WriteComputation(Writer& writer, const IT& begin, const IT& end, const T& key)
-      {
-        // Not part of the logs
-        const auto seqSize = static_cast<int>(std::distance(begin, end));
+      // Locals
+      logger.StartArray("locals");
+        bool found = false;
         auto lowIt = begin;
         auto highIt = end;
-        int middleIdx = seqSize / 2;
+        auto curIt = IT(end, "current", true);
+      logger.EndArray();
 
-        // Local logged variables
-        writer.Key("locals");
-        writer.StartArray();
-          auto index = Value<int>::BuildValue(writer, "index", -1);
-          auto middleIt =
-            Iterator::BuildIt<IT>(writer, kSeqName, "it", middleIdx, lowIt + middleIdx);
-        writer.EndArray();
+      // Computation
+      logger.StartArray("logs");
+      logger.StartLoop();
+      while (lowIt < highIt)
+      {
+        curIt = lowIt + (highIt.GetIndex() - lowIt.GetIndex()) / 2;
+        logger.Comment("Select middle element: " + curIt.String());
 
-        // Log algorithm operations
-        writer.Key("logs");
-        writer.StartArray();
-        while (lowIt < highIt && index < 0)
+        if (Equal()(key, *curIt))
         {
-          middleIdx = static_cast<int>(std::distance(begin, middleIt));
-          Operation::Set<int>(writer, "it", middleIdx);
-
-          if (IsEqualT()(key, *middleIt))
-          {
-            index = middleIdx;
-
-            Comment::Build(writer,
-              "Key {" + std::to_string(key) + "} Found at index [" + std::to_string(index) + "]", 1);
-            Operation::Set<int>(writer, "index", index);
-            break;
-          }
-          else if (key > *middleIt)
-          {
-            lowIt = middleIt + 1;
-
-            Comment::Build(writer, "Key{" + std::to_string(key) + "} > it[" +
-              std::to_string(middleIdx) + "]{" + std::to_string(*middleIt) +
-              "}: search within upper sequence.", 1);
-          }
-          else
-          {
-            highIt = middleIt;
-
-            Comment::Build(writer, "Key{" + std::to_string(key) + "} < it[" +
-              std::to_string(middleIdx) + "]{" + std::to_string(*middleIt) +
-              "}: search within lower sequence.", 1);
-          }
-
-          /// LOG RANGE CHANGED
-          /// @todo check new type of operation
-          writer.StartObject();
-            writer.Key("type");
-            writer.String("operation");
-            writer.Key("name");
-            writer.String("setRange");
-            writer.Key("range");
-            writer.StartArray();
-              writer.Int(static_cast<int>(std::distance(begin, lowIt)));
-              writer.Int(static_cast<int>(std::distance(begin, highIt)));
-            writer.EndArray();
-          writer.EndObject();
-
-          middleIt = lowIt + std::distance(lowIt, highIt) / 2;
-          middleIdx = static_cast<int>(std::distance(begin, middleIt));
-          Comment::Build(writer, "Select middle element[" + std::to_string(middleIdx) +
-            "]{" + std::to_string(*middleIt) + "}.", 1);
-          Operation::Set<int>(writer, "it", middleIdx);
+          found = true;
+          logger.Comment("Key {" + ToString(key) + "} Found at index [" + ToString(curIt.GetIndex()) + "]");
+          break;
+        }
+        else if (key > *curIt)
+        {
+          lowIt = curIt + 1;
+          logger.Comment("Key{" + ToString(key) + "} > " + curIt.String() + ": search in upper sequence.");
+        }
+        else
+        {
+          highIt = curIt;
+          logger.Comment("Key{" + ToString(key) + "} < " + curIt.String() + ": search in lower sequence.");
         }
 
-        // Logs failure
-        if (index < 0)
-          Comment::Build(writer, "Key {" + std::to_string(key) + "} was not found.", 0);
+        // Notify new search space
+        logger.SetRange(std::make_pair(lowIt.GetIndex(), highIt.GetIndex()));
+      }
+      logger.EndLoop();
 
-        Operation::Return<int>(writer, index);
-        writer.EndArray();
-        return true;
+      if (!found) logger.Comment("Key {" + ToString(key) + "} was not found.");
+      logger.Return((found) ? curIt.String() : end.String());
+      logger.EndArray();
+
+      // Statistics
+      if (logger.GetCurrentLevel() == 0)
+      {
+        logger.StartArray("stats");
+          logger.AddStats(curIt, true);
+        logger.EndArray();
       }
 
-      std::unique_ptr<Stream> stream; // Stream wrapper
-      std::unique_ptr<Writer> writer; // Writer used to fill the stream
+      return (found) ? curIt : end;
+    }
+
+    // Unique as created only at execution as a RAII ressource
+    std::unique_ptr<Logger> logger; // Logger used to fill the stream
   };
+  }
 }
 
 #endif // MODULE_SEARCH_BINARY_LOG_HXX

@@ -20,193 +20,122 @@
 #ifndef MODULE_SORT_MERGE_LOG_HXX
 #define MODULE_SORT_MERGE_LOG_HXX
 
-#include <Logger/algorithm.hxx>
-#include <Logger/array.hxx>
-#include <Logger/comment.hxx>
-#include <Logger/operation.hxx>
-#include <Logger/typedef.hxx>
-#include <Logger/value.hxx>
 #include <aggregate_in_place_log.hxx>
 
-// STD includes
-#include <iterator>
-
-namespace SHA_Logger
+namespace hul
 {
-  /// @class MergeLog
+  namespace sort
+  {
+  /// @class Merge
   ///
   template <typename IT,
-            typename Compare = std::less<typename std::iterator_traits<IT>::value_type>,
-            typename Aggregator = AggregateInPlaceLog<IT, Compare>
-            >
-  class MergeLog
+            typename Compare = std::less_equal<typename std::iterator_traits<IT>::value_type>,
+            typename Aggregator = AggregateInPlace<IT, Compare>>
+  class Merge
   {
-    typedef MergeLog<IT, Compare, Aggregator> Merge;
+  public:
+    static const String GetName() { return "Merge Sort"; }
+    static const String GetVersion() { return "1.0.0"; }
+    static const String GetType() { return "algorithm"; }
 
-    public:
-      static const String GetName() { return "Merge Sort"; }
+    /// Instantiate a new json writer using the stream passed as
+    /// argument, run and write algorithm computation information.
+    ///
+    /// @return stream reference filled up with Merge object information,
+    ///         error object information in case of failure.
+    static Ostream& Build(Ostream& os, const IT& begin, const IT& end)
+    {
+      std::unique_ptr<Merge> builder = std::unique_ptr<Merge>(new Merge(os));
+      builder->Write(begin, end);
 
-      // Assert correct JSON construction.
-      ~MergeLog() { assert(this->writer->IsComplete()); }
+      return os;
+    }
 
-      /// Instantiate a new json writer using the stream passed as
-      /// argument, run and write algorithm computation information.
-      ///
-      /// @return stream reference filled up with MergeLog object information,
-      ///         error object information in case of failure.
-      static Ostream& Build(Ostream& os, Options opts, const IT& begin, const IT& end,
-                            VecStats& stats, const int offset = 0)
+    ///
+    /// \brief Build
+    /// \param logger
+    /// \param begin
+    /// \param end
+    ///
+    /// //void operator()(Logger& logger, const IT& begin, const IT& end)
+    static void Build(Logger& logger, const IT& begin, const IT& end)
+    { Write(logger, begin, end); }
+
+  private:
+    Merge(Ostream& os) : logger(std::unique_ptr<Logger>(new Logger(os))) {}
+    Merge operator=(Merge&) {} // Not Implemented
+
+    void Write(const IT& begin, const IT& end) { Write(*this->logger, begin, end); }
+
+    ///
+    static void Write(Logger& logger, const IT& begin, const IT& end)
+    {
+      logger.Start();                        // Start Logging Procedure
+
+      Algo_Traits<Merge>::Build(logger);    // Write description
+      WriteParameters(logger, begin, end);   // Write parameters
+      WriteComputation(logger, begin, end);  // Write computation
+
+      logger.End();                          // Close Logging Procedure
+
+    }
+
+    ///
+    static void WriteParameters(Logger& logger, const IT& begin, const IT& end)
+    {
+      logger.StartArray("parameters");
+      if (logger.GetCurrentLevel() > 0) // Only iterators
       {
-        std::unique_ptr<MergeLog> builder = std::unique_ptr<MergeLog>(new MergeLog(os));
-        builder->Write(opts, begin, end, stats, offset);
-
-        return os;
+        logger.AddObject(begin, true);
+        logger.AddObject(end, true);
       }
+      else { logger.AddDataDetails(begin, end, true); } // All data
+      logger.EndArray();
+    }
 
-      /// Use json writer passed as parameter to write iterator information.
-      ///
-      /// @return stream reference filled up with MergeLog object information,
-      ///         error information in case of failure.
-      static Writer& Build(Writer& writer, Options opts, const IT& begin, const IT& end,
-                           VecStats& stats, const int offset = 0)
+    ///
+    static void WriteComputation(Logger& logger, const IT& begin, const IT& end)
+    {
+      const auto size = static_cast<const int>(std::distance(begin, end));
+      if (size < 2)
       {
-        Write(writer, opts, begin, end, stats, offset);
-
-        return writer;
-      }
-
-    private:
-      MergeLog(Ostream& os) : stream(std::unique_ptr<Stream>(new Stream(os))),
-                              writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
-      MergeLog operator=(MergeLog&) {} // Not Implemented
-
-      ///
-      /// \brief Write
-      /// \param opts
-      /// \param begin
-      /// \param end
-      /// \param offset
-      /// \return
-      ///
-      bool Write(Options opts, const IT& begin, const IT& end, VecStats& stats,  const int offset)
-      { return Write(*this->writer, opts, begin, end, stats, offset); }
-
-      ///
-      /// \brief Write
-      /// \param writer
-      /// \param opts
-      /// \param begin
-      /// \param end
-      /// \param offset
-      /// \return
-      ///
-      static bool Write(Writer& writer, Options opts, const IT& begin, const IT& end,
-                        VecStats& stats, const int offset)
-      {
-        // Do not write sequence if no data to be processed
-        if (static_cast<int>(std::distance(begin, end)) < 2)
+        if (logger.GetCurrentLevel() == 0)
         {
-          Operation::Return<bool>(writer, true);
-          return true;
+          logger.Comment("Sequence too small to be procesed: already sorted.");
+          logger.Return("void");
         }
-
-        writer.StartObject();
-
-        Algo_Traits<MergeLog>::Build(writer, opts);                 // Write description
-        WriteParameters(writer, opts, begin, end, offset);          // Write parameters
-        WriteComputation(writer, opts, begin, end, stats, offset);  // Write computation
-
-        writer.EndObject();
-
-        return true;
+        return;
       }
 
-      ///
-      /// \brief WriteParameters
-      /// \param writer
-      /// \param opts
-      /// \param begin
-      /// \param end
-      /// \param offset
-      /// \return
-      ///
-      static bool WriteParameters(Writer& writer, Options opts,
-                                  const IT& begin, const IT& end, const int offset)
+      // Locals
+      logger.StartArray("locals");
+        const auto middle = IT(begin + size / 2, "middle", true);
+      logger.EndArray();
+
+
+      logger.StartArray("logs");
+      Merge::Build(logger, begin, IT(middle, "end"));
+      Merge::Build(logger, IT(middle, "begin"), end);
+
+      // Merge the two pieces
+      Aggregator::Build(logger, begin, middle, end);
+
+      logger.Return("void");
+      logger.EndArray();
+
+      // Statistics
+      if (logger.GetCurrentLevel() == 0)
       {
-        writer.Key("parameters");
-        writer.StartArray();
-        if (opts & OpIsSub)
-        {
-          const int _seqSize = static_cast<int>(std::distance(begin, end));
-          Iterator::Build(writer, kSeqName, "begin", offset);
-          Iterator::Build(writer, kSeqName, "end", offset + _seqSize);
-        }
-        else
-        {
-          Array<IT>::Build(writer, kSeqName, "begin", begin, "end", end);
-        }
-        writer.EndArray();
-
-        return true;
+        logger.StartArray("stats");
+          logger.AddStats(begin, true);
+        logger.EndArray();
       }
+    }
 
-      ///
-      /// \brief WriteComputation
-      /// \param writer
-      /// \param begin
-      /// \param end
-      /// \param offset
-      /// \return
-      ///
-      static bool WriteComputation(Writer& writer, Options opts,
-                                   const IT& begin, const IT& end,
-                                   VecStats& stats, const int offset)
-      {
-        const auto _seqSize = static_cast<const int>(std::distance(begin, end));
-        const auto _pIdx = _seqSize / 2;
-        const std::string comment = "Pick Pivot at the middle of  [" + ToString(offset) + ", " +
-                                    ToString(offset + _seqSize - 1) + "] --> [" +
-                                    ToString(offset + _pIdx) + "]{" +
-                                    ToString(*(begin + _pIdx)) + "}";
-
-        writer.Key("locals");
-        writer.StartArray();
-        ++stats.nbOtherAccess;
-        auto pivot = Iterator::BuildIt<IT>(writer, kSeqName, "pivot", offset + _pIdx, begin + _pIdx, comment);
-        writer.EndArray();
-
-        writer.Key("logs");
-        writer.StartArray();
-
-        Merge::Build(writer, OpIsSub, begin, pivot, stats, offset);           // Recurse on first partition
-        Merge::Build(writer, OpIsSub, pivot, end, stats, offset + _pIdx);     // Recurse on second partition
-        Aggregator::Build(writer, OpIsSub, begin, pivot, end, stats, offset); // Merge the two pieces
-
-        Operation::Return<bool>(writer, true);
-        writer.EndArray();
-
-        if (!(opts & OpIsSub))
-        {
-          // Add Statistical informations
-          writer.Key("stats");
-          writer.StartObject();
-            writer.Key("nbComparisons");
-            writer.Int(stats.nbComparisons);
-            writer.Key("nbIterations");
-            writer.Int(stats.nbIterations);
-            writer.Key("nbOtherAccess");
-            writer.Int(stats.nbOtherAccess);
-            writer.Key("nbSwaps");
-            writer.Int(stats.nbSwaps);
-          writer.EndObject();
-        }
-
-        return true;
-      }
-
-      std::unique_ptr<Stream> stream; // Stream wrapper
-      std::unique_ptr<Writer> writer; // Writer used to fill the stream
+    // Unique as created only at execution as a RAII ressource
+    std::unique_ptr<Logger> logger;
   };
+  }
 }
 
 #endif // MODULE_SORT_MERGE_HXX

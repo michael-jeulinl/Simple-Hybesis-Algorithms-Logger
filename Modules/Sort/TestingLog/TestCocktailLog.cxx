@@ -18,110 +18,33 @@
  *
  *=========================================================================================================*/
 #include <gtest/gtest.h>
-#include "data.hxx"
 #include <cocktail_log.hxx>
 
 // STD includes
-#include <fstream>
-#include <functional>
-#include <vector>
+#include <ostream>
 
-// Testing namespace
-using namespace SHA_Logger;
+// Hurna Lib namespace
+using namespace hul;
+using namespace hul::sort;
 
 #ifndef DOXYGEN_SKIP
 namespace {
-  typedef std::vector<int> Container;
-  typedef Container::iterator IT;
+  typedef Vector<int> Array;
+  typedef Array::h_iterator IT;
+  typedef Cocktail<IT> Sort;
 }
 #endif /* DOXYGEN_SKIP */
 
-
-// Test Cocktail with different integer sequences
-TEST(TestCocktailLog, build)
+TEST(TestCocktailLog, buildFacto)
 {
-  // Generate log for all Random integers
-  for (auto it = SHA_DATA::Integers.begin(); it != SHA_DATA::Integers.end(); ++it)
-  {
-    Container data(it->second);
-    OFStream fileStream(std::string(it->first + ".json"));
+  std::stringstream dumpStream;
+  auto logger = std::shared_ptr<Logger>(new Logger(dumpStream));
 
-    VecStats tmpVar;
-    CocktailLog<IT>::Build(fileStream, OpGetAll, data.begin(), data.end(), tmpVar);
+  // Run
+  Array data(logger, { 1, -4, 2, 3, -1, 4, 0 , -2, -5, -3 });
+  Sort::Build(*logger.get(), data.h_begin(), data.h_end());
 
-    // All elements of the final array are sorted
-    for (auto it = data.begin(); it < data.end() - 1; ++it)
-      EXPECT_LE(*it, *(it + 1));
-  }
-}
-
-// Test Cocktail with reversed integer sequences
-TEST(TestCocktailLog, Reversed)
-{
-  Container sizes({10, 20, 50, 100});
-
-  for (auto size = sizes.begin(); size != sizes.end(); ++size)
-  {
-    Container data;
-    data.reserve(*size);
-    for (auto i = 0; i < *size; ++i)
-      data.push_back((*size / 2) - i);
-
-    OFStream fileStream(std::string("Int_Rev_" + std::to_string(*size) + ".json"));
-    VecStats tmpVar;
-    CocktailLog<IT>::Build(fileStream, OpGetAll, data.begin(), data.end(), tmpVar);
-
-    // All elements of the final array are sorted
-    for (auto it = data.begin(); it < data.end() - 1; ++it)
-      EXPECT_LE(*it, *(it + 1));
-  }
-}
-
-// Test with reversed char sequences
-TEST(TestCocktailLog, ReversedChars)
-{
-  Container sizes({10, 20, 50});
-
-  for (auto size = sizes.begin(); size != sizes.end(); ++size)
-  {
-    std::vector<char> data;
-    data.reserve(*size);
-    for (auto i = 0; i < *size; ++i)
-      data.push_back(static_cast<char>(*size - i + 65));
-
-    OFStream fileStream(std::string("Char_Rev_" + std::to_string(*size) + ".json"));
-    VecStats tmpVar;
-    CocktailLog<std::vector<char>::iterator>::Build(fileStream, OpGetAll, data.begin(), data.end(), tmpVar);
-
-    // All elements of the final array are sorted
-    for (auto it = data.begin(); it < data.end() - 1; ++it)
-      EXPECT_LE(*it, *(it + 1));
-  }
-}
-
-// Test with random char sequences
-TEST(TestCocktailLog, RandomChars)
-{
-  // Generate log for all Random integers
-  for (auto it = SHA_DATA::Integers.begin(); it != SHA_DATA::Integers.end(); ++it)
-  {
-    auto size = it->second.size();
-
-    if (size > 50)
-      continue;
-
-    std::vector<char> data;
-    data.reserve(size);
-    for (auto i = 0; i < size; ++i)
-      data.push_back(static_cast<char>(it->second[i] + (size / 2) + 65));
-
-    OFStream fileStream(std::string("Char" + it->first.substr(3) + ".json"));
-
-    VecStats tmpVar;
-    CocktailLog<std::vector<char>::iterator>::Build(fileStream, OpGetAll, data.begin(), data.end(), tmpVar);
-
-    // All elements of the final array are sorted
-    for (auto it = data.begin(); it < data.end() - 1; ++it)
-      EXPECT_LE(*it, *(it + 1));
-  }
+  // Test: all elements of the final array are sorted
+  for (auto it = data.begin(); it < data.end() - 1; ++it)
+    EXPECT_LE(*it, *(it + 1));
 }

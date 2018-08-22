@@ -17,15 +17,15 @@
  * substantial portions of the Software.
  *
  *=========================================================================================================*/
-#ifndef MODULE_SORT_DATA_LOG_HXX
-#define MODULE_SORT_DATA_LOG_HXX
+#ifndef MODULE_SEARCH_DATA_LOG_HXX
+#define MODULE_SEARCH_DATA_LOG_HXX
 
 // STD includes
 #include <map>
 #include <string>
 #include <vector>
 
-namespace SHA_DATA {
+namespace DATA {
   static std::map<std::string, std::vector<int>> Integers
   {
     // Random ranged
@@ -72,38 +72,16 @@ namespace SHA_DATA {
     }
   };
 
-  // Rotated index, data
-  static std::map<int, std::vector<int>> RotatedIntegers
+  // Index of searched keys
+  static std::map<int, std::vector<int>> IndexSearch
   {
-    // {5}
-    //   >------>||>----->
-    { 2, {0, 2, -2, -1, 1} },
-
-    // {10}
-    //   >---------------->||>------------->
-    { 5, {-4, -2, 3, 0, 4, -5, -3, -1, 0, 2} },
-
-    // {20}
-    //    >----------------------------------->||>---------------------------->
-    { 10, {-8, -6, -4, -3, -1, 0, 2, 4, 6, 9, -7, -5, -2, 1, 3, 5, 7, 8, 9, 10} },
-
-    // {50} : >---------------->[15]>------------->
-    { 15,
-       {-22, -10, -8, -6, -4, -3, -1, 0, 2, 4, 6, 9, 11, 23, 25,   // 15
-        -30,                                                       // Pivot [15]
-        -28, -27, -21, -19, -15, -14, -11, -10, -9, -7,            // 10
-        -6, -5, -2, 1, 3, 5, 7, 8, 9, 10,                          // 10
-        11, 12, 13, 14, 15, 16, 17, 18, 19, 22, 24, 27, 29, 30     // 14
-       } }
+    // Random ranged
+    { 5, { 2, 4 } },
+    { 10, { 3, 5, 9 } },
+    { 20, { 4, 10, 12 } },
+    { 50, { 3, 25, 40 } },
+    { 100, { 3, 25, 50, 75 } }
   };
-
-  /*static std::map<std::string, std::string> Strings
-  {
-    { "Str_Rev_5", "urnha" },
-    { "Str_Rev_10", "uurnnlkiea" },
-    { "Str_Rand_5", "hurna" },
-    { "Str_Rand_10", "urnajeulin" }
-  };*/
 }
 
-#endif // MODULE_SORT_DATA_LOG_HXX
+#endif // MODULE_SEARCH_DATA_LOG_HXX

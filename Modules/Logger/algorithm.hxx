@@ -22,6 +22,7 @@
 
 #include <Logger/options.hxx>
 #include <Logger/typedef.hxx>
+#include <Logger/vector.hxx>
 
 namespace SHA_Logger
 {
@@ -55,6 +56,16 @@ namespace SHA_Logger
         return writer;
       }
 
+      /*static bool Build(Logger& logger)
+      {
+        logger.AddEntry("type", Algo::GetType());
+        logger.AddEntry("version", Algo::GetVersion());
+        logger.AddEntry("name", Algo::GetName());
+
+        return true;
+      }*/
+
+
     private:
       Algo_Traits(Ostream& os) : stream(std::unique_ptr<Stream>(new Stream(os))),
                                  writer(std::unique_ptr<Writer>(new Writer(*this->stream))) {}
@@ -66,11 +77,13 @@ namespace SHA_Logger
       {
         writer.Key("type");
         writer.String(GetType());
-        if (opts & OpGetName || opts & OpIsSub)
-        {
+        writer.Key("version");
+        writer.String("check how to handle versionning with visualizers / structures and releases.");
+        //if (opts & OpGetName || opts & OpIsSub)
+        //{
            writer.Key("name");
            writer.String(Algo::GetName());
-        }
+        //}
 
         /*if (opts & OpGetDoc)
           Algo::WriteDoc(writer);
@@ -86,6 +99,26 @@ namespace SHA_Logger
 
       std::unique_ptr<Stream> stream; // Stream wrapper
       std::unique_ptr<Writer> writer; // Writer used to fill the stream
+  };
+}
+
+namespace hul
+{
+  /// @class Algo_Traits
+  ///
+  template <typename Algo>
+  class Algo_Traits
+  {
+  public:
+    static bool Build(Logger& logger)
+    {
+      logger.AddEntry("type", Algo::GetType());
+      logger.AddEntry("version", Algo::GetVersion());
+      logger.AddEntry("name", Algo::GetName());
+      if (logger.GetCurrentLevel() > 0) logger.AddEntry("level", logger.GetCurrentLevel());
+
+      return true;
+    }
   };
 }
 

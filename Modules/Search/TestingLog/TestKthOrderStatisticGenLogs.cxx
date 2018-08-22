@@ -18,33 +18,45 @@
  *
  *=========================================================================================================*/
 #include <gtest/gtest.h>
-#include <comb_log.hxx>
+#include <kth_order_statistic_log.hxx>
+#include "data.hxx"
 
 // STD includes
-#include <ostream>
+#include <fstream>
 
-// Hurna Lib namespace
+// Testing namespace
 using namespace hul;
-using namespace hul::sort;
+using namespace hul::search;
 
 #ifndef DOXYGEN_SKIP
 namespace {
   typedef Vector<int> Array;
   typedef Array::h_iterator IT;
-  typedef Comb<IT> Sort;
+  typedef KthOrderStatistic<IT> Search;
+
+  const std::string DIR = "order_statistic";
 }
 #endif /* DOXYGEN_SKIP */
 
-TEST(TestCombLog, buildFacto)
+// Test KthElement with different integer sequences
+TEST(TestKthElementGenLogs, build)
 {
-  std::stringstream dumpStream;
-  auto logger = std::shared_ptr<Logger>(new Logger(dumpStream));
-  Array data(logger, { 1, -4, 2, 3, -1, 4, 0 , -2, -5, -3 });
+  // Generate log for all Random integers
+  for (auto it = DATA::Integers.begin(); it != DATA::Integers.end(); ++it)
+  {
+    auto rangeIt = DATA::IndexSearch.find(it->second.size());
+    if (rangeIt == DATA::IndexSearch.end())
+      continue;
 
-  // Computation
-  Sort::Build(*logger.get(), data.h_begin(), data.h_end());
+    for (auto idxIt = rangeIt->second.begin(); idxIt != rangeIt->second.end(); ++idxIt)
+    {
+      OFStream fileStream(DIR + "/" + it->first + "_" + std::to_string(*idxIt) + ".json");
+      auto logger = std::shared_ptr<Logger>(new Logger(fileStream));
+      //auto logger = std::shared_ptr<Logger>(new Logger(std::cout));
+      Array data(logger, it->second);
 
-  // Test: all elements of the final array are sorted
-  for (auto it = data.begin(); it < data.end() - 1; ++it)
-    EXPECT_LE(*it, *(it + 1));
+      Search::Build(*logger.get(), data.h_begin(), data.h_end(), *idxIt);
+    }
+  }
 }
+
