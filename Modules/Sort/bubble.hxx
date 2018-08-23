@@ -1,13 +1,13 @@
 /*===========================================================================================================
  *
- * SHA - Simple Hybesis Algorithms
+ * HUC - Hurna Core
  *
  * Copyright (c) Michael Jeulin-Lagarrigue
  *
  *  Licensed under the MIT License, you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *
- *         https://github.com/michael-jeulinl/Simple-Hybesis-Algorithms/blob/master/LICENSE
+ *         https://github.com/Hurna/Hurna-Core/blob/master/LICENSE
  *
  * Unless required by applicable law or agreed to in writing, software distributed under the License is
  * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,48 +23,43 @@
 // STD includes
 #include <iterator>
 
-namespace SHA_Sort
+namespace huc
 {
-  /// Bubble Sort - Partition-Exchange Sort
-  /// Proceed an in-place bubble-sort on the elements.
-  /// sometimes referred to as sinking sort, is a simple sorting algorithm that repeatedly steps through
-  /// the list to be sorted, compares each pair of adjacent items and swaps them if they are in the wrong
-  /// order.
-  /// The pass through the list is repeated until no swaps needed: it indicates that the list is sorted.
-  ///
-  /// @complexity O(N²) in average case and O(N²) on worst case.
-  /// @remark: Although the algorithm is simple, it is too slow and impractical for most problem.
-  ///
-  /// @tparam IT type using to go through the collection.
-  /// @tparam Compare functor type (std::less_equal in order, std::greater_equal for inverse order).
-  ///
-  /// @param begin,end iterators to the initial and final positions of
-  /// the sequence to be sorted. The range used is [first,last), which contains all the elements between
-  /// first and last, including the element pointed by first but not the element pointed by last.
-  ///
-  /// @return void.
-  template <typename IT, typename Compare = std::less<typename std::iterator_traits<IT>::value_type>>
-  void Bubble(const IT& begin, const IT& end)
+  namespace sort
   {
-    const auto distance = static_cast<const int>(std::distance(begin, end));
-    if (distance < 2)
-      return;
-
-    int endIdx = -1;
-    bool hasSwapped;
-    // for each element - bubble it up until the end.
-    for (auto it = begin; it < end - 1; ++it, --endIdx)
+    /// Bubble Sort - Proceed an in-place sort on the elements.
+    ///
+    /// @tparam IT type using to go through the collection.
+    /// @tparam Compare functor type (std::less_equal in order, std::greater_equal for inverse order).
+    ///
+    /// @param begin,end iterators to the initial and final positions of
+    /// the sequence to be sorted. The range used is [first,last), which contains all the elements between
+    /// first and last, including the element pointed by first but not the element pointed by last.
+    ///
+    /// @return void.
+    template <typename IT, typename Compare = std::less<typename std::iterator_traits<IT>::value_type>>
+    void Bubble(const IT& begin, const IT& end)
     {
-      hasSwapped = false;
-      for (auto curIt = begin; curIt < end + endIdx; ++curIt)
-        if (Compare()(*(curIt + 1), *curIt))
-        {
-          std::swap(*(curIt + 1), *curIt);
-          hasSwapped = true;
-        }
+      const auto distance = static_cast<const int>(std::distance(begin, end));
+      if (distance < 2)
+        return;
 
-      if (!hasSwapped)
-        break;
+      int endIdx = -1;
+      bool hasSwapped;
+      // for each element - bubble it up until the end.
+      for (auto it = begin; it < end - 1; ++it, --endIdx)
+      {
+        hasSwapped = false;
+        for (auto curIt = begin; curIt < end + endIdx; ++curIt)
+          if (Compare()(*(curIt + 1), *curIt))
+          {
+            std::swap(*(curIt + 1), *curIt);
+            hasSwapped = true;
+          }
+
+        if (!hasSwapped)
+          break;
+      }
     }
   }
 }

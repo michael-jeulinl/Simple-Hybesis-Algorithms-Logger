@@ -100,17 +100,17 @@ $( document ).ready(function() {
   var nav_container = $('<div class="row"></div>');
   $('#navrow1').parent().prepend(nav_container);
 
-  var left_nav = $('<div class="col-md-9"></div>');
+  var left_nav = $('<div class="col-md-12"></div>');
   for (i = 0; i < 6; i++) {
     var navrow = $('#navrow' + i + ' > ul.tablist').detach();
     left_nav.append(navrow);
     $('#navrow' + i).remove();
   }
-  var right_nav = $('<div class="col-md-3"></div>').append('\
+  var right_nav = $('<div class="col-md-12"></div>').append('\
     <div id="search-box" class="input-group">\
       <div class="input-group-btn">\
         <button aria-expanded="false" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">\
-          <span class="glyphicon glyphicon-search"></span> <span class="caret"></span>\
+          <i class="fa fa-search"></i> <span class="caret"></span>\
         </button>\
         <ul class="dropdown-menu">\
         </ul>\
@@ -118,8 +118,9 @@ $( document ).ready(function() {
       <button id="search-close" type="button" class="close" aria-label="Close"><span aria-hidden="true">&times;</span></button>\
       <input id="search-field" class="form-control" accesskey="S" onkeydown="searchBox.OnSearchFieldChange(event);" placeholder="Search ..." type="text">\
     </div>');
-  $(nav_container).append(left_nav);
   $(nav_container).append(right_nav);
+  $(nav_container).append(left_nav);
+
 
   $('#MSearchSelectWindow .SelectionMark').remove();
   var search_selectors = $('#MSearchSelectWindow .SelectItem');
